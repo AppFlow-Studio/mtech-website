@@ -1,103 +1,154 @@
-import Image from "next/image";
+import Hero from "@/components/home/Hero";
+import Partners from "@/components/Partners";
+import WhyChooseUs from "@/components/home/WhyChooseUs";
+import FeaturesTabs from "@/components/home/FeaturesTabs";
+import GrowthSection from "@/components/home/GrowthSection";
+import ModernPaymentsIntro from "@/components/home/ModernPaymentsIntro";
+import InsightsSection from "@/components/home/InsightsSection";
+import PreferredChoice from "@/components/home/PreferredChoice";
+import MerchantPortal from "@/components/home/MerchantPortal";
+import Testimonials from "@/components/home/Testimonials";
+import Collection from "@/components/home/Collection";
+import PosSystems from "@/components/home/PosSystems";
+import { FeatureItem } from "@/lib/types";
+
+//Used for Feature tab components
+const featureItems: FeatureItem[] = [
+  {
+    title: "Payment Processing & Management",
+    description:
+      "Efficiently manage transactions, track payments, and streamline your financial workflows with our secure payment processing solutions.",
+    imageSrc: "/features/feature-1-payment.png",
+  },
+  {
+    title: "100% Transparent Costs",
+    description:
+      "Enjoy clear, upfront pricing with no hidden fees. We believe in honesty and building trust through transparent cost structures.",
+    imageSrc: "/features/feature-1-payment.png",
+  },
+  {
+    title: "Technical Support",
+    description:
+      "Our expert technical support team is available around the clock to assist you with any issues or questions you may have.",
+    imageSrc: "/features/feature-1-payment.png",
+  },
+  {
+    title: "Right Equipment & Software",
+    description:
+      "Get access to the latest, most secure POS terminals and software tailored to your specific business needs.",
+    imageSrc: "/features/feature-1-payment.png",
+  },
+  {
+    title: "Full Data Security & Compliance",
+    description:
+      "Rest easy knowing your data is protected with top-tier security measures and full PCI compliance, safeguarding you and your customers.",
+    imageSrc: "/features/feature-1-payment.png",
+  },
+  {
+    title: "User Friendly & reliable Options",
+    description:
+      "Choose from a range of reliable, easy-to-use payment options that provide a seamless experience for your customers.",
+    imageSrc: "/features/feature-1-payment.png",
+  },
+];
+
+//Used for Feature tab components for payment solutions
+const paymentSolutionsFeatures: FeatureItem[] = [
+  {
+    title: "Diverse Payment Options",
+    description:
+      "Offer your customers a variety of secure and convenient payment methods, ensuring a seamless transaction experience for everyone.",
+    imageSrc: "/features/diverse-payment-options.png",
+  },
+  {
+    title: "Optimized Cost Flow",
+    description:
+      "Streamline your transaction processes to reduce overhead and improve your bottom line with our efficient cost flow solutions.",
+    imageSrc: "/features/diverse-payment-options.png",
+  },
+  {
+    title: "Cost Savings",
+    description:
+      "Identify and implement significant cost-saving strategies to lower your payment processing fees and operational expenses, maximizing your profits.",
+    imageSrc: "/features/diverse-payment-options.png",
+  },
+  {
+    title: "Access Data-Driven Insights",
+    description:
+      "Leverage powerful analytics and reporting tools to understand customer behavior, track sales trends, and make informed business decisions.",
+    imageSrc: "/features/diverse-payment-options.png",
+  },
+  {
+    title: "Seamless Growth Potential",
+    description:
+      "Our scalable solutions are designed to grow with your business, supporting your expansion from a small startup to a large enterprise without friction.",
+    imageSrc: "/features/diverse-payment-options.png",
+  },
+  {
+    title: "Optimized Payment Processing",
+    description:
+      "Benefit from fast, reliable, and secure payment processing that enhances customer satisfaction and boosts your day-to-day operational efficiency.",
+    imageSrc: "/features/diverse-payment-options.png",
+  },
+];
+
+//Used for Feature tab components for modern payment
+const modernPaymentFeatures: FeatureItem[] = [
+  {
+    title: "Mobile Payments",
+    description:
+      "Simplify your payment processing with all the tools you need in one place. We offer cutting-edge payment terminals, POS systems, eCommerce capabilities, and value-added services to create a flexible and customized payment environment.",
+    imageSrc: "/features/mobile-payment-pos.png",
+  },
+  {
+    title: "Digital Wallets",
+    description:
+      "Accept payments from popular digital wallets like Apple Pay, Google Pay, and Samsung Pay, offering your customers speed and convenience.",
+    imageSrc: "/features/mobile-payment-pos.png",
+  },
+  {
+    title: "ACH Payments",
+    description:
+      "Process direct bank-to-bank payments securely and with lower transaction fees, ideal for recurring billing and large ticket items.",
+    imageSrc: "/features/mobile-payment-pos.png",
+  },
+  {
+    title: "Gift Cards",
+    description:
+      "Launch and manage your own branded gift card program to boost sales, attract new customers, and encourage repeat business.",
+    imageSrc: "/features/mobile-payment-pos.png",
+  },
+  {
+    title: "NFC Payments",
+    description:
+      "Enable fast and secure contactless payments through Near Field Communication (NFC) technology for a modern checkout experience.",
+    imageSrc: "/features/mobile-payment-pos.png",
+  },
+  {
+    title: "Dip / Tap / Swipe",
+    description:
+      "Our terminals support all standard card interactions, including traditional dip (EMV chip) and swipe, alongside modern tap-to-pay.",
+    imageSrc: "/features/mobile-payment-pos.png",
+  },
+];
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+    <div>
+      <Hero />
+      <Partners />
+      <WhyChooseUs />
+      <FeaturesTabs features={featureItems} />
+      <GrowthSection />
+      <FeaturesTabs features={paymentSolutionsFeatures} />
+      <ModernPaymentsIntro />
+      <FeaturesTabs features={modernPaymentFeatures} />
+      <InsightsSection />
+      <PreferredChoice />
+      <MerchantPortal />
+      <Testimonials />
+      <Collection />
+      <PosSystems />
     </div>
   );
 }

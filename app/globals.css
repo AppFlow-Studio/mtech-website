@@ -1,26 +1,139 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant light (&:where(.light, .light *));
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* WebKit browsers (Chrome, Safari, Edge) */
+}
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Center mode styles */
+
+.slick-slide > div > div {
+  opacity: 0.7;
+  transform: scale(0.9) !important;
+  filter: grayscale(0.3) brightness(0.9) !important;
+  transition: all 0.3s ease !important;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+.slick-active > div > div {
+  opacity: 1 !important;
+  transform: scale(1) !important;
+}
+
+/* .slick-slide:hover > div > div {
+  opacity: 0.85 !important;
+} */
+
+/* Custom dot styles */
+.slick-dots {
+  bottom: -60px !important;
+}
+
+.slick-dots li {
+  margin: 0 8px !important;
+}
+
+.slick-dots li button {
+  width: 12px !important;
+  height: 12px !important;
+  border-radius: 50% !important;
+}
+
+.slick-dots li button:before {
+  font-size: 12px !important;
+  width: 12px !important;
+  height: 12px !important;
+  color: #d1d5db !important;
+  opacity: 1 !important;
+  border-radius: 50% !important;
+}
+
+.slick-dots li.slick-active button:before {
+  color: #7c3aed !important;
+  transform: scale(1.2) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .slick-slide > div > div {
+    transform: scale(0.95) !important;
+  }
+
+  .slick-center .slick-slide > div > div {
+    transform: scale(1) !important;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Remove default slick theme styles */
+.slick-prev:before,
+.slick-next:before {
+  display: none !important;
+}
+
+@layer components {
+  .custom-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 2px;
+    background: transparent;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .custom-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 18px;
+    width: 18px;
+    background-color: #000;
+    border-radius: 50%;
+    border: none;
+    margin-top: -8px;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2);
+  }
+
+  .dark .custom-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 18px;
+    width: 18px;
+    background-color: #fff;
+    border-radius: 50%;
+    border: none;
+    margin-top: -8px;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2);
+  }
+
+  .custom-range::-moz-range-thumb {
+    height: 18px;
+    width: 18px;
+    background-color: #fff;
+    border-radius: 50%;
+    border: none;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2);
+  }
+
+  .custom-range::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 2px;
+    background-color: #4a5568;
+    border-radius: 2px;
+  }
+
+  .custom-range::-moz-range-track {
+    width: 100%;
+    height: 2px;
+    background-color: #4a5568;
+    border-radius: 2px;
+  }
+
+  .light .custom-range::-webkit-slider-runnable-track,
+  .light .custom-range::-moz-range-track {
+    background-color: #e2e8f0;
+  }
 }
