@@ -39,3 +39,16 @@ export interface ImageLinkCardProps {
   imageSrc: string;
   link: string;
 }
+
+interface Feature {
+  name: string;
+  detail?: string;
+}
+
+export interface Slide {
+  imageSrc: string;
+  title: string;
+  description: string;
+  features: Feature[];
+  cta?: string;
+}

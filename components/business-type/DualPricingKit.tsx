@@ -28,7 +28,10 @@ const gridCardsData: ImageLinkCardProps[] = [
   },
 ];
 
-const DualPricingKit = () => {
+const DualPricingKit = ({
+  title = "Dual Pricing Starter Kit",
+  description = "The Dual Pricing Starter Kit is an all-in-one solution designed to help merchants implement a compliant and transparent dual pricing system — displaying both cash and card prices at the point of sale.",
+}) => {
   return (
     <section className="py-16 sm:py-24">
       <div className="container mx-auto px-4">
@@ -42,13 +45,10 @@ const DualPricingKit = () => {
           <div className="lg:col-span-1 space-y-8">
             <div>
               <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
-                Dual Pricing Starter Kit
+                {title}
               </h1>
               <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
-                The Dual Pricing Starter Kit is an all-in-one solution designed
-                to help merchants implement a compliant and transparent dual
-                pricing system — displaying both cash and card prices at the
-                point of sale.
+                {description}
               </p>
             </div>
             {/* Render the single main card */}

@@ -88,6 +88,9 @@ const AtmTransaction = () => {
                   className="w-full h-auto rounded-2xl"
                 />
               </div>
+              <h3 className="text-xl md:text-2xl font-medium text-gray-900 dark:text-white mb-3">
+                Contact MTech Today!
+              </h3>
               <ul className="space-y-4">
                 {featureList.map((feature, index) => (
                   <li key={index} className="flex items-start gap-3">
