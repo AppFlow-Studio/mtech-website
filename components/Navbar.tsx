@@ -12,11 +12,13 @@ import {
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useTheme } from "./ThemeProvider";
+import Link from "next/link";
 
 const Navbar = () => {
   const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
+  const [hoveredItem, setHoveredItem] = useState<number | null>(null);
   const pathname = usePathname();
 
   // Check if current path matches or is a child of the href
@@ -36,7 +38,6 @@ const Navbar = () => {
       href: "/products",
       hasDropdown: true,
       dropdownItems: [
-        { name: "All Products", href: "/products" },
         { name: "ATM Topper", href: "/products/atm-topper" },
         { name: "Clover", href: "/products/clover" },
         { name: "Dejavoo", href: "/products/dejavoo" },
@@ -59,7 +60,6 @@ const Navbar = () => {
       href: "/services",
       hasDropdown: true,
       dropdownItems: [
-        { name: "All Services", href: "/services" },
         { name: "Repair Center", href: "/services/repair-center" },
         { name: "Warranty Request", href: "/services/warranty-request" },
       ],
@@ -141,15 +141,26 @@ const Navbar = () => {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex-shrink-0 flex items-center">
-              <img src="/logo.png" alt="Logo" className="h-16 w-auto" />
+              <Link href="/">
+                <img src="/logo.png" alt="Logo" className="h-16 w-auto" />
+              </Link>
             </div>
 
             {/* Desktop Menu */}
-            <div className="hidden xl:flex items-center space-x-8 bg-[#672AB21A] dark:bg-[#FFFFFF1A] backdrop-blur-md rounded-full px-4 py-2 z-50">
+            <div
+              className="hidden xl:flex items-center space-x-8 bg-[#672AB21A] dark:bg-[#FFFFFF1A] backdrop-blur-md rounded-full px-4 py-2 z-50"
+              onMouseLeave={() => {
+                setHoveredItem(null);
+              }}
+            >
               {menuItems.map((item, index) => (
-                <div key={index} className="relative group xl:mr-4">
-                  <div className="flex items-center">
-                    <a
+                <div key={index} className="relative xl:mr-4">
+                  <div
+                    className="flex items-center"
+                    onMouseEnter={() => setHoveredItem(index)}
+                    onMouseLeave={() => setHoveredItem(null)}
+                  >
+                    <Link
                       href={item.href}
                       className={`flex items-center space-x-1 hover:text-purple-400 transition-colors duration-200 text-sm rounded-full ${
                         isActive(item.href)
@@ -158,22 +169,31 @@ const Navbar = () => {
                       }`}
                     >
                       <span>{item.name}</span>
-                    </a>
+                    </Link>
                     {item.hasDropdown && (
                       <ChevronDown
                         size={14}
                         className="ml-1 cursor-pointer hover:text-purple-400"
+                        onMouseEnter={() => setHoveredItem(index)}
                       />
                     )}
                   </div>
 
                   {/* Dropdown Menu */}
                   {item.hasDropdown && (
-                    <div className="absolute left-0 mt-3 w-56 bg-[#f0e9f7] dark:bg-[#241b30] rounded-md shadow-lg opacity-0 group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200 dark:border-gray-700">
+                    <div
+                      className={`absolute left-0 mt-3 w-56 bg-[#f0e9f7] dark:bg-[#241b30] rounded-md shadow-lg transition-all duration-200 z-50 border border-gray-200 dark:border-gray-700 ${
+                        hoveredItem === index
+                          ? "opacity-100 visible"
+                          : "opacity-0 invisible"
+                      }`}
+                      onMouseEnter={() => setHoveredItem(index)}
+                      onMouseLeave={() => setHoveredItem(null)}
+                    >
                       <div className="py-2">
                         {item.dropdownItems?.map(
                           (dropdownItem, dropdownIndex) => (
-                            <a
+                            <Link
                               key={dropdownIndex}
                               href={dropdownItem.href}
                               className={`block px-4 py-2 text-sm ${
@@ -183,7 +203,7 @@ const Navbar = () => {
                               } transition-colors duration-200`}
                             >
                               {dropdownItem.name}
-                            </a>
+                            </Link>
                           )
                         )}
                       </div>
@@ -232,7 +252,7 @@ const Navbar = () => {
               {menuItems.map((item, index) => (
                 <div key={index}>
                   <div className="flex items-center justify-between">
-                    <a
+                    <Link
                       href={item.href}
                       className={`flex-1 px-3 py-2 text-left rounded-md transition-colors duration-200 ${
                         isActive(item.href)
@@ -241,7 +261,7 @@ const Navbar = () => {
                       }`}
                     >
                       {item.name}
-                    </a>
+                    </Link>
                     {item.hasDropdown && (
                       <button
                         onClick={() => toggleMobileDropdown(index)}
@@ -262,7 +282,7 @@ const Navbar = () => {
                     <div className="ml-4 mt-1 space-y-1">
                       {item.dropdownItems?.map(
                         (dropdownItem, dropdownIndex) => (
-                          <a
+                          <Link
                             key={dropdownIndex}
                             href={dropdownItem.href}
                             className={`block px-3 py-2 text-sm rounded-md transition-colors duration-200 ${
@@ -272,7 +292,7 @@ const Navbar = () => {
                             }`}
                           >
                             {dropdownItem.name}
-                          </a>
+                          </Link>
                         )
                       )}
                     </div>
