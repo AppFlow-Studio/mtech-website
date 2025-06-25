@@ -1,4 +1,3 @@
-// lib/theme.ts
 import { getCookie, setCookie } from "cookies-next";
 import type { OptionsType } from "cookies-next";
 

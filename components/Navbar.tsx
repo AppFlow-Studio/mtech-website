@@ -145,7 +145,7 @@ const Navbar = () => {
             </div>
 
             {/* Desktop Menu */}
-            <div className="hidden xl:flex items-center space-x-8 bg-[#672AB21A] dark:bg-[#FFFFFF1A] backdrop-blur-md rounded-full px-4 py-2">
+            <div className="hidden xl:flex items-center space-x-8 bg-[#672AB21A] dark:bg-[#FFFFFF1A] backdrop-blur-md rounded-full px-4 py-2 z-50">
               {menuItems.map((item, index) => (
                 <div key={index} className="relative group xl:mr-4">
                   <div className="flex items-center">
@@ -169,7 +169,7 @@ const Navbar = () => {
 
                   {/* Dropdown Menu */}
                   {item.hasDropdown && (
-                    <div className="absolute left-0 mt-3 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200 dark:border-gray-700">
+                    <div className="absolute left-0 mt-3 w-56 bg-[#f0e9f7] dark:bg-[#241b30] rounded-md shadow-lg opacity-0 group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200 dark:border-gray-700">
                       <div className="py-2">
                         {item.dropdownItems?.map(
                           (dropdownItem, dropdownIndex) => (
@@ -226,7 +226,7 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="xl:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+          <div className="xl:hidden bg-[#672AB21A] dark:bg-[#FFFFFF1A] border-t border-gray-200 dark:border-gray-700">
             <div className="px-4 py-2 space-y-1">
               {/* Navigation Items */}
               {menuItems.map((item, index) => (
