@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import FilterSidebar from "./FilterSidebar";
 import ProductCard from "./ProductCard";
 import Pagination from "./Pagination";
-import type { Product } from "@/lib/types"; // Adjust path if needed
-import { SlidersHorizontal, LayoutGrid, X } from "lucide-react";
+import type { Product } from "@/lib/types";
+import { SlidersHorizontal, LayoutGrid, List } from "lucide-react";
 
 interface ProductGridLayoutProps {
   title: string;
@@ -15,11 +15,82 @@ interface ProductGridLayoutProps {
 
 const ProductGridLayout = ({
   title,
-  totalProducts,
-  products,
+  totalProducts: initialTotalProducts,
+  products: initialProducts,
 }: ProductGridLayoutProps) => {
   const [isCompareOn, setIsCompareOn] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [filteredProducts, setFilteredProducts] =
+    useState<Product[]>(initialProducts);
+  const [totalProducts, setTotalProducts] = useState(initialTotalProducts);
+
+  // Filter states
+  const [inStockFilter, setInStockFilter] = useState<boolean | null>(null);
+  const [sortOption, setSortOption] = useState<string | null>(null);
+
+  const productsPerPage = viewMode === "grid" ? 9 : 6;
+
+  // Apply filters and sorting whenever they change
+  useEffect(() => {
+    let result = [...initialProducts];
+
+    // Apply stock filter
+    if (inStockFilter !== null) {
+      result = result.filter((product) => product.inStock === inStockFilter);
+    }
+
+    // Apply sorting
+    if (sortOption) {
+      switch (sortOption) {
+        case "alpha-az":
+          result.sort((a, b) => a.name.localeCompare(b.name));
+          break;
+        case "alpha-za":
+          result.sort((a, b) => b.name.localeCompare(a.name));
+          break;
+        // Add more sorting options here if needed
+        default:
+          break;
+      }
+    }
+
+    setFilteredProducts(result);
+    setTotalProducts(result.length);
+    setCurrentPage(1); // Reset to first page when filters change
+  }, [initialProducts, inStockFilter, sortOption]);
+
+  // Calculate total pages
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+
+  // Get current products
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = filteredProducts.slice(
+    indexOfFirstProduct,
+    indexOfLastProduct
+  );
+
+  // Change page
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+  const nextPage = () =>
+    currentPage < totalPages && setCurrentPage(currentPage + 1);
+  const prevPage = () => currentPage > 1 && setCurrentPage(currentPage - 1);
+
+  // Handle filter changes
+  const handleStockFilterChange = (inStock: boolean | null) => {
+    setInStockFilter(inStock);
+  };
+
+  const handleSortChange = (option: string | null) => {
+    setSortOption(option);
+  };
+
+  const resetFilters = () => {
+    setInStockFilter(null);
+    setSortOption(null);
+  };
 
   return (
     <div className="py-8 sm:py-12">
@@ -45,7 +116,15 @@ const ProductGridLayout = ({
         <div className="mt-8 lg:grid lg:grid-cols-4 lg:gap-8">
           {/* --- Desktop Sidebar --- */}
           <div className="hidden lg:block">
-            <FilterSidebar />
+            <FilterSidebar
+              onStockFilterChange={handleStockFilterChange}
+              onSortChange={handleSortChange}
+              onReset={resetFilters}
+              currentStockFilter={inStockFilter}
+              currentSortOption={sortOption}
+              inStockCount={initialProducts.filter((p) => p.inStock).length}
+              outOfStockCount={initialProducts.filter((p) => !p.inStock).length}
+            />
           </div>
 
           {/* --- Main Content --- */}
@@ -69,16 +148,50 @@ const ProductGridLayout = ({
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 View As
               </span>
-              <LayoutGrid className="h-6 w-6 text-white cursor-pointer" />
+              {viewMode === "grid" ? (
+                <LayoutGrid
+                  onClick={() => setViewMode("list")}
+                  className="h-6 w-6 text-white cursor-pointer"
+                />
+              ) : (
+                <List
+                  onClick={() => setViewMode("grid")}
+                  className="h-6 w-6 text-white cursor-pointer"
+                />
+              )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-              {products.map((product, index) => (
-                <ProductCard key={index} product={product} />
-              ))}
-            </div>
+            {viewMode === "grid" ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                {currentProducts.map((product, index) => (
+                  <ProductCard
+                    key={index}
+                    product={product}
+                    viewMode={viewMode}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {currentProducts.map((product, index) => (
+                  <ProductCard
+                    key={index}
+                    product={product}
+                    viewMode={viewMode}
+                  />
+                ))}
+              </div>
+            )}
 
-            <Pagination />
+            {totalPages > 1 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                paginate={paginate}
+                nextPage={nextPage}
+                prevPage={prevPage}
+              />
+            )}
           </main>
         </div>
       </div>
@@ -99,7 +212,16 @@ const ProductGridLayout = ({
 
         {/* Sidebar Content */}
         <div className="relative z-50 ml-auto h-full w-full max-w-xs bg-white dark:bg-[#0B0119] p-6 shadow-xl">
-          <FilterSidebar onClose={() => setIsFilterOpen(false)} />
+          <FilterSidebar
+            onClose={() => setIsFilterOpen(false)}
+            onStockFilterChange={handleStockFilterChange}
+            onSortChange={handleSortChange}
+            onReset={resetFilters}
+            currentStockFilter={inStockFilter}
+            currentSortOption={sortOption}
+            inStockCount={initialProducts.filter((p) => p.inStock).length}
+            outOfStockCount={initialProducts.filter((p) => !p.inStock).length}
+          />
         </div>
       </div>
     </div>
