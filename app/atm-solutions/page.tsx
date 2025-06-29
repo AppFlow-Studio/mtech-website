@@ -10,17 +10,17 @@ const solutionsData = [
   {
     title: "Large businesses",
     imageSrc: "/solutions/atm-large-business.png",
-    link: "#",
+    link: "/dual-pricing/large-business",
   },
   {
     title: "Small and Midsize Businesses",
     imageSrc: "/solutions/atm-smb.png",
-    link: "#",
+    link: "/dual-pricing/small-mid-businesses",
   },
   {
     title: "Solutions for Distributors",
     imageSrc: "/solutions/atm-distributors.png",
-    link: "#",
+    link: "/dual-pricing/merchant-services",
   },
 ];
 
