@@ -7,12 +7,12 @@ const repairCenterCards: ImageLinkCardProps[] = [
   {
     title: "House Of Wings Testimonial",
     imageSrc: "/repair-house-of-wings.png",
-    link: "#",
+    link: "/review",
   },
   {
     title: "Osos Pet Supply Testimonial",
     imageSrc: "/repair-pet-supply.png",
-    link: "#",
+    link: "/review",
   },
 ];
 
