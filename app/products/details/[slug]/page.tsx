@@ -1,8 +1,7 @@
-import ProductGridLayout from "@/components/ProductGridLayout";
-import HardwareSection from "@/components/HardwareSection";
-import PricingSection from "@/components/products/PricingSection";
-import RatesComparison from "@/components/products/RatesComparison";
-import type { Product } from "@/lib/types";
+import { notFound } from "next/navigation";
+import { Product } from "@/lib/types";
+import Detail from "@/components/products/Detail";
+import AlsoLikeSection from "@/components/products/AlsoLikeSection";
 
 const mockProducts: Product[] = [
   {
@@ -738,19 +737,30 @@ const mockProducts: Product[] = [
     inStock: true,
   },
 ];
-const totalProducts = 123;
 
-export default function Products() {
+function getProductBySlug(slug: string): Product | undefined {
+  console.log(`Fetching product with slug: ${slug}`);
+  return mockProducts.find((product) => product.link === slug);
+}
+
+export default async function ProductDetailPage({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  // Fetch the specific product based on the slug from the URL
+  const slug = await params.slug;
+  const product = getProductBySlug(slug);
+
+  // If no product is found for the given slug, show a 404 page.
+  if (!product) {
+    notFound();
+  }
+
   return (
     <>
-      <ProductGridLayout
-        title="Our Products"
-        totalProducts={totalProducts}
-        products={mockProducts}
-      />
-      <PricingSection />
-      <RatesComparison />
-      <HardwareSection />
+      <Detail product={product} />
+      <AlsoLikeSection />
     </>
   );
 }

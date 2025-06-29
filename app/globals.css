@@ -137,3 +137,16 @@
     background-color: #e2e8f0;
   }
 }
+
+.slick-track {
+  display: flex !important;
+}
+
+.slick-slide {
+  height: inherit !important;
+}
+
+.slick-slide > div > div,
+.slick-slide > div {
+  height: 100%;
+}

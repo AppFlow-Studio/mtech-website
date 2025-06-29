@@ -27,7 +27,7 @@ const ProductCard = ({ product, viewMode }: ProductCardProps) => {
         <p className="mt-2 text-gray-600 dark:text-gray-400 text-sm line-clamp-2 flex-grow">
           {product.description}
         </p>
-        <Link href={product.link} className="mt-4">
+        <Link href={`/products/details/${product.link}`} className="mt-4">
           <button
             className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 font-semibold text-sm text-white rounded-full transition-colors duration-300 cursor-pointer ${
               product.inStock
@@ -35,7 +35,7 @@ const ProductCard = ({ product, viewMode }: ProductCardProps) => {
                 : "bg-[#382F44]"
             }`}
           >
-            {product.inStock ? "View Details" : "Call For Price"}
+            View Details
             <ChevronRight className="h-4 w-4" />
           </button>
         </Link>
@@ -62,7 +62,7 @@ const ProductCard = ({ product, viewMode }: ProductCardProps) => {
           {product.description}
         </p>
         <div className="mt-4 flex justify-between items-center">
-          <Link href={product.link}>
+          <Link href={`/products/details/${product.link}`}>
             <button
               className={`inline-flex items-center justify-center gap-2 px-6 py-2.5 font-semibold text-sm text-white rounded-full transition-colors duration-300 cursor-pointer ${
                 product.inStock
@@ -70,7 +70,7 @@ const ProductCard = ({ product, viewMode }: ProductCardProps) => {
                   : "bg-[#382F44]"
               }`}
             >
-              {product.inStock ? "View Details" : "Call For Price"}
+              View Details
               <ChevronRight className="h-4 w-4" />
             </button>
           </Link>
