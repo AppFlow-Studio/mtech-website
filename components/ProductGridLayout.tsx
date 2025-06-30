@@ -151,12 +151,12 @@ const ProductGridLayout = ({
               {viewMode === "grid" ? (
                 <LayoutGrid
                   onClick={() => setViewMode("list")}
-                  className="h-6 w-6 text-white cursor-pointer"
+                  className="h-6 w-6 text-black dark:text-white cursor-pointer"
                 />
               ) : (
                 <List
                   onClick={() => setViewMode("grid")}
-                  className="h-6 w-6 text-white cursor-pointer"
+                  className="h-6 w-6 text-black dark:text-white cursor-pointer"
                 />
               )}
             </div>

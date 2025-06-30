@@ -10,7 +10,7 @@ const posSystemsData = [
   {
     name: "Supersonic POS",
     imageSrc: "/products/pos-supersonic.png",
-    link: "/products/supersonic",
+    link: "/products/supersonic-pos",
     features: [
       "Supersonic Pos Bundle",
       "Supersonic Touch Screen",
@@ -23,7 +23,7 @@ const posSystemsData = [
   {
     name: "Figure POS",
     imageSrc: "/products/pos-figure.png",
-    link: "/products/figure",
+    link: "/products/figure-pos",
     features: [
       "Receipt Printer",
       "Kitchen Printer",
@@ -36,7 +36,7 @@ const posSystemsData = [
   {
     name: "On The Fly POS",
     imageSrc: "/products/pos-onthefly.png",
-    link: "/products/onthefly",
+    link: "/products/on-the-fly-pos",
     features: [
       "Cash Drawer",
       "Pin Pad",

@@ -27,7 +27,6 @@ export function ThemeProvider({
     } else {
       document.documentElement.classList.remove("dark");
     }
-    console.log("cookie is aved", theme);
 
     // Save to cookie
     setThemeCookie(theme);

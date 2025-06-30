@@ -4,6 +4,7 @@ export interface Product {
   imageSrc: string;
   link: string;
   inStock: boolean;
+  tags?: string[];
 }
 
 export interface FullTestimonial {

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, ChevronRight, Download, Flame } from "lucide-react";
+import { ChevronRight, Flame } from "lucide-react";
 
 // --- Data for the collection cards ---
 const collectionData = [
@@ -10,19 +10,25 @@ const collectionData = [
     title: "Credit Card Terminals",
     imageSrc: "/products/terminals.png",
     isNew: true,
-    link: "/products/terminals",
+    link: `/products/area-of-speciality?data=${encodeURIComponent(
+      JSON.stringify({ tags: ["credit card terminals"] })
+    )}`,
   },
   {
     title: "ATM Machines",
     imageSrc: "/products/atm-machines.png",
     isNew: true,
-    link: "/products/atm",
+    link: `/products/area-of-speciality?data=${encodeURIComponent(
+      JSON.stringify({ tags: ["atm machines"] })
+    )}`,
   },
   {
     title: "Network Devices",
     imageSrc: "/products/network-devices.png",
     isNew: true,
-    link: "/products/networking",
+    link: `/products/area-of-speciality?data=${encodeURIComponent(
+      JSON.stringify({ tags: ["network devices"] })
+    )}`,
   },
 ];
 
