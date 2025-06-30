@@ -1,9 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Search } from "lucide-react";
+import Searchbar from "./Searchbar";
 
 const Hero = () => {
-  const [searchQuery, setSearchQuery] = useState("");
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -22,11 +21,6 @@ const Hero = () => {
     "ATM Cards",
   ];
 
-  const handleSearch = (e: { preventDefault: () => void }) => {
-    e.preventDefault();
-    console.log("Searching for:", searchQuery);
-  };
-
   const handleCategoryClick = (category: string) => {
     console.log("Category clicked:", category);
   };
@@ -36,7 +30,7 @@ const Hero = () => {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden mx-2 sm:mx-4 lg:mx-6 rounded-2xl">
+    <div className="relative min-h-screen overflow-hidden mx-2 sm:mx-4 lg:mx-6 rounded-2xl mt-4">
       {/* Background Video */}
       <div className="absolute inset-0 z-0">
         <video
@@ -85,39 +79,7 @@ const Hero = () => {
                 with added value beyond the basics.
               </p>
             </div>
-            <div
-              className={`transform transition-all duration-1000 delay-500 ease-out ${
-                isVisible
-                  ? "translate-y-0 opacity-100"
-                  : "translate-y-10 opacity-0"
-              }`}
-            >
-              <form
-                onSubmit={handleSearch}
-                className="max-w-xs sm:max-w-sm md:max-w-md mx-auto mb-4 md:mb-8"
-              >
-                <div className="relative">
-                  <div className="flex items-center bg-[#FFFFFF33] backdrop-blur-sm rounded-full p-1 md:py-1.5">
-                    <div className="flex items-center flex-1 px-3 sm:px-4 lg:px-6">
-                      <Search className="w-4 h-4 sm:w-5 sm:h-5 text-white/80 mr-2 sm:mr-3" />
-                      <input
-                        type="text"
-                        placeholder="Search for Products"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="flex-1 bg-transparent text-white placeholder-white/70 outline-none text-xs sm:text-sm lg:text-base py-1.5 sm:py-2 w-full"
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      className="bg-gradient-to-r from-[#662CB2] to-[#2C134C] text-white text-xs sm:text-sm px-4 sm:px-6 lg:px-8 py-1.5 sm:py-2.5 lg:py-3 rounded-full font-semibold hover:from-purple-700 hover:to-purple-800 transform hover:scale-105 transition-all duration-200"
-                    >
-                      Search
-                    </button>
-                  </div>
-                </div>
-              </form>
-            </div>
+            <Searchbar isVisible={isVisible} />
           </div>
         </div>
 

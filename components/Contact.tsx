@@ -43,7 +43,7 @@ const Contact = () => {
       <div className="container mx-auto px-4">
         {/* --- Section Header --- */}
         <div className="text-center max-w-3xl mx-auto">
-          <h1 className="text-3xl md:text-4xl font-medium text-gray-900 dark:text-white">
+          <h1 className="text-3xl md:text-4xl font-medium text-gray-900 dark:text-white ">
             Let's Start a Conversation
           </h1>
           <p className="mt-4 text-gray-600 dark:text-gray-300">
@@ -57,7 +57,7 @@ const Contact = () => {
         <div className="mt-16 grid grid-cols-1 lg:grid-cols-2 gap-16">
           {/* Column 1: Contact Form */}
           <div>
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center">
               Contact With Us
             </h2>
             <form
@@ -127,7 +127,7 @@ const Contact = () => {
           </div>
 
           {/* Column 2: Company Info */}
-          <div className="mt-12 lg:mt-0">
+          <div className="mt-12 lg:mt-0 text-center">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
               Company Contact Info
             </h2>

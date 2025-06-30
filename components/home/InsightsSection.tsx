@@ -76,7 +76,7 @@ const InsightsSection = () => {
         <div className="mt-16 overflow-hidden">
           <div
             ref={scrollContainerRef}
-            className="flex gap-8 overflow-x-auto -mx-4 px-4 no-scrollbar cursor-grab active:cursor-grabbing select-none hide-scrollbar ml-2 md:ml-4"
+            className="flex gap-8 overflow-x-auto -mx-4 px-4 no-scrollbar cursor-grab active:cursor-grabbing select-none hide-scrollbar ml-2 md:ml-4 group"
             onMouseDown={startDragging}
             onMouseUp={stopDragging}
             onMouseLeave={stopDragging}
@@ -86,7 +86,7 @@ const InsightsSection = () => {
               // The card container is now relative to position the handle icon
               <div
                 key={index}
-                className="relative flex-shrink-0 w-[90%] sm:w-[48%] snap-start"
+                className="relative flex-shrink-0 w-[90%] sm:w-[48%] snap-start "
               >
                 {/* --- The Card --- */}
                 <div className="bg-[#05070D1A] md:bg-[#FFFFFF1A] dark:bg-[#FFFFFF1A] rounded-2xl overflow-hidden h-full flex flex-col pointer-events-none p-2 md:p-4">
@@ -116,10 +116,7 @@ const InsightsSection = () => {
                   </div>
                 </div>
                 {index < insightsData.length - 1 && (
-                  <div
-                    className="
-                    absolute top-1/2 -right-[16px] -translate-y-1/2 translate-x-1/2 z-10 md:flex pointer-events-none"
-                  >
+                  <div className="absolute top-1/2 -right-[16px] -translate-y-1/2 translate-x-1/2 z-10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-in-out">
                     <div className="bg-white p-6 rounded-full shadow-lg">
                       <Hand className="h-8 w-8 text-[#380D52] " />
                     </div>
