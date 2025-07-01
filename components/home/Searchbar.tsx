@@ -20,7 +20,7 @@ function Searchbar({ isVisible }: SearchbarProps) {
 
   // This effect runs whenever the user changes the search query
   useEffect(() => {
-    if (searchQuery.trim().length > 1) {
+    if (searchQuery.trim().length > 0) {
       const results = allProducts
         .filter((product) =>
           product.name.toLowerCase().includes(searchQuery.toLowerCase())
