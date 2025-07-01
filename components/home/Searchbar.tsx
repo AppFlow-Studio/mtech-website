@@ -6,9 +6,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 
-// Import your product data and type
-import { mockProducts as allProducts } from "@/lib/mockdata"; // Adjust path if needed
-import type { Product } from "@/lib/types"; // Adjust path if needed
+import { mockProducts as allProducts } from "@/lib/mockdata";
+import type { Product } from "@/lib/types";
 
 interface SearchbarProps {
   isVisible: boolean;
@@ -49,7 +48,7 @@ function Searchbar({ isVisible }: SearchbarProps) {
 
   return (
     <div
-      className={`transform transition-all duration-1000 delay-500 ease-out ${
+      className={`transform transition-all duration-1000 delay-500 ease-out relative z-50 ${
         isVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
       }`}
     >
@@ -78,29 +77,32 @@ function Searchbar({ isVisible }: SearchbarProps) {
             </button>
           </div>
 
-          {/* --- Search Suggestions Dropdown --- */}
+          {/* --- Search Suggestions Dropdown with very high z-index --- */}
           {filteredProducts.length > 0 && (
-            <div className="absolute top-full mt-2 w-full bg-[#2A1F4A]/80 backdrop-blur-md rounded-xl shadow-lg z-20 overflow-hidden">
+            <div
+              className="absolute top-full mt-2 w-full bg-[#2A1F4A]/95 backdrop-blur-md rounded-xl shadow-2xl border border-white/20 overflow-hidden"
+              style={{ zIndex: 9999 }}
+            >
               <ul>
                 {filteredProducts.map((product) => (
                   <li key={product.link}>
                     <Link
                       href={`/products/details/${product.link}`}
                       onClick={handleSuggestionClick}
-                      className="flex items-center gap-4 p-3 hover:bg-purple-600/50 transition-colors"
+                      className="flex items-center gap-4 p-3 hover:bg-purple-600/50 transition-colors border-b border-white/10 last:border-b-0"
                     >
                       <Image
                         src={product.imageSrc}
                         alt={product.name}
                         width={40}
                         height={40}
-                        className="rounded-md object-contain bg-white/10"
+                        className="rounded-md object-contain bg-white/10 flex-shrink-0"
                       />
-                      <div className="flex-1 text-left">
-                        <p className="text-white font-semibold text-sm line-clamp-1">
+                      <div className="flex-1 text-left min-w-0">
+                        <p className="text-white font-semibold text-sm line-clamp-1 truncate">
                           {product.name}
                         </p>
-                        <p className="text-gray-300 text-xs line-clamp-1">
+                        <p className="text-gray-300 text-xs line-clamp-1 truncate">
                           {product.description}
                         </p>
                       </div>

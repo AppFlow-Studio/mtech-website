@@ -150,3 +150,22 @@
 .slick-slide > div {
   height: 100%;
 }
+
+.slick-slide:focus {
+      outline: none;
+    }
+    .slick-track {
+      display: flex;
+      gap: 1rem; /* Adjust this gap to match your design */
+    }
+    /* Responsive gaps */
+    @media (min-width: 640px) { /* sm */
+      .slick-track {
+        gap: 0.75rem;
+      }
+    }
+    @media (min-width: 1024px) { /* lg */
+      .slick-track {
+        gap: 1rem;
+      }
+    }
