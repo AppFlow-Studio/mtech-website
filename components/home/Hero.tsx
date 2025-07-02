@@ -11,7 +11,7 @@ const Hero = () => {
   }, []);
 
   return (
-    <div className="relative min-h-screen overflow-hidden mx-2 sm:mx-4 lg:mx-6 rounded-2xl mt-4">
+    <div className="relative h-fit overflow-hidden mx-2 sm:mx-4 lg:mx-6 rounded-2xl mt-4">
       {/* Background Video */}
       <div className="absolute inset-0 z-0">
         <video
@@ -29,9 +29,9 @@ const Hero = () => {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 min-h-screen flex flex-col">
+      <div className="relative z-10 flex flex-col">
         {/* Hero Section */}
-        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-16 md:pt-20 lg:pt-0">
+        <div className="py-8 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8">
           <div className="max-w-full md:max-w-4xl lg:max-w-6xl mx-auto text-center">
             <div
               className={`transform transition-all duration-1000 ease-out ${
@@ -65,7 +65,7 @@ const Hero = () => {
         </div>
 
         {/* Bottom Section */}
-        <div className="pb-4 sm:pb-6 lg:pb-8 px-2 sm:px-4 lg:px-6 h-[186px] md:h-[286px] lg:h-[370px] ">
+        <div className="pb-4 sm:pb-6 lg:pb-8 px-2 sm:px-4 lg:px-6 h-[186px] md:h-[286px] lg:h-[370px]">
           <CategoryPillsScroller />
         </div>
       </div>

@@ -1,6 +1,8 @@
 import Image from "next/image";
+import { Marquee } from "@/components/magicui/marquee";
+import { cn } from "@/lib/utils";
 
-//list of partners
+// List of partners
 const partners = [
   {
     name: "SuperSonic POS",
@@ -25,32 +27,43 @@ const partners = [
   },
 ];
 
+const PartnerLogo = ({ partner }: { partner: (typeof partners)[0] }) => {
+  return (
+    <div
+      className={cn(
+        "flex-shrink-0 px-8 py-4",
+        "transition-transform hover:scale-105"
+      )}
+    >
+      <Image
+        src={partner.logo}
+        alt={`${partner.name} logo`}
+        width={partner.width}
+        height={partner.height}
+        className="object-contain"
+      />
+    </div>
+  );
+};
+
 const Partners = () => {
   return (
-    <section className="py-16 sm:py-24">
+    <section className="py-16 sm:py-24 overflow-hidden">
       <div className="container mx-auto px-4">
-        {/* Section Title */}
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
           Our partners
         </h2>
-        <div
-          className="
-            flex items-center justify-start gap-x-12 overflow-x-auto pb-4
-            lg:grid lg:grid-cols-6 lg:items-center lg:justify-items-center lg:gap-x-8 lg:overflow-x-visible
-          "
-        >
-          {partners.map((partner) => (
-            <div key={partner.name} className="flex-shrink-0">
-              {/* Using Next.js Image component for optimization */}
-              <Image
-                src={partner.logo}
-                alt={`${partner.name} logo`}
-                width={partner.width}
-                height={partner.height}
-                className="object-contain" // Ensures the logo fits without distortion
-              />
-            </div>
-          ))}
+
+        <div className="relative">
+          <Marquee pauseOnHover className="[--duration:20s]">
+            {partners.map((partner) => (
+              <PartnerLogo key={partner.name} partner={partner} />
+            ))}
+          </Marquee>
+
+          {/* Gradient fade effects */}
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-1/4 bg-gradient-to-r from-background to-transparent"></div>
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-1/4 bg-gradient-to-l from-background to-transparent"></div>
         </div>
       </div>
     </section>
