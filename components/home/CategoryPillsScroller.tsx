@@ -2,25 +2,23 @@ import React, { useState, useEffect, useRef } from "react";
 import Slider from "react-slick";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 
-// You MUST import the slick-carousel CSS files
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Link from "next/link";
 
 const CategoryPillsScroller = () => {
-  // Sample data with images
   const categories = [
     {
       name: "POS System",
-      image: "/credit-card-terminals.png",
-      title: "Credit Card Terminals",
+      image: "/pos-system.png",
+      title: "POS System",
       link: `/products/area-of-speciality?data=${encodeURIComponent(
         JSON.stringify({ tags: ["pos system"] })
       )}`,
     },
     {
       name: "ATM Machines",
-      image: "/credit-card-terminals.png",
+      image: "/atm-machines.png",
       title: "ATM Machines",
       link: `/products/area-of-speciality?data=${encodeURIComponent(
         JSON.stringify({ tags: ["atm machines"] })
@@ -28,7 +26,7 @@ const CategoryPillsScroller = () => {
     },
     {
       name: "ATM Parts",
-      image: "/credit-card-terminals.png",
+      image: "/atm-parts.png",
       title: "ATM Parts & Components",
       link: `/products/area-of-speciality?data=${encodeURIComponent(
         JSON.stringify({ tags: ["atm parts"] })
@@ -36,7 +34,7 @@ const CategoryPillsScroller = () => {
     },
     {
       name: "POS Parts",
-      image: "/credit-card-terminals.png",
+      image: "/pos-parts.png",
       title: "POS Parts & Accessories",
       link: `/products/area-of-speciality?data=${encodeURIComponent(
         JSON.stringify({ tags: ["pos parts"] })
@@ -44,7 +42,7 @@ const CategoryPillsScroller = () => {
     },
     {
       name: "POS Accessories",
-      image: "/credit-card-terminals.png",
+      image: "/pos-accessories.png",
       title: "POS Accessories",
       link: `/products/area-of-speciality?data=${encodeURIComponent(
         JSON.stringify({ tags: ["pos accessories"] })
@@ -52,7 +50,7 @@ const CategoryPillsScroller = () => {
     },
     {
       name: "Scales",
-      image: "/credit-card-terminals.png",
+      image: "/digital-scales.png",
       title: "Digital Scales",
       link: `/products/area-of-speciality?data=${encodeURIComponent(
         JSON.stringify({ tags: ["scales"] })
@@ -60,7 +58,7 @@ const CategoryPillsScroller = () => {
     },
     {
       name: "ATM Signage",
-      image: "/credit-card-terminals.png",
+      image: "/atm-signage.png",
       title: "ATM Signage Solutions",
       link: `/products/area-of-speciality?data=${encodeURIComponent(
         JSON.stringify({ tags: ["atm signage"] })
@@ -78,6 +76,7 @@ const CategoryPillsScroller = () => {
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
   const sliderRef = useRef<Slider | null>(null);
 
   const handleCategoryClick = (category: string) => {
@@ -116,7 +115,7 @@ const CategoryPillsScroller = () => {
       x: 0,
       scale: 1,
       transition: {
-        duration: 0.5,
+        // duration: 0.2,
         ease: "easeInOut",
       },
     },
@@ -125,7 +124,7 @@ const CategoryPillsScroller = () => {
       x: -100,
       scale: 0.9,
       transition: {
-        duration: 0.5,
+        duration: 0.2,
         ease: "easeIn",
       },
     },
@@ -163,6 +162,25 @@ const CategoryPillsScroller = () => {
       scale: 0.98,
       transition: {
         duration: 0.1,
+      },
+    },
+  };
+
+  // Progress bar animation variants
+  const progressBarVariants: Variants = {
+    initial: {
+      width: "0%",
+    },
+    animate: {
+      width: "100%",
+      transition: {
+        duration: 4.4, // adjusted to match the autoplay speed and transition animation
+        ease: "linear",
+      },
+    },
+    paused: {
+      transition: {
+        duration: 0,
       },
     },
   };
@@ -227,7 +245,7 @@ const CategoryPillsScroller = () => {
           className="absolute top-0 left-0 z-10
             bg-[#FFFFFF80] backdrop-blur-md rounded-xl sm:rounded-2xl 
             p-3 sm:p-4 lg:p-6 border border-white/20 
-            w-36 xs:w-40 sm:w-48 md:w-60 lg:w-80 flex-shrink-0"
+            w-36 xs:w-40 sm:w-48 md:w-60 lg:w-80 flex-shrink-0 overflow-hidden"
         >
           <motion.h3
             className="text-white text-xs xs:text-sm sm:text-base lg:text-lg xl:text-xl font-semibold mb-1 xs:mb-2 sm:mb-3 lg:mb-4 text-center sm:text-left"
@@ -255,30 +273,38 @@ const CategoryPillsScroller = () => {
                 className="w-full h-auto rounded-md sm:rounded-lg object-contain max-h-16 xs:max-h-20 sm:max-h-24 lg:max-h-32"
               />
             </motion.div>
-            <motion.button
+            <Link
+              href={activeCategory.link}
               onClick={() => handleCategoryClick(activeCategory.name)}
               className="w-full bg-gradient-to-r from-[#662CB2] to-[#2C134C] text-white 
               text-[10px] xs:text-xs sm:text-sm lg:text-base py-1 xs:py-1.5 sm:py-2.5 lg:py-3 
               px-2 xs:px-3 sm:px-4 rounded-full 
               font-semibold hover:from-purple-700 hover:to-blue-700 
-              transform hover:scale-105 transition-all duration-200 lg:shadow-md"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 20 }}
-              transition={{ duration: 0.3, delay: 0.3 }}
-              whileHover={{
-                scale: 1.05,
-                boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
-              }}
-              whileTap={{ scale: 0.98 }}
+              transform hover:scale-105 transition-all duration-200 lg:shadow-md text-center"
             >
-              <Link href={activeCategory.link}>Shop Now</Link>
-            </motion.button>
+              Shop Now
+            </Link>
           </motion.div>
+
+          {/* Animated Progress Bar */}
+          <div className="absolute bottom-0 left-0 right-0 h-2 z-50 bg-white/20 rounded-b-xl sm:rounded-b-2xl overflow-hidden">
+            <motion.div
+              key={`progress-${activeCategory.name}-${isVisible}`}
+              className="h-full bg-gradient-to-r from-[#662CB2] to-[#2C134C]"
+              variants={progressBarVariants}
+              initial="initial"
+              animate={isVisible && !isHovered ? "animate" : "paused"}
+            />
+          </div>
         </motion.div>
       </AnimatePresence>
 
       {/* Slider with Regular Pills - Skip the currently active category - Positioned at bottom */}
-      <div className="mt-auto pt-24 xs:pt-28 sm:pt-32 md:pt-36 lg:pt-40 ml-0 sm:ml-24 lg:ml-52">
+      <div
+        className="mt-auto pt-24 xs:pt-28 sm:pt-32 md:pt-36 lg:pt-40 ml-0 sm:ml-24 lg:ml-52"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
         <Slider {...settings} ref={sliderRef}>
           {categories.map((category, index) => (
             <div key={category.name} className="px-1">

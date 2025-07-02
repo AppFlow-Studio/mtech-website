@@ -193,7 +193,7 @@ const FeatureTabs: React.FC<FeatureTabsProps> = ({ features }) => {
 
         {/* Desktop Layout (md breakpoint and above) */}
         <div className="hidden lg:block">
-          <div className="lg:flex lg:min-h-[450px] gap-6">
+          <div className="lg:flex lg:min-h-[450px] h-[450px] gap-6">
             {/* Render all cards */}
             {features.map((feature, index) => {
               const isActive = index === activeIndex;
