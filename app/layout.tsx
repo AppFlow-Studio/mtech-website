@@ -4,8 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { cookies } from "next/headers"; // <-- ADD THIS IMPORT
-// import { getTheme } from "@/app/actions/theme";
+import { cookies } from "next/headers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,7 +18,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "MTech Distributors",
-  description: "MTech Distributors",
+  description:
+    "MTech Distributors - Your Trusted Partner in Technology Solutions",
   icons: {
     icon: "/logo.png",
   },

@@ -14,26 +14,42 @@ const testimonialsData = [
   {
     quote:
       "When I reached out to MTech about online ordering, it completely transformed my business. It eliminated wait times and streamlined operations, making a huge difference. Even now, I feel like there's still so much more I can do with MTech to make things even more seamless.",
-    rating: 4,
+    rating: 5,
     author: "Sarah Johnson",
     title: "CEO of House of Wings NYC",
     imageSrc: "/logos/house-of-wings.png",
   },
   {
     quote:
-      "The analytics portal is a game-changer. Understanding our peak hours and most popular items has allowed us to optimize our inventory and staffing like never before. It's an indispensable tool for growth.",
+      "When I started House of Wings, it was a way to support my family. Finding the right location and staff was challenging, but MTech made everything else so much easier.",
     rating: 5,
-    author: "David Chen",
-    title: "Owner of The Daily Grind Cafe",
-    imageSrc: "/logos/house-of-wings.png",
+    author: "Lava Restaurant",
+    title: "MTech simplified my business journey",
+    imageSrc: "/logos/lava-restaurant.png",
   },
   {
     quote:
-      "Switching to MTech's POS system was the best decision we made this year. The interface is intuitive for our staff, and the backend gives me all the control I need. Plus, the support is top-notch.",
+      "I wanted someone nearby who was accessible and understood our needs. Their technicians were incredibly helpful, and the new system they installed made what could have been a complicated process feel simple and smooth.",
     rating: 5,
-    author: "Maria Rodriguez",
-    title: "Manager at Bella Flora Boutique",
-    imageSrc: "/logos/house-of-wings.png",
+    author: "Animal Paradise Hospital",
+    title: "I chose MTech because they're local.",
+    imageSrc: "/logos/animal-paradise.png",
+  },
+  {
+    quote:
+      "When I reached out to MTech about online ordering, it completely transformed my business. It eliminated wait times and streamlined operations, making a huge difference. Even now, I feel like there's still so much more I can do with MTech to make things even more seamless.",
+    rating: 5,
+    author: "Fresh Daily Bagels Rx",
+    title: "Would you like a few variations to choose from?",
+    imageSrc: "/logos/fresh-daily-bagels.png",
+  },
+  {
+    quote:
+      "Thanks to MTech, expanding has been stress-free. I would definitely recommend them. Their technicians are knowledgeable and their office staff is always helpful. They've been a huge part of making House of Wings what it is today!",
+    rating: 5,
+    author: "Fuel",
+    title: "MTech support made expansion easy.",
+    imageSrc: "/logos/fuel.png",
   },
 ];
 
@@ -91,15 +107,15 @@ const Testimonials = () => {
             {testimonialsData.map((testimonial, index) => (
               <SwiperSlide key={index}>
                 <div className="bg-[#05070D1A] dark:bg-[#FFFFFF33] rounded-2xl p-3 md:p-8 shadow-lg">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-                    <div className="flex flex-col gap-6 text-center lg:text-left">
-                      <div className="min-h-[450px] md:min-h-[180px] lg:min-h-0">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch h-[900px] md:h-[500px] lg:h-[450px]">
+                    <div className="order-2 lg:order-1 flex flex-col gap-6 text-center lg:text-left">
+                      <div className="flex-1 flex items-center">
                         <p className="text-2xl text-gray-600 dark:text-gray-300">
                           "{testimonial.quote}"
                         </p>
                       </div>
 
-                      <div className="flex flex-col items-center lg:items-start gap-2">
+                      <div className="flex flex-col items-center lg:items-start gap-2 flex-shrink-0">
                         <StarRating rating={testimonial.rating} />
                         <h3 className="font-bold text-xl text-gray-900 dark:text-white">
                           {testimonial.author}
@@ -110,13 +126,13 @@ const Testimonials = () => {
                       </div>
                     </div>
 
-                    <div className="bg-white rounded-lg p-4 w-full h-auto">
+                    <div className="order-1 lg:order-2 bg-white rounded-lg p-4 flex items-center justify-center">
                       <Image
                         src={testimonial.imageSrc}
                         alt={`Logo for ${testimonial.title}`}
                         width={400}
                         height={400}
-                        className="w-full h-full object-contain"
+                        className="max-w-full max-h-full object-contain"
                       />
                     </div>
                   </div>

@@ -12,10 +12,30 @@ import {
 } from "lucide-react";
 
 const productLinks = [
-  { name: "POS Systems", href: "/products/pos" },
-  { name: "Credit Card Terminals", href: "/products/terminals" },
-  { name: "ATM Machines", href: "/products/atm" },
-  { name: "Integrations", href: "/integrations" },
+  {
+    name: "POS Systems",
+    href: `/products/area-of-speciality?data=${encodeURIComponent(
+      JSON.stringify({ tags: ["pos system"] })
+    )}`,
+  },
+  {
+    name: "Credit Card Terminals",
+    href: `/products/area-of-speciality?data=${encodeURIComponent(
+      JSON.stringify({ tags: ["credit card terminals"] })
+    )}`,
+  },
+  {
+    name: "ATM Machines",
+    href: `/products/area-of-speciality?data=${encodeURIComponent(
+      JSON.stringify({ tags: ["atm machines"] })
+    )}`,
+  },
+  {
+    name: "Integrations",
+    href: `/products/area-of-speciality?data=${encodeURIComponent(
+      JSON.stringify({ tags: ["integrations"] })
+    )}`,
+  },
 ];
 
 const resourceLinks = [
@@ -50,7 +70,7 @@ const Footer = () => {
             </p>
             <div className="mt-6 flex space-x-4">
               {socialLinks.map((social) => (
-                <a
+                <Link
                   key={social.name}
                   href={social.href}
                   target="_blank"
@@ -59,7 +79,7 @@ const Footer = () => {
                   aria-label={social.name}
                 >
                   <social.icon className="h-5 w-5" />
-                </a>
+                </Link>
               ))}
             </div>
           </div>
