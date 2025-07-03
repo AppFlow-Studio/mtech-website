@@ -4,7 +4,7 @@ import { Slide } from "@/lib/types";
 
 const sliderData: Slide[] = [
   {
-    imageSrc: "/smart-scales.jpg",
+    imageSrc: "/hardware-store-inventory.jpg",
     title: "Take Control of Your Inventory",
     description:
       "Our POS system is designed to simplify inventory management, helping you stay stocked, stay organized, and stay ready.",
@@ -36,7 +36,7 @@ const sliderData: Slide[] = [
     cta: "Talk to an Expert",
   },
   {
-    imageSrc: "/smart-scales.jpg",
+    imageSrc: "/hardware-store-staff.jpg",
     title: "Fortify Your Retail Defense with Advanced Loss Prevention",
     description:
       "Safeguard your store from theft, fraud, and shrinkage with the powerful security features built into our POS system.",
@@ -61,11 +61,31 @@ const sliderData: Slide[] = [
     cta: "Talk to an Expert",
   },
   {
-    title: "Elevate Your Butcher Shop with our POS solutions",
-    imageSrc: "/butcher-shop-pos.jpg",
+    title: "Empower Your Hardware Store with Smart Solutions",
+    imageSrc: "/hardware-store-interior.jpg",
     description:
-      "Your butcher shop is so much more than just a business, it's a community staple where customers find the best cuts of meat. Take it to the next level with a POS that streamlines your operations without removing your authentic charm. Experience the perfect blend of tradition and modern efficiency with a POS system that simplifies sales, enhances customer service, and keeps your business running smoothly.",
-    features: [],
+      "From tools to paint to plumbing supplies, your hardware store is a community hub for DIYers and pros alike. Our POS system helps you manage complex inventory, speed up checkout, and deliver expert service every time.",
+    features: [
+      {
+        name: "Bulk Item Management",
+        detail: "Easily track and sell items by weight, length, or quantity.",
+      },
+      {
+        name: "Customer Accounts",
+        detail:
+          "Offer trade accounts and track purchase history for loyal customers.",
+      },
+      {
+        name: "Barcode & Label Printing",
+        detail: "Print custom labels for shelves and products on demand.",
+      },
+      {
+        name: "Expert Service Tools",
+        detail:
+          "Equip your staff with quick lookup and product info at the register.",
+      },
+    ],
+    cta: "Talk to an Expert",
   },
 ];
 

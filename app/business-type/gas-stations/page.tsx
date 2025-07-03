@@ -6,7 +6,7 @@ import { Slide } from "@/lib/types";
 
 const sliderData: Slide[] = [
   {
-    imageSrc: "/smart-scales.jpg",
+    imageSrc: "/gas-station.jpg",
     title: "The Origin Story of Our Brand.",
     description:
       "Petro Outlet was conceived at the heart of the fueling industry by operators who knew exactly what works (and what doesn’t). With innovation as our engine and simplicity as our compass, we’ve created a POS solution that streamlines operations, uncovers growth opportunities, and puts profitability firmly in your hands.",
@@ -30,7 +30,7 @@ const sliderData: Slide[] = [
     cta: "Talk to an Expert",
   },
   {
-    imageSrc: "/smart-scales.jpg",
+    imageSrc: "/fuel-inventory.jpg",
     title: "Smarter Fuel Management for Gas Stations",
     description:
       "Veeder‑Root sets the industry standard in fuel‑tank monitoring—providing gas station operators with cutting‑edge hardware and software to streamline inventory, ensure regulatory compliance, and boost efficiency.",
@@ -59,11 +59,30 @@ const sliderData: Slide[] = [
     cta: "Talk to an Expert",
   },
   {
-    title: "Elevate Your Butcher Shop with our POS solutions",
-    imageSrc: "/butcher-shop-pos.jpg",
+    title: "Drive More Revenue with Car Wash & Service Bay Integration",
+    imageSrc: "/car-wash-gas-station.jpg", // Update this path to your chosen image
     description:
-      "Your butcher shop is so much more than just a business, it's a community staple where customers find the best cuts of meat. Take it to the next level with a POS that streamlines your operations without removing your authentic charm. Experience the perfect blend of tradition and modern efficiency with a POS system that simplifies sales, enhances customer service, and keeps your business running smoothly.",
-    features: [],
+      "Expand your gas station’s offerings with seamless car wash and service bay management. Our POS system lets you track sales, manage appointments, and offer bundled promotions—all from one platform.",
+    features: [
+      {
+        name: "Car Wash Sales Tracking",
+        detail: "Monitor car wash usage and revenue in real time.",
+      },
+      {
+        name: "Service Bay Scheduling",
+        detail: "Easily book and manage oil changes, tire rotations, and more.",
+      },
+      {
+        name: "Bundled Promotions",
+        detail:
+          "Encourage customers to fuel up and get a wash with special deals.",
+      },
+      {
+        name: "Customer Notifications",
+        detail: "Send reminders and updates for scheduled services.",
+      },
+    ],
+    cta: "Talk to an Expert",
   },
 ];
 
