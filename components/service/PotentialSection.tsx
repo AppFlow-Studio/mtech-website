@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 
 const PotentialSection = () => {
   return (
@@ -31,7 +32,8 @@ const PotentialSection = () => {
               beyond the basics.
             </p>
             <div className="mt-8">
-              <button
+              <Link
+                href="/products"
                 className="
                 inline-flex items-center justify-center 
                 px-4 py-2 rounded-full font-semibold text-white
@@ -40,7 +42,7 @@ const PotentialSection = () => {
               "
               >
                 Buy Our Products
-              </button>
+              </Link>
             </div>
           </div>
           <div>

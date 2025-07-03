@@ -65,7 +65,7 @@ function Detail({ product }: { product: Product }) {
           </p>
 
           <div className="mt-8">
-            <Link href="#" className="mt-4">
+            <Link href="tel:888-411-7063" className="mt-4">
               <button
                 className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 font-semibold text-sm text-white rounded-full transition-colors duration-300 cursor-pointer ${
                   product.inStock

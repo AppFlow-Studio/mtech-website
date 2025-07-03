@@ -124,16 +124,16 @@ const Footer = () => {
             <ul className="mt-4 space-y-3">
               <li className="flex items-center gap-2">
                 <Phone className="h-5 w-5 flex-shrink-0" />
-                <span>888-411-7583</span>
+                <Link href="tel:888-411-7063">888-411-7063</Link>
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="h-5 w-5 flex-shrink-0" />
-                <a
+                <Link
                   href="mailto:support@mtechdistributors.com"
                   className="hover:text-white transition-colors break-all"
                 >
                   support@mtechdistributors.com
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

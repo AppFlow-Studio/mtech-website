@@ -115,7 +115,7 @@ const Navbar = () => {
         { name: "Food Truck", href: "/business-type/food-truck" },
         { name: "Gas Stations", href: "/business-type/gas-stations" },
         { name: "Hardware Stores", href: "/business-type/hardware-stores" },
-        { name: "Meta Markets", href: "/business-type/meta-markets" },
+        { name: "Meat Markets", href: "/business-type/meat-markets" },
         { name: "QSR", href: "/business-type/qsr" },
         { name: "Retail Stores", href: "/business-type/retail-stores" },
         { name: "Smoke Shop", href: "/business-type/smoke-shop" },
@@ -131,7 +131,7 @@ const Navbar = () => {
           <div className="max-w-7xl mx-auto flex justify-end items-center">
             <div className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300">
               <Phone size={16} />
-              <span>888-411-7063</span>
+              <Link href="tel:888-411-7063">888-411-7063</Link>
             </div>
           </div>
         </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 const HardwareSection = () => {
   // State to manage whether the video player should be shown
@@ -25,7 +26,8 @@ const HardwareSection = () => {
               performance.
             </p>
             <div className="mt-6">
-              <button
+              <Link
+                href="/products"
                 className="
                 inline-flex items-center justify-center 
                 px-6 py-3 rounded-full font-semibold text-white
@@ -34,7 +36,7 @@ const HardwareSection = () => {
               "
               >
                 Buy Our Products
-              </button>
+              </Link>
             </div>
           </div>
         </div>

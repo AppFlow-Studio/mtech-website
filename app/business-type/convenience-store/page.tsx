@@ -21,10 +21,6 @@ const sliderData: Slide[] = [
         name: "Deli Scales",
         detail: "Ensure consistent and accurate pricing for deli products.",
       },
-      {
-        name: "Extra 1",
-        detail: "Lorem ipsum",
-      },
     ],
     cta: "Talk to an Expert",
   },
@@ -42,19 +38,36 @@ const sliderData: Slide[] = [
       {
         name: "Smart order management sends orders straight to where they're needed, letting you focus on delivering the perfect experience for your customers.",
       },
-      {
-        name: "Extra 1",
-        detail: "Lorem ipsum",
-      },
     ],
     cta: "Get a Demo",
   },
   {
-    title: "Elevate Your Butcher Shop with our POS solutions",
-    imageSrc: "/butcher-shop-pos.jpg",
+    imageSrc: "/employee-management.jpg",
+    title: "Employee Management & Security",
     description:
-      "Your butcher shop is so much more than just a business, it's a community staple where customers find the best cuts of meat. Take it to the next level with a POS that streamlines your operations without removing your authentic charm. Experience the perfect blend of tradition and modern efficiency with a POS system that simplifies sales, enhances customer service, and keeps your business running smoothly.",
-    features: [],
+      "Empower your staff and protect your business with robust employee management and security features. From easy scheduling to advanced access controls, keep your store running smoothly and securely.",
+    features: [
+      {
+        name: "Role-Based Access",
+        detail:
+          "Assign permissions to staff based on their roles to ensure sensitive data stays protected",
+      },
+      {
+        name: "Time Tracking",
+        detail:
+          "Monitor employee hours and attendance with built-in time clock features.",
+      },
+      {
+        name: "Shift Scheduling",
+        detail: "Simplify shift planning and reduce scheduling conflicts.",
+      },
+      {
+        name: "Activity Logs",
+        detail:
+          "Track important actions and changes for better accountability.",
+      },
+    ],
+    cta: "Get a Demo",
   },
 ];
 

@@ -4,7 +4,7 @@ import { Slide } from "@/lib/types";
 
 const sliderData: Slide[] = [
   {
-    imageSrc: "/smart-scales.jpg",
+    imageSrc: "/bakery-payment-counter.jpg",
     title: "Simple, Flexible Payments for Bakeries & Delis",
     description:
       "Our POS system offers versatile payment options built to meet the unique demands of bakeries, delis, and specialty food businesses. Whether you're managing a rush at the counter or taking phone orders for a catering event, we make payments simple and secure.",
@@ -28,7 +28,7 @@ const sliderData: Slide[] = [
     cta: "Talk to an Expert",
   },
   {
-    imageSrc: "/smart-scales.jpg",
+    imageSrc: "/bakery-customers.jpg",
     title: "More Revenue. Same Great Service.",
     description:
       "With our POS system, you can lower your costs and raise your profits without changing how you serve your customers.",
@@ -49,10 +49,10 @@ const sliderData: Slide[] = [
     cta: "Talk to an Expert",
   },
   {
-    title: "Elevate Your Butcher Shop with our POS solutions",
-    imageSrc: "/butcher-shop-pos.jpg",
+    title: "Your Bakery, Made Sweeter with Our POS System",
+    imageSrc: "/busy-bakery.jpg",
     description:
-      "Your butcher shop is so much more than just a business, it's a community staple where customers find the best cuts of meat. Take it to the next level with a POS that streamlines your operations without removing your authentic charm. Experience the perfect blend of tradition and modern efficiency with a POS system that simplifies sales, enhances customer service, and keeps your business running smoothly.",
+      "Running a busy bakery takes heart and the right tools. Our POS system simplifies your daily workflow, helping you serve customers faster and keep your shelves full, all while growing your business.",
     features: [],
   },
 ];

@@ -4,7 +4,7 @@ import { Slide } from "@/lib/types";
 
 const sliderData: Slide[] = [
   {
-    imageSrc: "/smart-scales.jpg",
+    imageSrc: "/retail-inventory-management.jpg",
     title: "Take Control of Your Inventory",
     description:
       "Our POS system is designed to simplify inventory management, helping you stay stocked, stay organized, and stay ready.",
@@ -19,6 +19,11 @@ const sliderData: Slide[] = [
         detail: "Prevent out-of-stock issues with automated restock triggers.",
       },
       {
+        name: "Custom Alerts",
+        detail:
+          "Set up low-stock, expiry, and fast-seller alerts tailored to your needs.",
+      },
+      {
         name: "Improve Accuracy",
         detail: "Reduce human error and optimize inventory performance.",
       },
@@ -31,7 +36,7 @@ const sliderData: Slide[] = [
     cta: "Talk to an Expert",
   },
   {
-    imageSrc: "/smart-scales.jpg",
+    imageSrc: "/loss-prevention.jpg",
     title: "Fortify Your Retail Defense with Advanced Loss Prevention",
     description:
       "Safeguard your store from theft, fraud, and shrinkage with the powerful security features built into our POS system.",
@@ -56,10 +61,10 @@ const sliderData: Slide[] = [
     cta: "Talk to an Expert",
   },
   {
-    title: "Elevate Your Butcher Shop with our POS solutions",
-    imageSrc: "/butcher-shop-pos.jpg",
+    title: "Turning Cents into Success",
+    imageSrc: "/dollar-store-checkout.jpg",
     description:
-      "Your butcher shop is so much more than just a business, it's a community staple where customers find the best cuts of meat. Take it to the next level with a POS that streamlines your operations without removing your authentic charm. Experience the perfect blend of tradition and modern efficiency with a POS system that simplifies sales, enhances customer service, and keeps your business running smoothly.",
+      "In today's budget-focused market, dollar and hardware stores are go-to destinations for value-seeking shoppers. To turn each transaction into a smooth experience and keep customers coming back, you need a partner who understands your pace, your margins, and your mission.",
     features: [],
   },
 ];

@@ -30,59 +30,40 @@ const sliderData: Slide[] = [
     cta: "Talk to an Expert",
   },
   {
-    title: "Customer Engagement",
-    imageSrc: "/customer-engagement.jpg",
+    title: "Quick & Easy Checkout",
+    imageSrc: "/quick-checkout.jpg",
     description:
-      "Build lasting relationships with your customers through targeted loyalty programs, promotions, and personalized communication, all managed from one hub.",
+      "Long lines and full carts during busy hours no longer have to mean delays. Our POS solution delivers a breakthrough in retail efficiency with its lightning-fast checkout. Designed with an intuitive interface and engineered for rapid processing, it ensures your team can handle high traffic effortlessly and elevates every customer's shopping experience.",
     features: [
       {
-        name: "Loyalty Programs",
-        detail: "Reward your regulars and keep them coming back for more.",
-      },
-      {
-        name: "Email & SMS Marketing",
-        detail: "Send targeted offers and updates directly to your customers.",
-      },
-      {
-        name: "Customer Profiles",
+        name: "Rapid Checkout",
         detail:
-          "Understand purchasing habits to offer personalized experiences.",
+          "Transform your checkout process with powerful, high-speed technology that makes long lines a thing of the past-even during busy periods.",
       },
       {
-        name: "Gift Card Management",
+        name: "User-Friendly Interface",
         detail:
-          "Boost sales and attract new customers with branded gift cards.",
+          "Benefit from an interface so intuitive that it minimizes the need for extensive training, allowing your team to focus on what matters most.",
+      },
+      {
+        name: "Superior Customer Experience",
+        detail:
+          "Ensure each customer enjoys a smooth, efficient transaction, resulting in shorter wait times and higher satisfaction rates.",
+      },
+      {
+        name: "Optimized Efficiency",
+        detail:
+          "Enable your staff to perform transactions with exceptional speed and precision, boosting productivity when it counts",
       },
     ],
     cta: "Talk to an Expert",
   },
   {
-    title: "Quick & Easy Checkout",
-    imageSrc: "/quick-checkout.jpg",
+    title: "Built for Everyone. Streamlined and Smooth",
+    imageSrc: "/customer-engagement.jpg",
     description:
-      "Long lines and full carts are no longer an issue. Our breakthrough in retail efficiency is designed and engineered for rapid processing.",
-    features: [
-      {
-        name: "Rapid Checkout",
-        detail:
-          "Transform your checkout process to make long lines a thing of the past.",
-      },
-      {
-        name: "User-Friendly Interface",
-        detail:
-          "Benefit from an interface so simple, your team can focus on what matters.",
-      },
-      {
-        name: "Superior Customer Engagement",
-        detail: "Ensure each customer enjoys higher satisfaction rates.",
-      },
-      {
-        name: "Optimized Efficiency",
-        detail:
-          "Enable your staff to perform at a higher productivity, when it counts.",
-      },
-    ],
-    cta: "Talk to an Expert",
+      "More than a corner store it's the heartbeat of your neighborhood, a warm gathering spot where friends meet, families shop side by side, and every visit strengthens our community bond.",
+    features: [],
   },
 ];
 

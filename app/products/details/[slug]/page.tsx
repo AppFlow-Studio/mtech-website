@@ -5,7 +5,6 @@ import AlsoLikeSection from "@/components/products/AlsoLikeSection";
 import { mockProducts } from "@/lib/mockdata";
 
 function getProductBySlug(slug: string): Product | undefined {
-  console.log(`Fetching product with slug: ${slug}`);
   return mockProducts.find((product) => product.link === slug);
 }
 
