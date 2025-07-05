@@ -4,7 +4,7 @@ import { Slide } from "@/lib/types";
 
 const sliderData: Slide[] = [
   {
-    imageSrc: "/smart-scales.jpg",
+    imageSrc: "/retail-store-inventory.jpg",
     title: "Take Control of Your Inventory",
     description:
       "Our POS system is designed to simplify inventory management, helping you stay stocked, stay organized, and stay ready.",

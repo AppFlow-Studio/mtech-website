@@ -29,12 +29,21 @@ const ProductGridLayout = ({
   // Filter states
   const [inStockFilter, setInStockFilter] = useState<boolean | null>(null);
   const [sortOption, setSortOption] = useState<string | null>(null);
+  const [tagFilters, setTagFilters] = useState<string[]>([]);
 
   const productsPerPage = viewMode === "grid" ? 9 : 6;
 
   // Apply filters and sorting whenever they change
   useEffect(() => {
     let result = [...initialProducts];
+
+    // Apply tag filter
+    if (tagFilters.length > 0) {
+      result = result.filter(
+        (product) =>
+          product.tags && tagFilters.some((tag) => product.tags?.includes(tag))
+      );
+    }
 
     // Apply stock filter
     if (inStockFilter !== null) {
@@ -59,7 +68,7 @@ const ProductGridLayout = ({
     setFilteredProducts(result);
     setTotalProducts(result.length);
     setCurrentPage(1); // Reset to first page when filters change
-  }, [initialProducts, inStockFilter, sortOption]);
+  }, [initialProducts, tagFilters, inStockFilter, sortOption]);
 
   // Calculate total pages
   const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
@@ -87,9 +96,14 @@ const ProductGridLayout = ({
     setSortOption(option);
   };
 
+  const handleTagFilterChange = (tags: string[]) => {
+    setTagFilters(tags);
+  };
+
   const resetFilters = () => {
     setInStockFilter(null);
     setSortOption(null);
+    setTagFilters([]);
   };
 
   return (
@@ -119,11 +133,14 @@ const ProductGridLayout = ({
             <FilterSidebar
               onStockFilterChange={handleStockFilterChange}
               onSortChange={handleSortChange}
+              onTagFilterChange={handleTagFilterChange}
               onReset={resetFilters}
               currentStockFilter={inStockFilter}
               currentSortOption={sortOption}
+              currentTagFilters={tagFilters}
               inStockCount={initialProducts.filter((p) => p.inStock).length}
               outOfStockCount={initialProducts.filter((p) => !p.inStock).length}
+              products={initialProducts}
             />
           </div>
 
@@ -216,11 +233,14 @@ const ProductGridLayout = ({
             onClose={() => setIsFilterOpen(false)}
             onStockFilterChange={handleStockFilterChange}
             onSortChange={handleSortChange}
+            onTagFilterChange={handleTagFilterChange}
             onReset={resetFilters}
             currentStockFilter={inStockFilter}
             currentSortOption={sortOption}
+            currentTagFilters={tagFilters}
             inStockCount={initialProducts.filter((p) => p.inStock).length}
             outOfStockCount={initialProducts.filter((p) => !p.inStock).length}
+            products={initialProducts}
           />
         </div>
       </div>

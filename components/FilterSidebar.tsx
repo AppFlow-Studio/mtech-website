@@ -1,5 +1,6 @@
 "use client";
 
+import { Product } from "@/lib/types";
 import { SlidersHorizontal, X } from "lucide-react";
 
 interface CheckboxProps {
@@ -36,22 +37,28 @@ interface FilterSidebarProps {
   onClose?: () => void;
   onStockFilterChange: (inStock: boolean | null) => void;
   onSortChange: (option: string | null) => void;
+  onTagFilterChange: (tags: string[]) => void;
   onReset: () => void;
   currentStockFilter: boolean | null;
   currentSortOption: string | null;
+  currentTagFilters: string[];
   inStockCount: number;
   outOfStockCount: number;
+  products: Product[];
 }
 
 const FilterSidebar = ({
   onClose,
   onStockFilterChange,
   onSortChange,
+  onTagFilterChange,
   onReset,
   currentStockFilter,
   currentSortOption,
+  currentTagFilters,
   inStockCount,
   outOfStockCount,
+  products,
 }: FilterSidebarProps) => {
   const handleStockToggle = (value: boolean) => {
     if (currentStockFilter === value) {
@@ -67,6 +74,26 @@ const FilterSidebar = ({
     } else {
       onSortChange(option); // Check the option
     }
+  };
+
+  const handleTagToggle = (tag: string) => {
+    const newTags = currentTagFilters.includes(tag)
+      ? currentTagFilters.filter((t) => t !== tag)
+      : [...currentTagFilters, tag];
+    onTagFilterChange(newTags);
+  };
+
+  // Count products for each tag
+  const tagCounts = {
+    "atm machines": products.filter((p) => p.tags?.includes("atm machines"))
+      .length,
+    "pos system": products.filter((p) => p.tags?.includes("pos system")).length,
+    "credit card terminals": products.filter((p) =>
+      p.tags?.includes("credit card terminals")
+    ).length,
+    "network devices": products.filter((p) =>
+      p.tags?.includes("network devices")
+    ).length,
   };
 
   return (
@@ -85,6 +112,43 @@ const FilterSidebar = ({
       </div>
 
       <div className="mt-6 space-y-6">
+        {/* Product Type Section */}
+        <div>
+          <h3 className="font-semibold text-gray-800 dark:text-gray-100">
+            Product Type
+          </h3>
+          <div className="mt-3 space-y-2">
+            <Checkbox
+              id="atm-machines"
+              label="ATM Machines"
+              count={tagCounts["atm machines"]}
+              checked={currentTagFilters.includes("atm machines")}
+              onChange={() => handleTagToggle("atm machines")}
+            />
+            <Checkbox
+              id="pos-system"
+              label="POS System"
+              count={tagCounts["pos system"]}
+              checked={currentTagFilters.includes("pos system")}
+              onChange={() => handleTagToggle("pos system")}
+            />
+            <Checkbox
+              id="atm-card-terminals"
+              label="ATM Card Terminals"
+              count={tagCounts["credit card terminals"]}
+              checked={currentTagFilters.includes("credit card terminals")}
+              onChange={() => handleTagToggle("credit card terminals")}
+            />
+            <Checkbox
+              id="network-devices"
+              label="Network Devices"
+              count={tagCounts["network devices"]}
+              checked={currentTagFilters.includes("network devices")}
+              onChange={() => handleTagToggle("network devices")}
+            />
+          </div>
+        </div>
+
         {/* Availability Section */}
         <div>
           <h3 className="font-semibold text-gray-800 dark:text-gray-100">

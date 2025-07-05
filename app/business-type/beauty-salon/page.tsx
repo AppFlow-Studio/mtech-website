@@ -4,7 +4,7 @@ import { Slide } from "@/lib/types";
 
 const sliderData: Slide[] = [
   {
-    imageSrc: "/smart-scales.jpg",
+    imageSrc: "/hair-salon.jpg",
     title: "Simplified Management",
     description:
       "Simplify Bookings and Inventory, Our POS system streamlines appointment scheduling and stock tracking, so you can focus on styling, not spreadsheets.",
@@ -33,7 +33,7 @@ const sliderData: Slide[] = [
     cta: "Talk to an Expert",
   },
   {
-    imageSrc: "/smart-scales.jpg",
+    imageSrc: "/salon-client.jpg",
     title: "All-Inclusive Feature Suite",
     description:
       "Transform your salon with our POS system’s seamless promotion builder, centralized client and team management, and live stock-level syncing.",
@@ -63,7 +63,7 @@ const sliderData: Slide[] = [
   },
   {
     title: "Empower Your Beauty Business with Our POS System",
-    imageSrc: "/butcher-shop-pos.jpg",
+    imageSrc: "/salon-pos.jpg",
     description:
       "Small beauty and hair shops foster personal connections but struggle with time-heavy checkouts. Tracking several services per appointment by hand becomes a bottleneck. Our POS system solves this by placing every service on its own button, turning complex tabs into instant, accurate payments.",
     features: [],
@@ -78,14 +78,14 @@ function page() {
           {/* Section Header */}
           <div className="text-center max-w-3xl mx-auto">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
-              Hardware Stores
+              Beauty Salon
             </h2>
             <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
-              Hardware Stores are specialized retail outlets that offer tools,
-              building materials, plumbing supplies, electrical components,
-              paint, fasteners, and home improvement products. Serving both DIY
-              customers and professional contractors, hardware stores are a
-              go-to destination for repair, renovation, and maintenance needs.
+              Beauty Salons are professional service establishments dedicated to
+              enhancing personal appearance and well-being through a range of
+              cosmetic and grooming treatments. Services often include haircuts,
+              styling, coloring, manicures, pedicures, facials, waxing, and
+              skincare treatments
             </p>
           </div>
         </div>

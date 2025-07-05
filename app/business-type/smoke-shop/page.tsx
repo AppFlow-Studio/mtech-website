@@ -4,8 +4,8 @@ import { Slide } from "@/lib/types";
 
 const sliderData: Slide[] = [
   {
-    imageSrc: "/smart-scales.jpg",
-    title: "ScanData Power: Elevate Your Smoke Shop Gam",
+    imageSrc: "/smoke-shop.jpg",
+    title: "ScanData Power: Elevate Your Smoke Shop Game",
     description:
       "Unlock the Full Power of ScanData Reporting: Seamlessly integrated with Altria and RJ Reynolds, our ScanData reporting transforms raw tobacco scans into game-changing intelligence. It’s more than just numbers, it’s your roadmap to operational excellence.",
     features: [
@@ -33,7 +33,7 @@ const sliderData: Slide[] = [
     cta: "Talk to an Expert",
   },
   {
-    imageSrc: "/smart-scales.jpg",
+    imageSrc: "/smoke-shop-counter.jpg",
     title: "Protect Your Margins",
     description:
       "Defend against losses with our advanced security tools, ensuring every cent you earn stays right with you.",
@@ -55,7 +55,7 @@ const sliderData: Slide[] = [
   },
   {
     title: "Premium Puff, Friendly Price. Your Style, Your Savings!",
-    imageSrc: "/butcher-shop-pos.jpg",
+    imageSrc: "/smoke-shop-shelve.jpg",
     description: "Catch Your Breath. Our POS System Drives Success.€",
     features: [],
   },

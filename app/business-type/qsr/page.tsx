@@ -4,7 +4,7 @@ import { Slide } from "@/lib/types";
 
 const sliderData: Slide[] = [
   {
-    imageSrc: "/smart-scales.jpg",
+    imageSrc: "/fast-food-restaurant-checkout.jpg",
     title: "Handle High Volumes with Payment Agility",
     description:
       "Handle High Volumes with Payment Agility From cash sales and card swipes to contactless wallets and online checkouts, our POS system keeps every transaction smooth",
@@ -19,7 +19,7 @@ const sliderData: Slide[] = [
     cta: "Talk to an Expert",
   },
   {
-    imageSrc: "/smart-scales.jpg",
+    imageSrc: "/coffee-shop-customer.jpg",
     title: "Taste the Perks",
     description:
       "With our POS system, boba bars, cafés, and hookah lounges can set up and run rewards programs effortlessly—turning first-time guests into lifelong fans.",
@@ -44,7 +44,7 @@ const sliderData: Slide[] = [
   },
   {
     title: "Discover the Hospitality Hub",
-    imageSrc: "/butcher-shop-pos.jpg",
+    imageSrc: "/restaurant.jpg",
     description:
       "Aromatic coffees, fresh bagels, playful boba creations, and the mellow atmosphere of hookah lounges, all converge to create destinations where visitors can unwind, socialize, and treat themselves.",
     features: [],
