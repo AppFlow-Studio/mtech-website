@@ -82,6 +82,7 @@ const CategoryPillsScroller = () => {
 
   const [currentIndex, setCurrentIndex] = useState(totalItems);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const controls = useAnimationControls();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const pillsRef = useRef<(HTMLDivElement | null)[]>([]);
@@ -125,19 +126,21 @@ const CategoryPillsScroller = () => {
   }, []);
 
   useEffect(() => {
-    if (totalItems <= 1) return;
+    if (totalItems <= 1 || isTransitioning) return;
+
     const timer = setInterval(() => {
       if (isExpanded) {
+        // Start collapsing and transitioning simultaneously
+        setIsTransitioning(true);
         setIsExpanded(false);
-        setTimeout(() => {
-          setCurrentIndex((prev) => prev + 1);
-        }, 1000);
+        setCurrentIndex((prev) => prev + 1);
       } else {
         setCurrentIndex((prev) => prev + 1);
       }
     }, slideDuration);
+    
     return () => clearInterval(timer);
-  }, [totalItems, isExpanded, slideDuration, currentIndex]);
+  }, [totalItems, isExpanded, slideDuration, isTransitioning]);
 
   useEffect(() => {
     if (totalItems <= 1 || !containerRef.current) return;
@@ -153,6 +156,8 @@ const CategoryPillsScroller = () => {
         transition: { ease: "easeInOut", duration: animationDuration / 1000 },
       })
       .then(() => {
+        // Reset transition state and expand the new card
+        setIsTransitioning(false);
         setIsExpanded(true);
 
         if (currentIndex >= totalItems * 2) {
@@ -166,14 +171,6 @@ const CategoryPillsScroller = () => {
         }
       });
   }, [currentIndex, controls, totalItems, animationDuration, offsetValue]);
-
-  useEffect(() => {
-    if (!isExpanded) return;
-    const collapseTimer = setTimeout(() => {
-      setIsExpanded(false);
-    }, expandedDuration);
-    return () => clearTimeout(collapseTimer);
-  }, [isExpanded, expandedDuration]);
 
   const handleShopNow = () => {
     const currentCategory = categories[currentIndex % totalItems];
@@ -191,6 +188,7 @@ const CategoryPillsScroller = () => {
     if (index === currentIndex) return;
 
     setIsExpanded(false);
+    setIsTransitioning(true);
 
     setTimeout(() => {
       setCurrentIndex(index);
@@ -257,7 +255,7 @@ const CategoryPillsScroller = () => {
                 </motion.div>
 
                 <AnimatePresence>
-                  {isExpanded && isActive && (
+                  {isExpanded && isActive && !isTransitioning && (
                     <motion.div
                       key={`card-${index}`}
                       className="absolute bottom-0 left-1/2 -translate-x-1/2 z-10"
@@ -301,7 +299,7 @@ const CategoryPillsScroller = () => {
                             className="h-full bg-gradient-to-r from-[#662CB2] to-[#2C134C]"
                             variants={progressBarVariants}
                             initial="initial"
-                            animate={isExpanded ? "animate" : "paused"}
+                            animate={isExpanded && !isTransitioning ? "animate" : "paused"}
                           />
                         </div>
                       </div>
