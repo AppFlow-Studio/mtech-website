@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
-import Slider from "react-slick";
-import { motion, AnimatePresence, Variants } from "framer-motion";
-
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
+import {
+  motion,
+  useAnimationControls,
+  AnimatePresence,
+  Variants,
+} from "framer-motion";
 import Link from "next/link";
 
 const CategoryPillsScroller = () => {
@@ -74,264 +75,243 @@ const CategoryPillsScroller = () => {
     },
   ];
 
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [isVisible, setIsVisible] = useState(true);
-  const [isHovered, setIsHovered] = useState(false);
-  const sliderRef = useRef<Slider | null>(null);
+  const slideDuration = 5000;
+  const animationDuration = 800;
+  const expandedDuration = 5000;
+  const totalItems = categories.length;
 
-  const handleCategoryClick = (category: string) => {
-    console.log(`Clicked on: ${category}`);
+  const [currentIndex, setCurrentIndex] = useState(totalItems);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const controls = useAnimationControls();
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const pillsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const [offsetValue, setOffsetValue] = useState(40);
 
-    // Find the index of the clicked category
-    const categoryIndex = categories.findIndex((cat) => cat.name === category);
+  const expandedCardWidth = 108;
 
-    if (categoryIndex !== -1 && sliderRef.current) {
-      // Calculate the direction to always go left to right
-      const currentIndex = currentSlide % categories.length;
-      let targetIndex = categoryIndex;
-
-      // If target is behind current position, add categories length to go forward
-      if (targetIndex < currentIndex) {
-        targetIndex = categoryIndex + categories.length;
-      }
-
-      // Navigate to the clicked category (always left to right)
-      sliderRef.current.slickGoTo(targetIndex);
-    }
-  };
-
-  // Get the current active category (leftmost visible)
-  const activeCategory = categories[currentSlide % categories.length];
-
-  // Animation variants for the expanded pill
-  const expandedPillVariants: Variants = {
-    hidden: {
-      opacity: 0,
-      x: -100,
-      scale: 0.9,
-    },
-    visible: {
-      opacity: 1,
-      x: 0,
-      scale: 1,
-      transition: {
-        // duration: 0.2,
-        ease: "easeInOut",
-      },
-    },
-    exit: {
-      opacity: 0,
-      x: -100,
-      scale: 0.9,
-      transition: {
-        duration: 0.2,
-        ease: "easeIn",
-      },
-    },
-    enter: {
-      opacity: 0,
-      x: -100,
-      scale: 0.9,
-    },
-  };
-
-  // Animation variants for regular pills
-  const pillVariants: Variants = {
-    hidden: {
-      opacity: 0,
-      y: 20,
-      scale: 0.9,
-    },
-    visible: {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      transition: {
-        duration: 0.5,
-        ease: "easeOut",
-      },
-    },
-    hover: {
-      scale: 1.05,
-      transition: {
-        duration: 0.2,
-        ease: "easeInOut",
-      },
-    },
-    tap: {
-      scale: 0.98,
-      transition: {
-        duration: 0.1,
-      },
-    },
-  };
+  const tripleCategories = [...categories, ...categories, ...categories];
 
   // Progress bar animation variants
   const progressBarVariants: Variants = {
-    initial: {
-      width: "0%",
-    },
+    initial: { width: "0%" },
     animate: {
       width: "100%",
       transition: {
-        duration: 4.4, // adjusted to match the autoplay speed and transition animation
+        duration: expandedDuration / 1000,
         ease: "linear",
       },
     },
-    paused: {
-      transition: {
-        duration: 0,
-      },
-    },
+    paused: { width: "0%" },
   };
 
-  // React Slick Settings
-  const settings = {
-    dots: false,
-    arrows: false,
-    infinite: true,
-    autoplay: true,
-    slidesToScroll: 1,
-    pauseOnHover: true,
-    autoplaySpeed: 5000,
-    speed: 500,
-    cssEase: "ease-in-out",
-    beforeChange: (current: any, next: React.SetStateAction<number>) => {
-      setIsVisible(false);
-      setTimeout(() => {
-        setCurrentSlide(next);
-        setIsVisible(true);
-      }, 200);
-    },
-    slidesToShow: 6,
-    responsive: [
-      {
-        breakpoint: 1280,
-        settings: {
-          slidesToShow: 4,
-        },
-      },
-      {
-        breakpoint: 1024,
-        settings: {
-          slidesToShow: 4,
-        },
-      },
-      {
-        breakpoint: 768,
-        settings: {
-          slidesToShow: 3,
-        },
-      },
-      {
-        breakpoint: 480,
-        settings: {
-          slidesToShow: 2,
-        },
-      },
-    ],
+  useEffect(() => {
+    // Update offset value based on screen size
+    const updateOffset = () => {
+      if (window.innerWidth < 640) {
+        // Mobile
+        setOffsetValue(40);
+      } else if (window.innerWidth < 768) {
+        // Small tablet
+        setOffsetValue(50);
+      } else {
+        // Desktop
+        setOffsetValue(110);
+      }
+    };
+
+    updateOffset();
+    window.addEventListener("resize", updateOffset);
+    return () => window.removeEventListener("resize", updateOffset);
+  }, []);
+
+  useEffect(() => {
+    if (totalItems <= 1) return;
+    const timer = setInterval(() => {
+      if (isExpanded) {
+        setIsExpanded(false);
+        setTimeout(() => {
+          setCurrentIndex((prev) => prev + 1);
+        }, 1000);
+      } else {
+        setCurrentIndex((prev) => prev + 1);
+      }
+    }, slideDuration);
+    return () => clearInterval(timer);
+  }, [totalItems, isExpanded, slideDuration, currentIndex]);
+
+  useEffect(() => {
+    if (totalItems <= 1 || !containerRef.current) return;
+
+    const targetPill = pillsRef.current[currentIndex];
+    if (!targetPill) return;
+
+    const targetPosition = -targetPill.offsetLeft + offsetValue;
+
+    controls
+      .start({
+        x: targetPosition,
+        transition: { ease: "easeInOut", duration: animationDuration / 1000 },
+      })
+      .then(() => {
+        setIsExpanded(true);
+
+        if (currentIndex >= totalItems * 2) {
+          const newIndex = totalItems + (currentIndex % totalItems);
+          const newTargetPill = pillsRef.current[newIndex];
+          if (newTargetPill) {
+            const newXPosition = -newTargetPill.offsetLeft + offsetValue;
+            controls.set({ x: newXPosition });
+            setCurrentIndex(newIndex);
+          }
+        }
+      });
+  }, [currentIndex, controls, totalItems, animationDuration, offsetValue]);
+
+  useEffect(() => {
+    if (!isExpanded) return;
+    const collapseTimer = setTimeout(() => {
+      setIsExpanded(false);
+    }, expandedDuration);
+    return () => clearTimeout(collapseTimer);
+  }, [isExpanded, expandedDuration]);
+
+  const handleShopNow = () => {
+    const currentCategory = categories[currentIndex % totalItems];
+    window.location.href = currentCategory.link;
+  };
+
+  const getPillTransform = (index: number) => {
+    if (isExpanded && index > currentIndex) {
+      return window.innerWidth < 640 ? 60 : expandedCardWidth;
+    }
+    return 0;
+  };
+
+  const handlePillClick = (index: number) => {
+    if (index === currentIndex) return;
+
+    setIsExpanded(false);
+
+    setTimeout(() => {
+      setCurrentIndex(index);
+    }, 150);
   };
 
   return (
-    <div className="relative py-2 sm:pb-3 h-full flex flex-col">
-      {/* Fixed Positioned Active Pill */}
-      <AnimatePresence mode="wait">
+    <div
+      className="w-full mx-auto h-[220px] md:h-[350px] relative overflow-hidden"
+      ref={containerRef}
+    >
+      <div className="absolute bottom-0 left-0 right-0 py-4">
         <motion.div
-          key={`expanded-${activeCategory.name}`}
-          variants={expandedPillVariants}
-          initial="enter"
-          animate={isVisible ? "visible" : "exit"}
-          exit="exit"
-          className="absolute top-0 left-0 z-10
-            bg-[#FFFFFF80] backdrop-blur-md rounded-xl sm:rounded-2xl 
-            p-3 sm:p-4 lg:p-6 border border-white/20 
-            w-36 xs:w-40 sm:w-48 md:w-60 lg:w-80 flex-shrink-0 overflow-hidden"
+          className="flex items-end pl-4"
+          animate={controls}
+          initial={{ x: 0 }}
         >
-          <motion.h3
-            className="text-white text-xs xs:text-sm sm:text-base lg:text-lg xl:text-xl font-semibold mb-1 xs:mb-2 sm:mb-3 lg:mb-4 text-center sm:text-left"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : -10 }}
-            transition={{ duration: 0.3 }}
-          >
-            {activeCategory.title}
-          </motion.h3>
-          <motion.div
-            className="rounded-lg bg-[#B4ADB8] p-1 xs:p-2 sm:p-3 lg:p-4 flex flex-col items-center"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: isVisible ? 1 : 0, scale: isVisible ? 1 : 0.9 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-          >
-            <motion.div
-              className="mb-1 xs:mb-2 sm:mb-3 lg:mb-4 w-full"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 20 }}
-              transition={{ duration: 0.3, delay: 0.2 }}
-            >
-              <img
-                src={activeCategory.image}
-                alt={activeCategory.title}
-                className="w-full h-auto rounded-md sm:rounded-lg object-contain max-h-16 xs:max-h-20 sm:max-h-24 lg:max-h-32"
-              />
-            </motion.div>
-            <Link
-              href={activeCategory.link}
-              onClick={() => handleCategoryClick(activeCategory.name)}
-              className="w-full bg-gradient-to-r from-[#662CB2] to-[#2C134C] text-white 
-              text-[10px] xs:text-xs sm:text-sm lg:text-base py-1 xs:py-1.5 sm:py-2.5 lg:py-3 
-              px-2 xs:px-3 sm:px-4 rounded-full 
-              font-semibold hover:from-purple-700 hover:to-blue-700 
-              transform hover:scale-105 transition-all duration-200 lg:shadow-md text-center"
-            >
-              Shop Now
-            </Link>
-          </motion.div>
+          {tripleCategories.map((category, index) => {
+            const isActive = index === currentIndex;
+            const isFirstInSequenceActive = currentIndex % totalItems === 0;
+            const isPillLastInSequence = index % totalItems === totalItems - 1;
+            const hideBecauseOfSeam =
+              isFirstInSequenceActive && isPillLastInSequence;
 
-          {/* Animated Progress Bar */}
-          <div className="absolute bottom-0 left-0 right-0 h-2 z-50 bg-white/20 rounded-b-xl sm:rounded-b-2xl overflow-hidden">
-            <motion.div
-              key={`progress-${activeCategory.name}-${isVisible}`}
-              className="h-full bg-gradient-to-r from-[#662CB2] to-[#2C134C]"
-              variants={progressBarVariants}
-              initial="initial"
-              animate={isVisible && !isHovered ? "animate" : "paused"}
-            />
-          </div>
-        </motion.div>
-      </AnimatePresence>
+            const isHidden =
+              (isExpanded && isActive) ||
+              index === currentIndex - 1 ||
+              index === currentIndex - 2 ||
+              hideBecauseOfSeam;
 
-      {/* Slider with Regular Pills - Skip the currently active category - Positioned at bottom */}
-      <div
-        className="mt-auto pt-24 xs:pt-28 sm:pt-32 md:pt-36 lg:pt-40 ml-0 sm:ml-24 lg:ml-52"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        <Slider {...settings} ref={sliderRef}>
-          {categories.map((category, index) => (
-            <div key={category.name} className="px-1">
-              {index === currentSlide % categories.length ? (
-                // Skip/hide the currently active category pill
-                <></>
-              ) : (
-                // Regular Pills - only show non-active categories
-                <motion.button
-                  variants={pillVariants}
-                  initial="hidden"
-                  animate="visible"
-                  whileHover="hover"
-                  whileTap="tap"
-                  onClick={() => handleCategoryClick(category.name)}
-                  className="bg-[#8B848C] backdrop-blur-sm text-[#F0F3FD] 
-                    text-[10px] xs:text-xs sm:text-sm px-2 xs:px-3 sm:px-4 lg:px-6 
-                    py-1 xs:py-1.5 sm:py-2 lg:py-3 rounded-full w-full
-                    font-medium border border-white/30 hover:bg-white/30 
-                    transition-all duration-200 whitespace-nowrap m-1"
+            return (
+              <motion.div
+                key={`${category.name}-${index}`}
+                ref={(el) => {
+                  pillsRef.current[index] = el;
+                }}
+                className="flex-shrink-0 px-1 relative"
+                animate={{ x: getPillTransform(index) }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+              >
+                <motion.div
+                  animate={{ opacity: isHidden ? 0 : 1 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex-shrink-0"
                 >
-                  {category.name}
-                </motion.button>
-              )}
-            </div>
-          ))}
-        </Slider>
+                  <Link href={category.link} passHref>
+                    <div
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handlePillClick(index);
+                      }}
+                      className="
+                        bg-[#8B848C] backdrop-blur-sm text-[#F0F3FD]
+                        text-[10px] xs:text-xs sm:text-sm px-2 xs:px-3 sm:px-4 lg:px-6
+                        py-1 xs:py-1.5 sm:py-2 lg:py-3 rounded-full
+                        font-medium border border-white/30 hover:bg-white/30
+                        transition-all duration-200 whitespace-nowrap m-1
+                        cursor-pointer
+                      "
+                    >
+                      {category.name}
+                    </div>
+                  </Link>
+                </motion.div>
+
+                <AnimatePresence>
+                  {isExpanded && isActive && (
+                    <motion.div
+                      key={`card-${index}`}
+                      className="absolute bottom-0 left-1/2 -translate-x-1/2 z-10"
+                      style={{ transformOrigin: "bottom center" }}
+                      initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.8, y: 20 }}
+                      transition={{ duration: 0.4, ease: "easeInOut" }}
+                    >
+                      <div
+                        className="bg-[#FFFFFF80] backdrop-blur-md rounded-xl sm:rounded-2xl 
+                          p-3 sm:p-4 lg:p-6 border border-white/20 
+                          w-36 xs:w-40 sm:w-48 md:w-60 lg:w-80 flex-shrink-0 relative overflow-hidden"
+                      >
+                        <h3 className="text-white text-sm sm:text-base lg:text-lg xl:text-xl font-semibold mb-2 sm:mb-3 lg:mb-4 text-center sm:text-left">
+                          {category.title}
+                        </h3>
+                        <div className="rounded-lg bg-[#B4ADB8] p-2 sm:p-3 lg:p-4 flex flex-col items-center">
+                          <div className="mb-2 sm:mb-3 lg:mb-4">
+                            <img
+                              src={category.image}
+                              alt={category.title}
+                              className="w-full h-auto rounded-md sm:rounded-lg object-contain max-h-16 xs:max-h-20 sm:max-h-24 lg:max-h-32"
+                            />
+                          </div>
+                          <button
+                            onClick={handleShopNow}
+                            className="w-full bg-gradient-to-r from-[#662CB2] to-[#2C134C] text-white 
+                            text-xs sm:text-sm lg:text-base py-2 sm:py-2.5 lg:py-3 px-3 sm:px-4 rounded-full 
+                            font-semibold hover:from-purple-700 hover:to-blue-700 
+                            transform hover:scale-105 transition-all duration-200 lg:shadow-md"
+                          >
+                            Shop Now
+                          </button>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="absolute bottom-0 left-0 right-0 h-2 z-50 bg-white/20 rounded-b-xl sm:rounded-b-2xl overflow-hidden">
+                          <motion.div
+                            key={`progress-${category.name}-${isExpanded}`}
+                            className="h-full bg-gradient-to-r from-[#662CB2] to-[#2C134C]"
+                            variants={progressBarVariants}
+                            initial="initial"
+                            animate={isExpanded ? "animate" : "paused"}
+                          />
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            );
+          })}
+        </motion.div>
       </div>
     </div>
   );
