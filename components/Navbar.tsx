@@ -229,9 +229,9 @@ const Navbar = () => {
               </button>
 
               {/* Register Button */}
-              <button className="bg-gradient-to-b from-[#662CB2] to-[#2C134C] hover:from-[#7a35d1] hover:to-[#3c1963] text-white px-4 py-2 rounded-full transition-colors duration-200">
-                Register
-              </button>
+              <Link href="/login" className="bg-gradient-to-b from-[#662CB2] to-[#2C134C] hover:from-[#7a35d1] hover:to-[#3c1963] text-white px-4 py-2 rounded-full transition-colors duration-200">
+                Login
+              </Link>
             </div>
 
             {/* Mobile menu button */}

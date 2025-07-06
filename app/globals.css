@@ -1,26 +1,31 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+
 @custom-variant dark (&:where(.dark, .dark *));
 @custom-variant light (&:where(.light, .light *));
 
 .hide-scrollbar::-webkit-scrollbar {
-  display: none; /* WebKit browsers (Chrome, Safari, Edge) */
+  display: none;
+  /* WebKit browsers (Chrome, Safari, Edge) */
 }
+
 .hide-scrollbar {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
 
 /* Center mode styles */
 
-.slick-slide > div > div {
+.slick-slide>div>div {
   opacity: 0.7;
   transform: scale(0.9) !important;
   filter: grayscale(0.3) brightness(0.9) !important;
   transition: all 0.3s ease !important;
 }
 
-.slick-active > div > div {
+.slick-active>div>div {
   opacity: 1 !important;
   transform: scale(1) !important;
 }
@@ -60,11 +65,11 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .slick-slide > div > div {
+  .slick-slide>div>div {
     transform: scale(0.95) !important;
   }
 
-  .slick-center .slick-slide > div > div {
+  .slick-center .slick-slide>div>div {
     transform: scale(1) !important;
   }
 }
@@ -147,26 +152,32 @@
   height: inherit !important;
 }
 
-.slick-slide > div > div,
-.slick-slide > div {
+.slick-slide>div>div,
+.slick-slide>div {
   height: 100%;
 }
 
 .slick-slide:focus {
   outline: none;
 }
+
 .slick-track {
   display: flex;
-  gap: 1rem; /* Adjust this gap to match your design */
+  gap: 1rem;
+  /* Adjust this gap to match your design */
 }
+
 /* Responsive gaps */
 @media (min-width: 640px) {
+
   /* sm */
   .slick-track {
     gap: 0.75rem;
   }
 }
+
 @media (min-width: 1024px) {
+
   /* lg */
   .slick-track {
     gap: 1rem;
@@ -211,18 +222,22 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --animate-marquee: marquee var(--duration) infinite linear;
   --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
+
   @keyframes marquee {
     from {
       transform: translateX(0);
     }
+
     to {
       transform: translateX(calc(-100% - var(--gap)));
     }
   }
+
   @keyframes marquee-vertical {
     from {
       transform: translateY(0);
     }
+
     to {
       transform: translateY(calc(-100% - var(--gap)));
     }
@@ -302,6 +317,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }

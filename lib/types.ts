@@ -53,3 +53,26 @@ export interface Slide {
   features: Feature[];
   cta?: string;
 }
+
+export interface UserProfile {
+  id: string
+  first_name: string | null
+  last_name: string | null
+  role: 'AGENT' | 'ADMIN'
+  created_at: string
+}
+
+export interface AuthState {
+  user: UserProfile | null
+  isLoading: boolean
+  isAuthenticated: boolean
+  error: string | null
+}
+
+export interface AuthStore extends AuthState {
+  setUser: (user: UserProfile | null) => void
+  setLoading: (loading: boolean) => void
+  setError: (error: string | null) => void
+  logout: () => void
+  initialize: () => Promise<void>
+}

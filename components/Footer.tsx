@@ -142,7 +142,7 @@ const Footer = () => {
         {/* Bottom Separator and Copyright */}
         <div className="mt-12 border-t border-white/20 pt-8">
           <p className=" text-[#F0F3FD]">
-            © {new Date().getFullYear()} Teck Distributors
+            © {new Date().getFullYear()} MTech Distributors
           </p>
         </div>
       </div>
