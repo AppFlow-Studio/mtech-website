@@ -30,7 +30,8 @@ import {
 } from "@/components/ui/dialog"
 import { useProducts } from './actions/ProductsServerState'
 import { useTiers } from './actions/TeirsStores'
-import { useAgents } from './actions/AgentStore'
+import { useAddAgent, useAgents, useDeleteAgent } from './actions/AgentStore'
+import { toast } from 'sonner'
 
 type TabType = 'agents' | 'products' | 'pricing' | null
 
@@ -128,31 +129,42 @@ export default function AdminDashboard() {
 function AgentManagement() {
     const { data: agents } = useAgents()
     const { data: tiers } = useTiers()
+    const { mutate: addAgent } = useAddAgent()
+    const { mutate: deleteAgent } = useDeleteAgent()
+    const [open, setOpen] = useState(false)
     const [formData, setFormData] = useState({
-        firstName: '',
-        lastName: '',
+        first_name: '',
+        last_name: '',
         email: '',
         password: '',
-        tier: 'Tier 1'
+        tier: ''
     })
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
-        const newAgent = {
-            id: Date.now(),
-            ...formData,
-            tier: formData.tier
-        }
-        // TODO: Create agent in database
-        console.log('Created agent:', newAgent)
-        setFormData({ firstName: '', lastName: '', email: '', password: '', tier: 'Tier 1' })
+        addAgent(formData, {
+            onSuccess: () => {
+                toast.success('Agent added successfully')
+                setFormData({
+                    first_name: '',
+                    last_name: '',
+                    email: '',
+                    password: '',
+                    tier: ''
+                })
+                setOpen(false)
+            },
+            onError: () => {
+                toast.error('Failed to add agent')
+            }
+        })
     }
 
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-foreground">Agent Management</h2>
-                <Dialog>
+                <Dialog open={open} onOpenChange={setOpen}>
                     <DialogTrigger asChild>
                         <Button className="flex items-center gap-2">
                             <Plus className="h-4 w-4" />
@@ -216,7 +228,14 @@ function AgentManagement() {
                                                     <AgentEditForm agent={agent} tiers={tiers} />
                                                 </DialogContent>
                                             </Dialog>
-                                            <Button size="sm" variant="outline" className="text-destructive hover:text-destructive">
+                                            <Button size="sm" variant="outline" className="text-destructive hover:text-destructive" onClick={() => deleteAgent(agent.id, {
+                                                onSuccess: () => {
+                                                    toast.success('Agent deleted successfully')
+                                                },
+                                                onError: () => {
+                                                    toast.error('Failed to delete agent')
+                                                }
+                                            })}>
                                                 <Trash2 className="h-3 w-3" />
                                             </Button>
                                         </div>
@@ -352,8 +371,8 @@ function AgentForm({ onSubmit, formData, setFormData, tiers }: {
                     <label className="block text-sm font-medium text-foreground mb-2">First Name</label>
                     <Input
                         type="text"
-                        value={formData.firstName}
-                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                        value={formData.first_name}
+                        onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
                         required
                     />
                 </div>
@@ -361,8 +380,8 @@ function AgentForm({ onSubmit, formData, setFormData, tiers }: {
                     <label className="block text-sm font-medium text-foreground mb-2">Last Name</label>
                     <Input
                         type="text"
-                        value={formData.lastName}
-                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                        value={formData.last_name}
+                        onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
                         required
                     />
                 </div>
@@ -391,6 +410,7 @@ function AgentForm({ onSubmit, formData, setFormData, tiers }: {
                     value={formData.tier}
                     onChange={(e) => setFormData({ ...formData, tier: e.target.value })}
                 >
+                    <option value={''}>Unassigned</option>
                     {tiers?.map((tier: any) => (
                         <option key={tier.id} value={tier.id}>{tier.name}</option>
                     ))}
@@ -406,8 +426,8 @@ function AgentForm({ onSubmit, formData, setFormData, tiers }: {
 // Agent Edit Form Component
 function AgentEditForm({ agent, tiers }: { agent: any, tiers: any }) {
     const [formData, setFormData] = useState({
-        firstName: agent.first_name || '',
-        lastName: agent.last_name || '',
+        first_name: agent.first_name || '',
+        last_name: agent.last_name || '',
         email: agent.email || '',
         tier: agent.tier || ''
     })
@@ -434,8 +454,8 @@ function AgentEditForm({ agent, tiers }: { agent: any, tiers: any }) {
                     <label className="block text-sm font-medium text-foreground mb-2">Last Name</label>
                     <Input
                         type="text"
-                        value={formData.lastName}
-                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                        value={formData.last_name}
+                        onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
                         required
                     />
                 </div>
