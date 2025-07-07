@@ -1,6 +1,7 @@
 'use client'
 
-import { useAuth } from '@/lib/hooks/useAuth'
+import { useAuthStore } from '@/lib/auth-store'
+import { useProfile } from '@/lib/hooks/useProfile'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
@@ -17,15 +18,9 @@ export function ProtectedRoute({
     fallback,
     redirectTo = '/login'
 }: ProtectedRouteProps) {
-    const { isAuthenticated, isLoading, user } = useAuth()
+    const {  isLoading, profile } = useProfile()
+    const { user } = useAuthStore()
     const router = useRouter()
-
-    useEffect(() => {
-        if (!isLoading && !isAuthenticated) {
-            router.push(redirectTo)
-        }
-    }, [isLoading, isAuthenticated, router, redirectTo])
-
     // Show loading state
     if (isLoading) {
         return (
@@ -39,7 +34,7 @@ export function ProtectedRoute({
     }
 
     // Not authenticated
-    if (!isAuthenticated) {
+    if (!user) {
         return fallback || (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-white to-indigo-50 dark:from-[#0B0119] dark:via-[#1a0b2e] dark:to-[#0B0119]">
                 <div className="text-center">
@@ -56,7 +51,7 @@ export function ProtectedRoute({
     }
 
     // Check role if required
-    if (requiredRole && user?.role !== requiredRole) {
+    if (requiredRole && profile?.role !== requiredRole) {
         return fallback || (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-white to-indigo-50 dark:from-[#0B0119] dark:via-[#1a0b2e] dark:to-[#0B0119]">
                 <div className="text-center">
@@ -67,7 +62,7 @@ export function ProtectedRoute({
                     </div>
                     <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Insufficient Permissions</h2>
                     <p className="text-gray-600 dark:text-gray-400">
-                        You need {requiredRole} role to access this page. Your current role is {user?.role}.
+                        You need {requiredRole} role to access this page. Your current role is {profile?.role}.
                     </p>
                 </div>
             </div>

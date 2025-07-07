@@ -13,6 +13,8 @@ import {
 import { usePathname } from "next/navigation";
 import { useTheme } from "./ThemeProvider";
 import Link from "next/link";
+import { useAuthStore } from "@/lib/auth-store";
+import { useProfile } from "@/lib/hooks/useProfile";
 
 const Navbar = () => {
   const { theme, toggleTheme } = useTheme();
@@ -20,7 +22,8 @@ const Navbar = () => {
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
   const [hoveredItem, setHoveredItem] = useState<number | null>(null);
   const pathname = usePathname();
-
+  const { user } = useAuthStore()
+  const { profile } = useProfile()
   // Check if current path matches or is a child of the href
   const isActive = (href: string) => {
     return pathname === href || pathname.startsWith(`${href}/`);
@@ -229,9 +232,11 @@ const Navbar = () => {
               </button>
 
               {/* Register Button */}
-              <Link href="/login" className="bg-gradient-to-b from-[#662CB2] to-[#2C134C] hover:from-[#7a35d1] hover:to-[#3c1963] text-white px-4 py-2 rounded-full transition-colors duration-200">
+              {!user ? <Link href="/login" className="bg-gradient-to-b from-[#662CB2] to-[#2C134C] hover:from-[#7a35d1] hover:to-[#3c1963] text-white px-4 py-2 rounded-full transition-colors duration-200">
                 Login
-              </Link>
+              </Link> : <Link href={profile?.role === "ADMIN" ? "/admin" : profile?.role === "AGENT" ? "/agent" : "/"} className="bg-gradient-to-b from-[#662CB2] to-[#2C134C] hover:from-[#7a35d1] hover:to-[#3c1963] text-white px-4 py-2 rounded-full transition-colors duration-200">
+                Dashboard
+              </Link>}
             </div>
 
             {/* Mobile menu button */}

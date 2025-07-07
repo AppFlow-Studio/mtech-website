@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/components/AuthProvider";
 import { cookies } from "next/headers";
 import { Toaster } from "@/components/ui/sonner"
+import TanstackProvider from "@/providers/tanstack";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -52,9 +53,11 @@ export default async function RootLayout({
       >
         <ThemeProvider initialTheme={initialTheme}>
             <AuthProvider>
-              <Navbar />
-              {children}
-              <Footer />
+              <TanstackProvider>
+                <Navbar />
+                {children}
+                <Footer />
+              </TanstackProvider>
             </AuthProvider>
             <Toaster />
         </ThemeProvider>
