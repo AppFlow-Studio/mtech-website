@@ -54,3 +54,45 @@ export const deleteUser = async (id : string) => {
     }
     return result
 }
+
+export const updateAgentAuth = async (data: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    tier: string;
+    password?: string;
+    email?: string;
+}) => {
+  const supabase = createClient(
+    supabase_url,
+    service_role_key,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  );
+  if(data.password) {
+    await supabase.auth.admin.updateUserById(data.id, {
+      password: data.password,
+    })
+  }
+  if(data.email) {
+    await supabase.auth.admin.updateUserById(data.id, {
+      email: data.email,
+    })
+  }
+  const result = await supabase.auth.admin.updateUserById(data.id, {
+    user_metadata: {
+      first_name: data.first_name,
+      last_name: data.last_name,
+      tier: data.tier,
+    },
+  });
+  
+  if (result.error) {
+    throw new Error(result.error.message)
+  }
+  return result
+}

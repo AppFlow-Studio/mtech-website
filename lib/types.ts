@@ -5,6 +5,7 @@ export interface Product {
   link: string;
   inStock: boolean;
   tags?: string[];
+  default_price: number;
 }
 
 export interface FullTestimonial {

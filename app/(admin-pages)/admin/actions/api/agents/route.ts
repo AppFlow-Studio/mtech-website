@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
-import { createUser, deleteUser } from './supabaseauthadmin'
+import { createUser, deleteUser, updateAgentAuth } from './supabaseauthadmin'
+import { updateAgent } from './update-agent'
 export async function GET(request: NextRequest) {
     try {
     const supabase = await createClient()
@@ -31,7 +32,10 @@ export async function POST(request: NextRequest) {
         }
 
         return NextResponse.json(response)
-    } catch (error) {
+    } catch (error: unknown) {
+        if (error && typeof error === 'object' && 'message' in error) {
+            return NextResponse.json({ error: (error as any).message || 'Internal server error' }, { status: 500 })
+        }
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
@@ -45,6 +49,28 @@ export async function DELETE(request: NextRequest) {
         }
         return NextResponse.json(response)
     } catch (error) {
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
+}
+
+export async function PUT(request: NextRequest) {
+    try {
+        const body = await request.json()
+        console.log(body)
+        const response = await updateAgentAuth(body) // Updates the auth table
+        const response2 = await updateAgent(body) // Updates the profiles table
+        console.log('route.ts', response, 'response2', response2)
+        if (response.error) {
+            return NextResponse.json({ error: response.error }, { status: 500 })
+        }
+        if (response2.error) {
+            return NextResponse.json({ error: response2.error }, { status: 500 })
+        }
+        return NextResponse.json(response)
+    } catch (error: unknown) {
+        if (error && typeof error === 'object' && 'message' in error) {
+            return NextResponse.json({ error: (error as any).message || 'Internal server error' }, { status: 500 })
+        }
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

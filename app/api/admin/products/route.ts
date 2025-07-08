@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
             inStock: product.in_stock || product.inStock,
             tags: product.tags || [],
             price: product.price,
+            default_price: product.default_price,
             createdAt: product.created_at,
             updatedAt: product.updated_at
         })) || []
