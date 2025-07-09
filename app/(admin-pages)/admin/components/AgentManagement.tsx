@@ -84,7 +84,7 @@ export default function AgentManagement() {
                             Add Agent
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="w-full max-w-md">
+                    <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-7xl max-h-[90vh]">
                         <DialogHeader>
                             <DialogTitle>Create New Agent</DialogTitle>
                             <DialogDescription>
@@ -131,7 +131,7 @@ export default function AgentManagement() {
                                                         <Edit className="h-3 w-3" />
                                                     </Button>
                                                 </DialogTrigger>
-                                                <DialogContent className="w-full max-w-md">
+                                                <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-7xl max-h-[90vh]">
                                                     <DialogHeader>
                                                         <DialogTitle>Edit Agent: {agent.first_name} {agent.last_name}</DialogTitle>
                                                         <DialogDescription>

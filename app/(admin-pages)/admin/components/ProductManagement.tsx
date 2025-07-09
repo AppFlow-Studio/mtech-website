@@ -31,9 +31,11 @@ export default function ProductManagement({ searchTerm, setSearchTerm }: {
     setSearchTerm: (term: string) => void
 }) {
     const { data: products, isLoading, isError, refetch } = useProducts()
+    const { tags } = useTags()
     const [deleteProductId, setDeleteProductId] = useState<string | null>(null)
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
+    const [selectedTags, setSelectedTags] = useState<string[]>([])
     if (isLoading) return (
         <div className="flex items-center justify-center h-64">
             <div className="text-lg text-muted-foreground">Loading products...</div>
@@ -46,11 +48,30 @@ export default function ProductManagement({ searchTerm, setSearchTerm }: {
         </div>
     )
 
-    // Filter products based on search term
-    const filteredProducts = products?.filter((product: any) =>
-        product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description?.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || []
+    // Filter products based on search term and selected tags
+    const filteredProducts = products?.filter((product: any) => {
+        // Text search filter
+        const matchesSearch = product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            product.description?.toLowerCase().includes(searchTerm.toLowerCase())
+
+        // Tag filter
+        const matchesTags = selectedTags.length === 0 ||
+            selectedTags.some(tag => product.tags?.includes(tag))
+
+        return matchesSearch && matchesTags
+    }) || []
+
+    const handleTagToggle = (tag: string) => {
+        setSelectedTags(prev =>
+            prev.includes(tag)
+                ? prev.filter(t => t !== tag)
+                : [...prev, tag]
+        )
+    }
+
+    const clearAllTags = () => {
+        setSelectedTags([])
+    }
 
     const handleDeleteProduct = async (product: any) => {
         setDeleteProductId(product.id)
@@ -86,7 +107,7 @@ export default function ProductManagement({ searchTerm, setSearchTerm }: {
                             Add Product
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <DialogContent className="w-full max-w-[calc(100%-2rem)] sm:max-w-7xl max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                             <DialogTitle>Add New Product</DialogTitle>
                             <DialogDescription>
@@ -110,96 +131,148 @@ export default function ProductManagement({ searchTerm, setSearchTerm }: {
                 />
             </div>
 
-            {/* Products Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProducts.map((product: any) => (
-                    <div key={product.link} className="bg-card border border-border rounded-lg overflow-hidden">
-                        <div className="aspect-square bg-muted relative">
-                            <img
-                                src={product.imageSrc}
-                                alt={product.name}
-                                className="w-full h-full object-cover"
-                            />
-                            <div className="absolute top-2 right-2">
-                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${product.inStock
-                                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                                    }`}>
-                                    {product.inStock ? 'In Stock' : 'Out of Stock'}
-                                </span>
-                            </div>
-                        </div>
-                        <div className="p-4">
-                            <h3 className="font-medium text-foreground mb-2 line-clamp-2">{product.name}</h3>
-                            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{product.description}</p>
-                            <div className="flex flex-wrap gap-1 mb-3">
-                                {product.tags.map((tag: string) => (
-                                    <Badge key={tag} variant="outline">
-                                        {tag}
-                                    </Badge>
-                                ))}
-                            </div>
-                            <div className="flex gap-2">
-                                <Dialog>
-                                    <DialogTrigger asChild>
-                                        <Button size="sm" variant="outline" className="flex-1">
-                                            <Edit className="h-3 w-3 mr-1" />
-                                            Edit
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent className="w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-                                        <DialogHeader>
-                                            <DialogTitle>Edit Product: {product.name}</DialogTitle>
-                                            <DialogDescription>
-                                                Update product information, pricing, and availability.
-                                            </DialogDescription>
-                                        </DialogHeader>
-
-                                        <ProductEditForm product={product} />
-                                    </DialogContent>
-                                </Dialog>
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="text-destructive hover:text-destructive"
-                                    onClick={() => handleDeleteProduct(product)}
-                                >
-                                    <Trash2 className="h-3 w-3" />
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-            {/* Delete Confirmation Dialog */}
-            <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <AlertTriangle className="h-5 w-5 text-destructive" />
-                            Confirm Delete
-                        </DialogTitle>
-                        <DialogDescription>
-                            Are you sure you want to delete "{deleteProduct?.name}"? This action cannot be undone.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setOpenDeleteDialog(false)}>
-                            Cancel
+            {/* Tag Filters */}
+            <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-foreground">Filter by Tags</h3>
+                    {selectedTags.length > 0 && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={clearAllTags}
+                            className="text-xs text-muted-foreground hover:text-foreground"
+                        >
+                            Clear all
                         </Button>
-                        <Button variant="destructive" onClick={confirmDelete} disabled={isDeleting}>
-                            {isDeleting ? (
-                                <>
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                    Deleting...
-                                </>
-                            ) : (
-                                "Delete Product"
+                    )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    {tags.map((tag) => (
+                        <Badge
+                            key={tag}
+                            variant={selectedTags.includes(tag) ? "default" : "outline"}
+                            className={`cursor-pointer transition-colors hover:bg-primary/10 ${selectedTags.includes(tag)
+                                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                                : 'hover:border-primary/50'
+                                }`}
+                            onClick={() => handleTagToggle(tag)}
+                        >
+                            {tag}
+                            {selectedTags.includes(tag) && (
+                                <span className="ml-1 text-xs">✓</span>
                             )}
-                        </Button>
+                        </Badge>
+                    ))}
+                </div>
+                {selectedTags.length > 0 && (
+                    <div className="text-xs text-muted-foreground">
+                        Showing products with: {selectedTags.join(', ')}
                     </div>
-                </DialogContent>
-            </Dialog>
+                )}
+            </div>
+
+            {/* Products Grid */}
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <div className="text-sm text-muted-foreground">
+                        {filteredProducts.length} of {products?.length || 0} products
+                        {(searchTerm || selectedTags.length > 0) && (
+                            <span className="ml-2 text-xs">
+                                (filtered)
+                            </span>
+                        )}
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredProducts.map((product: any) => (
+                        <div key={product.link} className="bg-card border border-border rounded-lg overflow-hidden">
+                            <div className="aspect-square bg-muted relative">
+                                <img
+                                    src={product.imageSrc}
+                                    alt={product.name}
+                                    className="w-full h-full object-cover"
+                                />
+                                <div className="absolute top-2 right-2">
+                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${product.inStock
+                                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                        }`}>
+                                        {product.inStock ? 'In Stock' : 'Out of Stock'}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="p-4">
+                                <h3 className="font-medium text-foreground mb-2 line-clamp-2">{product.name}</h3>
+                                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{product.description}</p>
+                                <div className="flex flex-wrap gap-1 mb-3">
+                                    {product.tags.map((tag: string) => (
+                                        <Badge key={tag} variant="outline">
+                                            {tag}
+                                        </Badge>
+                                    ))}
+                                </div>
+                                <div className="flex gap-2">
+                                    <Dialog>
+                                        <DialogTrigger asChild>
+                                            <Button size="sm" variant="outline" className="flex-1">
+                                                <Edit className="h-3 w-3 mr-1" />
+                                                Edit
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent className="w-full max-w-[calc(100%-2rem)] sm:max-w-7xl max-h-[90vh] overflow-y-auto">
+                                            <DialogHeader>
+                                                <DialogTitle>Edit Product: {product.name}</DialogTitle>
+                                                <DialogDescription>
+                                                    Update product information, pricing, and availability.
+                                                </DialogDescription>
+                                            </DialogHeader>
+
+                                            <ProductEditForm product={product} />
+                                        </DialogContent>
+                                    </Dialog>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="text-destructive hover:text-destructive"
+                                        onClick={() => handleDeleteProduct(product)}
+                                    >
+                                        <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                {/* Delete Confirmation Dialog */}
+                <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                                <AlertTriangle className="h-5 w-5 text-destructive" />
+                                Confirm Delete
+                            </DialogTitle>
+                            <DialogDescription>
+                                Are you sure you want to delete "{deleteProduct?.name}"? This action cannot be undone.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="flex justify-end gap-2">
+                            <Button variant="outline" onClick={() => setOpenDeleteDialog(false)}>
+                                Cancel
+                            </Button>
+                            <Button variant="destructive" onClick={confirmDelete} disabled={isDeleting}>
+                                {isDeleting ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        Deleting...
+                                    </>
+                                ) : (
+                                    "Delete Product"
+                                )}
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            </div>
         </div>
     )
 }
@@ -706,7 +779,7 @@ function ProductAddForm() {
                                             className="w-[180px]"
                                         >
                                             <option value="" disabled>Select a tag</option>
-                                            {TAG_OPTIONS.filter(option => !field.value.includes(option)).map(option => (
+                                            {tagOptions.filter(option => !field.value.includes(option)).map(option => (
                                                 <option key={option} value={option}>{option}</option>
                                             ))}
                                         </Select>

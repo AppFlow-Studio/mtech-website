@@ -9,7 +9,8 @@ import {
     DollarSign,
     Settings,
     LogOut,
-    Tag
+    Tag,
+    MessageSquare
 } from 'lucide-react'
 
 import AgentManagement from './components/AgentManagement'
@@ -18,8 +19,9 @@ import PricingTiers from './components/PricingTiers'
 import DashboardOverview from './components/DashboardOverview'
 import TagManagement from './components/TagManagement'
 import { TagProvider } from './components/TagContext'
+import ContactInquiries from './components/ContactInquiries'
 
-type TabType = 'agents' | 'products' | 'pricing' | 'tags' | null
+type TabType = 'agents' | 'products' | 'pricing' | 'tags' | 'contact-inquiries' | null
 
 export default function AdminDashboard() {
     const { profile } = useProfile()
@@ -108,6 +110,16 @@ export default function AdminDashboard() {
                             <Tag className="h-4 w-4" />
                             Tag Management
                         </button>
+                        <button
+                            onClick={() => setActiveTab('contact-inquiries')}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'contact-inquiries'
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
+                                }`}
+                        >
+                            <MessageSquare className="h-4 w-4" />
+                            Contact Inquiries
+                        </button>
                     </div>
 
                     {/* Content Sections */}
@@ -115,7 +127,7 @@ export default function AdminDashboard() {
                     {activeTab === 'products' && <ProductManagement searchTerm={searchTerm} setSearchTerm={setSearchTerm} />}
                     {activeTab === 'pricing' && <PricingTiers />}
                     {activeTab === 'tags' && <TagManagement />}
-
+                    {activeTab === 'contact-inquiries' && <ContactInquiries />}
                     {/* Dashboard Overview - Show when no specific tab is selected */}
                     {!activeTab && <DashboardOverview />}
                 </div>
