@@ -72,21 +72,13 @@ const CategoryPillsScroller = () => {
   const expandedDuration = 5000;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [maxPills, setMaxPills] = useState(6);
-  const [animationPhase, setAnimationPhase] = useState("expanded");
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Variants for the container that holds the pill and the card
   const containerVariants: Variants = {
     collapsed: {
       width: "auto",
-      transition: { duration: 0.3 },
-    },
-    "pill-visible": {
-      width: "auto",
-      transition: { duration: 0.3 },
-    },
-    expanding: {
-      width: window.innerWidth < 768 ? "12rem" : "15rem",
       transition: { duration: 0.4, ease: "easeInOut" },
     },
     expanded: {
@@ -100,12 +92,12 @@ const CategoryPillsScroller = () => {
     hidden: {
       opacity: 0,
       scaleY: 0,
-      transition: { duration: 0.3, ease: "easeIn" },
+      transition: { duration: 0.4, ease: "easeInOut" },
     },
     visible: {
       opacity: 1,
       scaleY: 1,
-      transition: { delay: 0.2, duration: 0.3, ease: "easeOut" },
+      transition: { duration: 0.4, ease: "easeInOut" },
     },
   };
 
@@ -125,29 +117,21 @@ const CategoryPillsScroller = () => {
   const startAnimationSequence = (newIndex: number) => {
     if (timerRef.current) clearInterval(timerRef.current);
 
-    // Phase 1: Shrink current card
-    setAnimationPhase("shrinking");
+    // Start transition
+    setIsTransitioning(true);
 
+    // Change index immediately so both animations happen simultaneously
+    setCurrentIndex(newIndex);
+
+    // End transition after animation completes
     setTimeout(() => {
-      // Phase 2: Show pill for 0.2 seconds
-      setAnimationPhase("pill-visible");
+      setIsTransitioning(false);
 
-      setTimeout(() => {
-        // Phase 3: Change index and start expanding
-        setCurrentIndex(newIndex);
-        setAnimationPhase("expanding");
-
-        setTimeout(() => {
-          // Phase 4: Fully expanded
-          setAnimationPhase("expanded");
-
-          // Start the timer for next transition
-          timerRef.current = setTimeout(() => {
-            startAnimationSequence((newIndex + 1) % maxPills);
-          }, expandedDuration);
-        }, 600); // Time for expansion animation
-      }, 200); // 0.2 seconds for pill visibility
-    }, 300); // Time for shrinking animation
+      // Start the timer for next transition
+      timerRef.current = setTimeout(() => {
+        startAnimationSequence((newIndex + 1) % maxPills);
+      }, expandedDuration);
+    }, 400); // Duration matches the animation duration
   };
 
   // --- Timers and Effects ---
@@ -205,25 +189,14 @@ const CategoryPillsScroller = () => {
       <div className="flex items-end justify-center gap-6 px-4">
         {visibleCategories.map((category, index) => {
           const isActive = index === currentIndex;
-          const shouldShowCard =
-            isActive &&
-            (animationPhase === "expanding" || animationPhase === "expanded");
-          const shouldShowPill = !isActive || animationPhase === "pill-visible";
+          const shouldShowCard = isActive && !isTransitioning;
+          const shouldShowPill = !isActive || isTransitioning;
 
           return (
             <motion.div
               key={`${category.name}-${index}`}
               variants={containerVariants}
-              animate={
-                isActive
-                  ? animationPhase === "pill-visible"
-                    ? "pill-visible"
-                    : animationPhase === "expanding" ||
-                      animationPhase === "expanded"
-                    ? "expanded"
-                    : "collapsed"
-                  : "collapsed"
-              }
+              animate={isActive ? "expanded" : "collapsed"}
               className="relative flex justify-center flex-shrink-0"
               style={{ transformOrigin: "bottom" }}
             >
@@ -285,7 +258,7 @@ const CategoryPillsScroller = () => {
                       </div>
 
                       {/* Progress Bar */}
-                      {animationPhase === "expanded" && (
+                      {!isTransitioning && (
                         <div className="absolute bottom-0 left-0 right-0 h-2 z-50 bg-white/20 rounded-b-xl sm:rounded-b-2xl overflow-hidden">
                           <motion.div
                             key={`progress-${currentIndex}`}
