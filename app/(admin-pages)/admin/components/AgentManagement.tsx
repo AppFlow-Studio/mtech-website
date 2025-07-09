@@ -5,24 +5,27 @@ import { useState } from "react"
 import { toast } from "sonner"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Plus, Edit, Trash2 } from "lucide-react"
+import { Plus, Edit, Trash2, AlertTriangle, Loader2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
 
 export default function AgentManagement() {
-    const { data: agents } = useAgents()
+    const { data: agents, refetch } = useAgents()
     const { data: tiers } = useTiers()
     const { mutate: addAgent } = useAddAgent()
     const { mutate: deleteAgent } = useDeleteAgent()
     const { mutate: updateAgent } = useUpdateAgent()
     const [open, setOpen] = useState(false)
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+    const [agentToDelete, setAgentToDelete] = useState<any>(null)
+    const [isDeleting, setIsDeleting] = useState(false)
     const [formData, setFormData] = useState({
         first_name: '',
         last_name: '',
         email: '',
         password: '',
-        tier: ''
+        tier: undefined
     })
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -35,9 +38,10 @@ export default function AgentManagement() {
                     last_name: '',
                     email: '',
                     password: '',
-                    tier: ''
+                    tier: undefined
                 })
                 setOpen(false)
+                refetch()
             },
             onError: () => {
                 toast.error('Failed to add agent')
@@ -45,6 +49,30 @@ export default function AgentManagement() {
         })
     }
 
+    const handleDeleteClick = (agent: any) => {
+        setAgentToDelete(agent)
+        setDeleteConfirmOpen(true)
+    }
+
+    const handleConfirmDelete = async () => {
+        if (!agentToDelete) return
+
+        setIsDeleting(true)
+        deleteAgent(agentToDelete.id, {
+            onSuccess: () => {
+                toast.success('Agent deleted successfully')
+                setDeleteConfirmOpen(false)
+                setAgentToDelete(null)
+                setIsDeleting(false)
+                refetch()
+            },
+            onError: () => {
+                toast.error('Failed to delete agent')
+                setIsDeleting(false)
+            }
+        })
+    }
+    
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -92,7 +120,7 @@ export default function AgentManagement() {
                                     <td className="p-4 text-sm text-foreground">{agent.email}</td>
                                     <td className="p-4 text-sm text-foreground">
                                         <Badge variant="secondary">
-                                            {agent.tier ? agent.tier : 'unassigned'}
+                                            {agent.agent_tiers ? agent.agent_tiers.name : 'unassigned'}
                                         </Badge>
                                     </td>
                                     <td className="p-4 text-sm text-foreground">
@@ -110,17 +138,15 @@ export default function AgentManagement() {
                                                             Update agent information and tier assignment.
                                                         </DialogDescription>
                                                     </DialogHeader>
-                                                    <AgentEditForm agent={agent} tiers={tiers} />
+                                                    <AgentEditForm agent={agent} tiers={tiers} refetch={refetch} />
                                                 </DialogContent>
                                             </Dialog>
-                                            <Button size="sm" variant="outline" className="text-destructive hover:text-destructive" onClick={() => deleteAgent(agent.id, {
-                                                onSuccess: () => {
-                                                    toast.success('Agent deleted successfully')
-                                                },
-                                                onError: () => {
-                                                    toast.error('Failed to delete agent')
-                                                }
-                                            })}>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                onClick={() => handleDeleteClick(agent)}
+                                            >
                                                 <Trash2 className="h-3 w-3" />
                                             </Button>
                                         </div>
@@ -131,6 +157,63 @@ export default function AgentManagement() {
                     </table>
                 </div>
             </div>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
+                                <AlertTriangle className="h-5 w-5 text-destructive" />
+                            </div>
+                            <div>
+                                <DialogTitle className="text-lg font-semibold">Delete Agent</DialogTitle>
+                                <DialogDescription className="text-muted-foreground">
+                                    This action cannot be undone.
+                                </DialogDescription>
+                            </div>
+                        </div>
+                    </DialogHeader>
+
+                    <div className="py-4">
+                        <p className="text-sm text-foreground">
+                            Are you sure you want to delete <span className="font-semibold">{agentToDelete?.first_name} {agentToDelete?.last_name}</span>?
+                            This will permanently remove their account and all associated data.
+                        </p>
+                    </div>
+
+                    <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setDeleteConfirmOpen(false)
+                                setAgentToDelete(null)
+                            }}
+                            disabled={isDeleting}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleConfirmDelete}
+                            disabled={isDeleting}
+                            className="gap-2"
+                        >
+                            {isDeleting ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                <>
+                                    <Trash2 className="h-4 w-4" />
+                                    Delete Agent
+                                </>
+                            )}
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }
@@ -189,7 +272,7 @@ function AgentForm({ onSubmit, formData, setFormData, tiers }: {
                     value={formData.tier}
                     onChange={(e) => setFormData({ ...formData, tier: e.target.value })}
                 >
-                    <option value={''}>Unassigned</option>
+                    <option value={undefined}>Unassigned</option>
                     {tiers?.map((tier: any) => (
                         <option key={tier.id} value={tier.id}>{tier.name}</option>
                     ))}
@@ -203,18 +286,18 @@ function AgentForm({ onSubmit, formData, setFormData, tiers }: {
 }
 
 // Agent Edit Form Component
-function AgentEditForm({ agent, tiers }: { agent: any, tiers: any }) {
+function AgentEditForm({ agent, tiers, refetch }: { agent: any, tiers: any, refetch: () => Promise<void> }) {
     const { mutate: updateAgent } = useUpdateAgent()
     const [formData, setFormData] = useState({
         id: agent.id,
         first_name: agent.first_name || '',
         last_name: agent.last_name || '',
         email: agent.email || '',
-        tier: agent.tier || '',
+        tier: agent.tier || undefined,
         password: '' || undefined, // New field for password
     })
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         // Only include password if it's not empty
         const updateData = { ...formData }
@@ -222,16 +305,15 @@ function AgentEditForm({ agent, tiers }: { agent: any, tiers: any }) {
             delete updateData.password
         }
         updateAgent(updateData, {
-            onSuccess: () => {
+            onSuccess: async () => {
                 toast.success('Agent updated successfully')
+                await refetch()
             },
             onError: () => {
                 toast.error('Failed to update agent')
             }
         })
-        // TODO: Update agent in database
     }
-
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

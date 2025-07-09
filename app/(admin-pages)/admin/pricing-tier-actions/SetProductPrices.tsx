@@ -10,6 +10,7 @@ import { useTierAndProducts } from "../actions/TeirsStores"
 import { Product } from "@/lib/types"
 import { updateTierPrices } from "./update-tier-prices"
 import { toast } from "sonner"
+import { PostgrestError } from "@supabase/supabase-js"
 
 export type Tier = {
     id: string;
@@ -35,7 +36,7 @@ export default function SetProductPricesPopup({ tier }: { tier: Tier }) {
     //console.log(productPrices)
     //console.log('productPrices', tierAndProducts)
     useEffect(() => {
-        if (tierAndProducts) {
+        if (tierAndProducts && productPrices.length === 0) {
             setProductPrices(tierAndProducts?.agent_product_prices.map((product) => ({ ...product.products, price: product.price, agent_product_id: product.id })))
         }
     }, [tierAndProducts, isLoading])
@@ -44,7 +45,7 @@ export default function SetProductPricesPopup({ tier }: { tier: Tier }) {
         setIsSaving(true)
         try {
             const result = await updateTierPrices(tier.id, productPrices.map((product) => ({ id: product.agent_product_id, price: product.price })))
-            if (result) {
+            if (typeof result !== typeof PostgrestError) {
                 toast.success('Prices updated successfully')
                 setOpen(false) // Close dialog on success
             } else {
@@ -101,7 +102,7 @@ export default function SetProductPricesPopup({ tier }: { tier: Tier }) {
                     Manage Product Prices
                 </Button>
             </DialogTrigger>
-            <DialogContent className="w-full max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogContent className="w-full max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>
                         Product Pricing for {tier.name}
@@ -112,7 +113,7 @@ export default function SetProductPricesPopup({ tier }: { tier: Tier }) {
                 </DialogHeader>
 
                 {/* Search and Bulk Actions */}
-                <div className="flex gap-4 mb-6">
+                <div className="flex gap-4 mb-6 w-full">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input

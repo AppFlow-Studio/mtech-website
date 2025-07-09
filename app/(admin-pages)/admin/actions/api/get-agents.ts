@@ -1,14 +1,15 @@
+'use server'
+import { createClient } from "@/utils/supabase/server"
 export async function getAgents() {
-    const response = await fetch('/admin/actions/api/agents', {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
+    const supabase = await createClient()
+    const { data, error } = await supabase.from('profiles').select(`
+        *,
+        agent_tiers( * )
+        `)
 
-    if (!response.ok) {
+    if (error) {
         throw new Error('Failed to fetch agents')
     }
 
-    return response.json()
+    return data
 }

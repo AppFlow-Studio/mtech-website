@@ -12,7 +12,7 @@ export async function updateAgent(body : {
 }) {
 
        const supabase = await createClient()
-       const { error } = await supabase.from('profiles').update({
+       const { data,error } = await supabase.from('profiles').update({
         first_name: body.first_name,
         last_name: body.last_name,
         email: body.email,
@@ -21,5 +21,5 @@ export async function updateAgent(body : {
        if (error) {
         throw new Error(error.message)
        }
-       return 
+       return data
 }
