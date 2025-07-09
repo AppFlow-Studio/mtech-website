@@ -24,6 +24,7 @@ import {
 import { deleteProduct } from "../product-actions/delete-product"
 import { toast } from "sonner"
 import { updateProduct } from "../product-actions/update-product"
+import { useTags } from "./TagContext"
 
 export default function ProductManagement({ searchTerm, setSearchTerm }: {
     searchTerm: string,
@@ -285,6 +286,7 @@ type EditProductFormType = z.infer<typeof editProductSchema>
 
 // Replace the entire ProductEditForm function
 function ProductEditForm({ product }: { product: any }) {
+    const tagOptions = useTagOptions()
     const form = useForm<EditProductFormType>({
         resolver: zodResolver(editProductSchema),
         defaultValues: {
@@ -294,7 +296,7 @@ function ProductEditForm({ product }: { product: any }) {
             inStock: product.inStock || false,
             tags: product.tags || [],
             default_price: product.default_price || 0,
-            imageSrc: product.imageSrc || File,
+            imageSrc: product.imageSrc || '',
         },
         mode: "onTouched"
     })
@@ -318,9 +320,9 @@ function ProductEditForm({ product }: { product: any }) {
         }
         else {
             toast.success("Product updated successfully")
-        toast.success("Product updated successfully")
-        await refetch()
-    }
+            toast.success("Product updated successfully")
+            await refetch()
+        }
     }
     return (
         <Form {...form}>
@@ -399,7 +401,7 @@ function ProductEditForm({ product }: { product: any }) {
                             <FormItem>
                                 <FormLabel>Default Price ($)</FormLabel>
                                 <FormControl>
-                                    <Input type="number" min="0" step="0.01" {...field} value={field.value}  placeholder="0.00" />
+                                    <Input type="number" min="0" step="0.01" {...field} value={field.value} placeholder="0.00" />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -450,7 +452,7 @@ function ProductEditForm({ product }: { product: any }) {
                                             className="w-[180px]"
                                         >
                                             <option value="" disabled>Select a tag</option>
-                                            {TAG_OPTIONS.filter(option => !field.value.includes(option)).map(option => (
+                                            {tagOptions.filter(option => !field.value.includes(option)).map(option => (
                                                 <option key={option} value={option}>{option}</option>
                                             ))}
                                         </Select>
@@ -544,6 +546,7 @@ const productSchema = z.object({
 type ProductFormType = z.infer<typeof productSchema>
 
 function ProductAddForm() {
+    const tagOptions = useTagOptions()
     const form = useForm<ProductFormType>({
         resolver: zodResolver(productSchema),
         defaultValues: {
@@ -784,15 +787,8 @@ function ProductAddForm() {
     )
 }
 
-// Tag options
-const TAG_OPTIONS = [
-    "atm parts",
-    "pos parts",
-    "network devices",
-    "atm signage",
-    "credit card terminals",
-    "pos system",
-    "pos accessories",
-    "atm machines",
-    "scales",
-]
+// Tag options - now using shared context
+function useTagOptions() {
+    const { tags } = useTags()
+    return tags
+}
