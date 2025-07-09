@@ -65,7 +65,7 @@ const Hero = () => {
         </div>
 
         {/* Bottom Section */}
-        <div className="pb-4 sm:pb-6 lg:pb-8 px-2 sm:px-4 lg:px-6 h-[250px] md:h-[370px] lg:h-[370px]">
+        <div className="pb-4 sm:pb-6 lg:pb-8 px-2 sm:px-4 lg:px-6 h-[290px] md:h-[370px] lg:h-[370px]">
           <CategoryPillsScroller />
         </div>
       </div>

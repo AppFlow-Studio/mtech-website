@@ -1,11 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import {
-  motion,
-  useAnimationControls,
-  AnimatePresence,
-  Variants,
-} from "framer-motion";
-import Link from "next/link";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 
 const CategoryPillsScroller = () => {
   const categories = [
@@ -29,7 +23,7 @@ const CategoryPillsScroller = () => {
       name: "ATM Parts",
       image: "/atm-parts.png",
       title: "ATM Parts & Components",
-      link: `/products/area-of-speciality?data=${encodeURIComponent(
+      link: `/products/area-of-specialite?data=${encodeURIComponent(
         JSON.stringify({ tags: ["atm parts"] })
       )}`,
     },
@@ -75,22 +69,45 @@ const CategoryPillsScroller = () => {
     },
   ];
 
-  const slideDuration = 5000;
-  const animationDuration = 300;
   const expandedDuration = 5000;
-  const totalItems = categories.length;
-
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const controls = useAnimationControls();
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const pillsRef = useRef<(HTMLDivElement | null)[]>([]);
-  const [offsetValue, setOffsetValue] = useState(40);
+  const [maxPills, setMaxPills] = useState(6);
+  const [animationPhase, setAnimationPhase] = useState("expanded");
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const expandedCardWidth = 108;
+  // Variants for the container that holds the pill and the card
+  const containerVariants: Variants = {
+    collapsed: {
+      width: "auto",
+      transition: { duration: 0.3 },
+    },
+    "pill-visible": {
+      width: "auto",
+      transition: { duration: 0.3 },
+    },
+    expanding: {
+      width: window.innerWidth < 768 ? "12rem" : "15rem",
+      transition: { duration: 0.4, ease: "easeInOut" },
+    },
+    expanded: {
+      width: window.innerWidth < 768 ? "12rem" : "15rem",
+      transition: { duration: 0.4, ease: "easeInOut" },
+    },
+  };
 
-  const tripleCategories = [...categories, ...categories, ...categories];
+  // Variants for the card itself
+  const cardVariants: Variants = {
+    hidden: {
+      opacity: 0,
+      scaleY: 0,
+      transition: { duration: 0.3, ease: "easeIn" },
+    },
+    visible: {
+      opacity: 1,
+      scaleY: 1,
+      transition: { delay: 0.2, duration: 0.3, ease: "easeOut" },
+    },
+  };
 
   // Progress bar animation variants
   const progressBarVariants: Variants = {
@@ -102,225 +119,190 @@ const CategoryPillsScroller = () => {
         ease: "linear",
       },
     },
-    paused: { width: "0%" },
+  };
+
+  // --- Animation sequence handler ---
+  const startAnimationSequence = (newIndex: number) => {
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    // Phase 1: Shrink current card
+    setAnimationPhase("shrinking");
+
+    setTimeout(() => {
+      // Phase 2: Show pill for 0.2 seconds
+      setAnimationPhase("pill-visible");
+
+      setTimeout(() => {
+        // Phase 3: Change index and start expanding
+        setCurrentIndex(newIndex);
+        setAnimationPhase("expanding");
+
+        setTimeout(() => {
+          // Phase 4: Fully expanded
+          setAnimationPhase("expanded");
+
+          // Start the timer for next transition
+          timerRef.current = setTimeout(() => {
+            startAnimationSequence((newIndex + 1) % maxPills);
+          }, expandedDuration);
+        }, 600); // Time for expansion animation
+      }, 200); // 0.2 seconds for pill visibility
+    }, 300); // Time for shrinking animation
+  };
+
+  // --- Timers and Effects ---
+
+  const startTimer = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      startAnimationSequence((currentIndex + 1) % maxPills);
+    }, expandedDuration);
+  };
+
+  const resetTimer = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    startTimer();
   };
 
   useEffect(() => {
-    // Update offset value based on screen size
-    const updateOffset = () => {
-      if (window.innerWidth < 640) {
-        // Mobile
-        setOffsetValue(40);
-      } else if (window.innerWidth < 768) {
-        // Small tablet
-        setOffsetValue(50);
-      } else {
-        // Desktop
-        setOffsetValue(110);
-      }
+    const updateMaxPills = () => {
+      let newMaxPills = 6;
+      if (window.innerWidth < 400) newMaxPills = 2;
+      else if (window.innerWidth < 700) newMaxPills = 3;
+      else if (window.innerWidth < 850) newMaxPills = 4;
+      else if (window.innerWidth < 1100) newMaxPills = 5;
+
+      setMaxPills(newMaxPills);
+      setCurrentIndex((prev) => (prev >= newMaxPills ? 0 : prev));
     };
 
-    updateOffset();
-    window.addEventListener("resize", updateOffset);
-    return () => window.removeEventListener("resize", updateOffset);
+    updateMaxPills();
+    window.addEventListener("resize", updateMaxPills);
+    return () => window.removeEventListener("resize", updateMaxPills);
   }, []);
 
   useEffect(() => {
-    if (totalItems <= 1 || isTransitioning) return;
+    startTimer();
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [maxPills]);
 
-    const timer = setInterval(() => {
-      if (isExpanded) {
-        // Start collapsing and transitioning simultaneously
-        setIsTransitioning(true);
-        setIsExpanded(false);
-        setCurrentIndex((prev) => prev + 1);
-      } else {
-        setCurrentIndex((prev) => prev + 1);
-      }
-    }, slideDuration);
-
-    return () => clearInterval(timer);
-  }, [totalItems, isExpanded, slideDuration, isTransitioning]);
-
-  useEffect(() => {
-    if (totalItems <= 1 || !containerRef.current) return;
-
-    const targetPill = pillsRef.current[currentIndex];
-    if (!targetPill) return;
-
-    const targetPosition = -targetPill.offsetLeft + offsetValue;
-
-    controls
-      .start({
-        x: targetPosition,
-        transition: { ease: "easeInOut", duration: animationDuration / 1000 },
-      })
-      .then(() => {
-        // Reset transition state and expand the new card
-        setIsTransitioning(false);
-        setIsExpanded(true);
-
-        // Reset position after first round instead of waiting for third round
-        if (currentIndex >= totalItems) {
-          const newIndex = currentIndex % totalItems;
-          const newTargetPill = pillsRef.current[newIndex];
-          if (newTargetPill) {
-            const newXPosition = -newTargetPill.offsetLeft + offsetValue;
-            controls.set({ x: newXPosition });
-            setCurrentIndex(newIndex);
-          }
-        }
-      });
-  }, [currentIndex, controls, totalItems, animationDuration, offsetValue]);
+  const visibleCategories = categories.slice(0, maxPills);
 
   const handleShopNow = () => {
-    const currentCategory = categories[currentIndex % totalItems];
+    const currentCategory = visibleCategories[currentIndex];
     window.location.href = currentCategory.link;
-  };
-
-  const getPillTransform = (index: number) => {
-    if (isExpanded && index > currentIndex) {
-      return window.innerWidth < 640 ? 60 : expandedCardWidth;
-    }
-    return 0;
   };
 
   const handlePillClick = (index: number) => {
     if (index === currentIndex) return;
-
-    setIsExpanded(false);
-    setIsTransitioning(true);
-
-    setTimeout(() => {
-      setCurrentIndex(index);
-    }, 100);
+    startAnimationSequence(index);
   };
 
   return (
-    <div
-      className="w-full mx-auto h-[220px] md:h-[350px] relative overflow-hidden"
-      ref={containerRef}
-    >
-      <div className="absolute bottom-0 left-0 right-0 py-4">
-        <motion.div
-          className="flex items-end pl-4"
-          animate={controls}
-          initial={{ x: 0 }}
-        >
-          {tripleCategories.map((category, index) => {
-            const isActive = index === currentIndex;
-            const actualIndex = index % totalItems;
-            const currentActualIndex = currentIndex % totalItems;
+    <div className="w-full mx-auto h-[280px] md:h-[350px] relative overflow-hidden flex items-end justify-center">
+      <div className="flex items-end justify-center gap-6 px-4">
+        {visibleCategories.map((category, index) => {
+          const isActive = index === currentIndex;
+          const shouldShowCard =
+            isActive &&
+            (animationPhase === "expanding" || animationPhase === "expanded");
+          const shouldShowPill = !isActive || animationPhase === "pill-visible";
 
-            // Hide pills that are too far behind to prevent gaps
-            const isFirstInSequenceActive = currentActualIndex === 0;
-            const isPillLastInSequence = actualIndex === totalItems - 1;
-            const hideBecauseOfSeam =
-              isFirstInSequenceActive &&
-              isPillLastInSequence &&
-              index < currentIndex;
-
-            const isHidden =
-              (isExpanded && isActive) ||
-              index === currentIndex - 1 ||
-              index === currentIndex - 2 ||
-              hideBecauseOfSeam;
-
-            return (
+          return (
+            <motion.div
+              key={`${category.name}-${index}`}
+              variants={containerVariants}
+              animate={
+                isActive
+                  ? animationPhase === "pill-visible"
+                    ? "pill-visible"
+                    : animationPhase === "expanding" ||
+                      animationPhase === "expanded"
+                    ? "expanded"
+                    : "collapsed"
+                  : "collapsed"
+              }
+              className="relative flex justify-center flex-shrink-0"
+              style={{ transformOrigin: "bottom" }}
+            >
+              {/* Pill */}
               <motion.div
-                key={`${category.name}-${index}`}
-                ref={(el) => {
-                  pillsRef.current[index] = el;
-                }}
-                className="flex-shrink-0 px-1 relative"
-                animate={{ x: getPillTransform(index) }}
-                transition={{ duration: 0.2, ease: "easeInOut" }}
+                onClick={() => handlePillClick(index)}
+                animate={{ opacity: shouldShowPill ? 1 : 0 }}
+                transition={{ duration: 0.2 }}
+                className={`
+                  bg-[#8B848C] backdrop-blur-sm text-[#F0F3FD]
+                  text-[10px] xs:text-xs sm:text-sm px-2 xs:px-3 sm:px-4
+                  py-1 xs:py-1.5 sm:py-2 rounded-full
+                  font-medium border border-white/30 hover:bg-white/30
+                  transition-colors duration-300 whitespace-nowrap m-1
+                  cursor-pointer
+                  ${!shouldShowPill ? "pointer-events-none" : ""}
+                `}
               >
-                <motion.div
-                  animate={{ opacity: isHidden ? 0 : 1 }}
-                  transition={{ duration: 0.1 }}
-                  className="flex-shrink-0"
-                >
-                  <Link href={category.link} passHref>
+                {category.name}
+              </motion.div>
+
+              {/* Card */}
+              <AnimatePresence>
+                {shouldShowCard && (
+                  <motion.div
+                    key={`card-${currentIndex}`}
+                    variants={cardVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="hidden"
+                    className="absolute bottom-0 left-0 right-0 z-10"
+                    style={{ transformOrigin: "bottom" }}
+                  >
                     <div
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handlePillClick(index);
-                      }}
-                      className="
-                        bg-[#8B848C] backdrop-blur-sm text-[#F0F3FD]
-                        text-[10px] xs:text-xs sm:text-sm px-2 xs:px-3 sm:px-4 lg:px-6
-                        py-1 xs:py-1.5 sm:py-2 lg:py-3 rounded-full
-                        font-medium border border-white/30 hover:bg-white/30
-                        transition-all duration-200 whitespace-nowrap m-1
-                        cursor-pointer
-                      "
+                      className="bg-[#FFFFFF80] backdrop-blur-md rounded-xl sm:rounded-2xl 
+                        p-3 sm:p-4 border border-white/20 
+                        w-full flex-shrink-0 relative overflow-hidden"
                     >
-                      {category.name}
-                    </div>
-                  </Link>
-                </motion.div>
-
-                <AnimatePresence>
-                  {isExpanded && isActive && !isTransitioning && (
-                    <motion.div
-                      key={`card-${index}`}
-                      className="absolute bottom-0 left-1/2 -translate-x-1/2 z-10"
-                      style={{ transformOrigin: "bottom center" }}
-                      initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.8, y: 20 }}
-                      transition={{ duration: 0.2, ease: "easeInOut" }}
-                    >
-                      <div
-                        className="bg-[#FFFFFF80] backdrop-blur-md rounded-xl sm:rounded-2xl 
-                          p-3 sm:p-4 lg:p-6 border border-white/20 
-                          w-36 xs:w-40 sm:w-48 md:w-60 lg:w-80 flex-shrink-0 relative overflow-hidden"
-                      >
-                        <h3 className="text-white text-sm sm:text-base lg:text-lg xl:text-xl font-semibold mb-2 sm:mb-3 lg:mb-4 text-center sm:text-left">
-                          {category.title}
-                        </h3>
-                        <div className="rounded-lg bg-[#B4ADB8] p-2 sm:p-3 lg:p-4 flex flex-col items-center">
-                          <div className="mb-2 sm:mb-3 lg:mb-4">
-                            <img
-                              src={category.image}
-                              alt={category.title}
-                              className="w-full h-auto rounded-md sm:rounded-lg object-contain max-h-16 xs:max-h-20 sm:max-h-24 lg:max-h-32"
-                            />
-                          </div>
-                          <button
-                            onClick={handleShopNow}
-                            className="w-full bg-gradient-to-r from-[#662CB2] to-[#2C134C] text-white 
-                            text-xs sm:text-sm lg:text-base py-2 sm:py-2.5 lg:py-3 px-3 sm:px-4 rounded-full 
-                            font-semibold hover:from-purple-700 hover:to-blue-700 
-                            transform hover:scale-105 transition-all duration-200 lg:shadow-md"
-                          >
-                            Shop Now
-                          </button>
+                      <h3 className="text-white text-sm sm:text-base xl:text-xl font-semibold mb-2 sm:mb-3 text-center sm:text-left">
+                        {category.title}
+                      </h3>
+                      <div className="rounded-lg bg-[#B4ADB8] p-2 sm:p-3 flex flex-col items-center">
+                        <div className="mb-2 sm:mb-3">
+                          <img
+                            src={category.image}
+                            alt={category.title}
+                            className="w-full h-auto rounded-md sm:rounded-lg object-contain max-h-16 xs:max-h-20 sm:max-h-24"
+                          />
                         </div>
+                        <button
+                          onClick={handleShopNow}
+                          className="w-full bg-gradient-to-r from-[#662CB2] to-[#2C134C] text-white 
+                          text-xs sm:text-sm py-2 sm:py-2.5 px-3 sm:px-4 rounded-full 
+                          font-semibold hover:from-purple-700 hover:to-blue-700 
+                          transform hover:scale-105 transition-all duration-200 lg:shadow-md"
+                        >
+                          Shop Now
+                        </button>
+                      </div>
 
-                        {/* Progress Bar */}
+                      {/* Progress Bar */}
+                      {animationPhase === "expanded" && (
                         <div className="absolute bottom-0 left-0 right-0 h-2 z-50 bg-white/20 rounded-b-xl sm:rounded-b-2xl overflow-hidden">
                           <motion.div
-                            key={`progress-${category.name}-${isExpanded}`}
+                            key={`progress-${currentIndex}`}
                             className="h-full bg-gradient-to-r from-[#662CB2] to-[#2C134C]"
                             variants={progressBarVariants}
                             initial="initial"
-                            animate={
-                              isExpanded && !isTransitioning
-                                ? "animate"
-                                : "paused"
-                            }
+                            animate="animate"
                           />
                         </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            );
-          })}
-        </motion.div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          );
+        })}
       </div>
     </div>
   );
