@@ -76,11 +76,11 @@ const CategoryPillsScroller = () => {
   ];
 
   const slideDuration = 5000;
-  const animationDuration = 800;
+  const animationDuration = 300;
   const expandedDuration = 5000;
   const totalItems = categories.length;
 
-  const [currentIndex, setCurrentIndex] = useState(totalItems);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const controls = useAnimationControls();
@@ -138,7 +138,7 @@ const CategoryPillsScroller = () => {
         setCurrentIndex((prev) => prev + 1);
       }
     }, slideDuration);
-    
+
     return () => clearInterval(timer);
   }, [totalItems, isExpanded, slideDuration, isTransitioning]);
 
@@ -160,8 +160,9 @@ const CategoryPillsScroller = () => {
         setIsTransitioning(false);
         setIsExpanded(true);
 
-        if (currentIndex >= totalItems * 2) {
-          const newIndex = totalItems + (currentIndex % totalItems);
+        // Reset position after first round instead of waiting for third round
+        if (currentIndex >= totalItems) {
+          const newIndex = currentIndex % totalItems;
           const newTargetPill = pillsRef.current[newIndex];
           if (newTargetPill) {
             const newXPosition = -newTargetPill.offsetLeft + offsetValue;
@@ -192,7 +193,7 @@ const CategoryPillsScroller = () => {
 
     setTimeout(() => {
       setCurrentIndex(index);
-    }, 150);
+    }, 100);
   };
 
   return (
@@ -208,10 +209,16 @@ const CategoryPillsScroller = () => {
         >
           {tripleCategories.map((category, index) => {
             const isActive = index === currentIndex;
-            const isFirstInSequenceActive = currentIndex % totalItems === 0;
-            const isPillLastInSequence = index % totalItems === totalItems - 1;
+            const actualIndex = index % totalItems;
+            const currentActualIndex = currentIndex % totalItems;
+
+            // Hide pills that are too far behind to prevent gaps
+            const isFirstInSequenceActive = currentActualIndex === 0;
+            const isPillLastInSequence = actualIndex === totalItems - 1;
             const hideBecauseOfSeam =
-              isFirstInSequenceActive && isPillLastInSequence;
+              isFirstInSequenceActive &&
+              isPillLastInSequence &&
+              index < currentIndex;
 
             const isHidden =
               (isExpanded && isActive) ||
@@ -227,11 +234,11 @@ const CategoryPillsScroller = () => {
                 }}
                 className="flex-shrink-0 px-1 relative"
                 animate={{ x: getPillTransform(index) }}
-                transition={{ duration: 0.4, ease: "easeInOut" }}
+                transition={{ duration: 0.2, ease: "easeInOut" }}
               >
                 <motion.div
                   animate={{ opacity: isHidden ? 0 : 1 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: 0.1 }}
                   className="flex-shrink-0"
                 >
                   <Link href={category.link} passHref>
@@ -263,7 +270,7 @@ const CategoryPillsScroller = () => {
                       initial={{ opacity: 0, scale: 0.8, y: 20 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.8, y: 20 }}
-                      transition={{ duration: 0.4, ease: "easeInOut" }}
+                      transition={{ duration: 0.2, ease: "easeInOut" }}
                     >
                       <div
                         className="bg-[#FFFFFF80] backdrop-blur-md rounded-xl sm:rounded-2xl 
@@ -299,7 +306,11 @@ const CategoryPillsScroller = () => {
                             className="h-full bg-gradient-to-r from-[#662CB2] to-[#2C134C]"
                             variants={progressBarVariants}
                             initial="initial"
-                            animate={isExpanded && !isTransitioning ? "animate" : "paused"}
+                            animate={
+                              isExpanded && !isTransitioning
+                                ? "animate"
+                                : "paused"
+                            }
                           />
                         </div>
                       </div>
