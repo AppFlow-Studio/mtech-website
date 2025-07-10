@@ -4,36 +4,40 @@ import Image from "next/image";
 
 const hyosungAtmProducts: Product[] = [
   {
-    name: "HYOSUNG HALO II",
+    name: "Hyosung HALO II ATM",
     description:
-      "The HALO II offers a unique, sleek design perfect for locations ranging from small c...",
+      "The Nautilus Hyosung HALO II ATM is a standout in the retail ATM market, featuring a unique, sleek design and a vibrant, user-friendly interface. Its signature iridescent, color-changing keypad bezel attracts customers, while its large, bright display makes transactions easy to follow. The HALO II is perfect for a wide range of locations, from small convenience stores to upscale hotels, offering robust security and high reliability. It combines stunning aesthetics with the dependable performance that Hyosung is known for, making it a popular choice worldwide.",
     imageSrc: "/products/product-75.png",
-    link: "#",
+    link: "hyosung-halo-ii",
     inStock: true,
+    tags: ["atm machines"],
   },
   {
-    name: "HYOSUNG 5200SE",
+    name: "Hyosung 5200SE ATM",
     description:
-      "The 5200 provides a choice of either an affordable Microsoft® Windows® CE 6.0 p...",
+      "The Hyosung 5200SE is a high-performance, bank-grade lobby ATM that offers advanced features and exceptional reliability. This machine provides a choice of either an affordable Microsoft Windows CE 6.0 platform or the more powerful Windows 7, allowing for greater flexibility and upgradeability. With its large 12.1-inch screen, high-capacity cash dispenser, and options for check and cash deposit, the 5200SE is designed to handle high transaction volumes in financial institutions and busy retail environments, providing a true self-service experience.",
     imageSrc: "/products/product-76.png",
-    link: "#",
+    link: "hyosung-5200se",
     inStock: true,
+    tags: ["atm machines"],
   },
   {
-    name: "HYOSUNG FORCE MX 2800SE",
+    name: "Hyosung FORCE MX 2800SE ATM",
     description:
-      "Hyosung is dedicated to making technology work for the humans who use...",
+      "The Hyosung FORCE MX 2800SE is a next-generation retail ATM dedicated to making technology work seamlessly for its users. It features a modern, user-friendly interface on a large 12.1-inch screen, along with integrated NFC/RFID and barcode scanning capabilities for enhanced transaction options. The FORCE is built with a strong focus on security and reliability, ensuring maximum uptime and customer trust. Its modular design allows for easy maintenance and future upgrades, making it a smart, forward-looking investment for any business.",
     imageSrc: "/products/product-77.png",
-    link: "#",
+    link: "hyosung-force-mx-2800se",
     inStock: true,
+    tags: ["atm machines"],
   },
   {
-    name: "HYOSUNG FORCE TTW 4K",
+    name: "Hyosung FORCE TTW 4K ATM",
     description:
-      "The 2800T brings you through-the-wall replacement and enhancement...",
+      "The Hyosung FORCE TTW (Through-The-Wall) brings next-generation technology to the outdoor ATM space. Designed as an ideal replacement for older through-the-wall models, this machine offers significant enhancements in performance, security, and user experience. It features a large, weatherized display, modern transaction options like contactless payments, and robust construction to withstand the elements. The FORCE TTW provides a reliable and attractive 24/7 cash access point for customers while offering easy rear-access serviceability for operators.",
     imageSrc: "/products/product-78.png",
-    link: "#",
+    link: "hyosung-force-ttw-4k",
     inStock: true,
+    tags: ["atm machines"],
   },
 ];
 

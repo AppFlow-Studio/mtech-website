@@ -1,9 +1,46 @@
+// components/Detail.tsx (or wherever this component is located)
 "use client";
+
 import { Product } from "@/lib/types";
 import { ChevronRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import React, { useRef, useState } from "react";
+
+// --- Reusable Form Input Component ---
+const FormInput = ({
+  id,
+  label,
+  type = "text",
+  value,
+  disabled = false,
+  required = true,
+}: {
+  id: string;
+  label: string;
+  type?: string;
+  value?: string;
+  disabled?: boolean;
+  required?: boolean;
+}) => (
+  <div>
+    <label
+      htmlFor={id}
+      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+    >
+      {label}
+    </label>
+    <input
+      type={type}
+      id={id}
+      name={id}
+      defaultValue={value}
+      disabled={disabled}
+      required={required}
+      className="block w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+    />
+  </div>
+);
 
 function Detail({ product }: { product: Product }) {
   const [isHovered, setIsHovered] = useState(false);
@@ -12,12 +49,22 @@ function Detail({ product }: { product: Product }) {
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!imageRef.current) return;
-
     const { left, top, width, height } =
       imageRef.current.getBoundingClientRect();
     const x = ((e.clientX - left) / width) * 100;
     const y = ((e.clientY - top) / height) * 100;
     setPosition({ x, y });
+  };
+
+  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    // In a real application, you would handle the form submission here,
+    // e.g., send the data to an API endpoint.
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData.entries());
+    console.log("Form submitted:", data);
+    alert("Thank you for your inquiry! We will get back to you shortly.");
+    e.currentTarget.reset();
   };
 
   return (
@@ -27,7 +74,7 @@ function Detail({ product }: { product: Product }) {
         <div className="relative">
           <div
             ref={imageRef}
-            className="bg-[#F0F3FD] dark:bg-[#2A2039] p-8 rounded-2xl cursor-zoom-in relative overflow-hidden"
+            className="bg-slate-100 dark:bg-slate-800 p-8 rounded-2xl cursor-zoom-in relative overflow-hidden"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             onMouseMove={handleMouseMove}
@@ -39,10 +86,9 @@ function Detail({ product }: { product: Product }) {
               src={product.imageSrc}
               className="w-full h-auto object-contain aspect-square"
             />
-
             {isHovered && (
               <div
-                className="absolute inset-0 pointer-events-none bg-[#F0F3FD] dark:bg-[#2A2039]"
+                className="absolute inset-0 pointer-events-none bg-slate-100 dark:bg-slate-800"
                 style={{
                   backgroundImage: `url(${product.imageSrc})`,
                   backgroundPosition: `${position.x}% ${position.y}%`,
@@ -54,8 +100,8 @@ function Detail({ product }: { product: Product }) {
           </div>
         </div>
 
-        {/* --- Column 2: Product Details --- */}
-        <div className=" lg:text-left">
+        {/* --- Column 2: Product Details & Contact Form --- */}
+        <div className="lg:text-left">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
             {product.name}
           </h1>
@@ -67,10 +113,10 @@ function Detail({ product }: { product: Product }) {
           <div className="mt-8">
             <Link href="tel:888-411-7063" className="mt-4">
               <button
-                className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 font-semibold text-sm text-white rounded-full transition-colors duration-300 cursor-pointer ${
+                className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 font-semibold text-sm text-white rounded-full transition-colors duration-300 cursor-pointer ${
                   product.inStock
                     ? "bg-gradient-to-b from-[#662CB2] to-[#2C134C] hover:from-[#7a3ac5] hover:to-[#3c1961]"
-                    : "bg-[#382F44]"
+                    : "bg-[#382F44] cursor-not-allowed"
                 }`}
               >
                 Call For Price
@@ -79,6 +125,49 @@ function Detail({ product }: { product: Product }) {
             </Link>
           </div>
         </div>
+      </div>
+      {/* --- CONTACT FORM --- */}
+      <div className="mt-10 mx-auto md:w-1/2 pt-10 border-t border-gray-200 dark:border-gray-700">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Request a Quote
+        </h2>
+        <form onSubmit={handleFormSubmit} className="mt-6 space-y-4">
+          <FormInput id="name" label="Name" />
+          <FormInput id="email" label="Email" type="email" />
+          <FormInput id="phone" label="Phone Number" type="tel" />
+          <FormInput
+            id="item"
+            label="Item Interested In"
+            value={product.name}
+            disabled={true}
+          />
+          <div>
+            <label
+              htmlFor="comments"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
+              Comments
+            </label>
+            <textarea
+              id="comments"
+              name="comments"
+              rows={4}
+              className="block w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+            ></textarea>
+          </div>
+          <div>
+            <button
+              type="submit"
+              className={` inline-flex items-center justify-center px-6 py-3 border border-transparent rounded-full shadow-sm text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 cursor-pointer ${
+                product.inStock
+                  ? "bg-gradient-to-b from-[#662CB2] to-[#2C134C] hover:from-[#7a3ac5] hover:to-[#3c1961]"
+                  : "bg-[#382F44] cursor-not-allowed"
+              }`}
+            >
+              Submit Inquiry
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
