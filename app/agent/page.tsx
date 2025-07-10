@@ -33,105 +33,21 @@ import {
     Minus,
     Trash2,
     CreditCard,
-    UserPlus
+    UserPlus,
+    LogOut,
+    Users
 } from "lucide-react"
 import { useProfile } from "@/lib/hooks/useProfile"
 import { useGetAgentById } from "../(admin-pages)/admin/actions/AgentStore"
 import AgentProductsTab from "../(admin-pages)/admin/components/AgentProductsTab"
-// Mock data for agent
-const mockAgent = {
-    id: "agent_1",
-    first_name: "Alex",
-    last_name: "Rodriguez",
-    email: "alex@mtech.com",
-    tier: {
-        name: "Premium",
-        commission_rate: 15,
-        description: "Premium tier with highest commission rates"
-    },
-    status: "active",
-    total_commission: 2847.50,
-    this_month_commission: 342.80,
-    assigned_inquiries: 12,
-    completed_inquiries: 8
-}
+import { useSignOut } from "@/lib/auth-utils"
+import { useAgentsInquiries } from "@/components/states/inquiries"
+import { useInquiryNotes, useAddInquiryNote } from "@/components/states/notes"
+import { agentUpdateInquiry } from "@/components/actions/agent-update inquirey"
+import { toast } from "sonner"
 
-// Mock assigned inquiries
-const mockAssignedInquiries = [
-    {
-        id: 1,
-        name: "John Smith",
-        email: "john.smith@email.com",
-        phone: "+1 (555) 123-4567",
-        itemInterested: "Clover POS System",
-        comments: "Looking for a complete POS solution for my coffee shop. Need something user-friendly with inventory management.",
-        status: "new",
-        createdAt: "2024-01-15T10:30:00Z",
-        priority: "high"
-    },
-    {
-        id: 2,
-        name: "Sarah Johnson",
-        email: "sarah.j@business.com",
-        phone: "+1 (555) 987-6543",
-        itemInterested: "ATM Machine",
-        comments: "Interested in ATM placement for my convenience store. Need information about installation and maintenance.",
-        status: "contacted",
-        createdAt: "2024-01-14T14:20:00Z",
-        priority: "medium"
-    },
-    {
-        id: 3,
-        name: "Mike Chen",
-        email: "mike.chen@restaurant.com",
-        phone: "+1 (555) 456-7890",
-        itemInterested: "Figure POS System",
-        comments: "Need a robust POS system for my restaurant. Looking for something that can handle high volume.",
-        status: "follow_up",
-        createdAt: "2024-01-13T09:15:00Z",
-        priority: "high"
-    }
-]
 
-// Mock tier-specific products
-const mockTierProducts = [
-    {
-        id: 1,
-        name: "Clover Flex",
-        description: "Portable card reader for mobile payments",
-        regularPrice: 299.99,
-        tierPrice: 254.99,
-        imageSrc: "/products/pos-clover.png",
-        category: "POS Systems"
-    },
-    {
-        id: 2,
-        name: "Figure POS Terminal",
-        description: "Advanced POS system with inventory management",
-        regularPrice: 599.99,
-        tierPrice: 509.99,
-        imageSrc: "/products/pos-figure.png",
-        category: "POS Systems"
-    },
-    {
-        id: 3,
-        name: "Genmega ATM",
-        description: "Full-service ATM machine with cash management",
-        regularPrice: 2499.99,
-        tierPrice: 2124.99,
-        imageSrc: "/products/atm-machines.png",
-        category: "ATM Machines"
-    },
-    {
-        id: 4,
-        name: "Wireless Payment Terminal",
-        description: "4G enabled wireless payment processing",
-        regularPrice: 399.99,
-        tierPrice: 339.99,
-        imageSrc: "/products/wireless.png",
-        category: "Wireless"
-    }
-]
+
 
 export default function AgentPage() {
     const { profile } = useProfile()
@@ -141,9 +57,9 @@ export default function AgentPage() {
     const [searchTerm, setSearchTerm] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
     const [priorityFilter, setPriorityFilter] = useState("all")
+    const signOut = useSignOut()
     const [editForm, setEditForm] = useState({
         status: '',
-        notes: '',
         priority: ''
     })
     const [isUpdating, setIsUpdating] = useState(false)
@@ -152,9 +68,13 @@ export default function AgentPage() {
     const [isCartOpen, setIsCartOpen] = useState(false)
     const [cartMode, setCartMode] = useState<'guest' | 'inquiry'>('guest')
     const [selectedInquiryForCart, setSelectedInquiryForCart] = useState<any>(null)
+    const [showNoteForm, setShowNoteForm] = useState(false)
+    const [newNote, setNewNote] = useState("")
+    const [isAddingNote, setIsAddingNote] = useState(false)
     const { data: agent, isLoading } = useGetAgentById(profile?.id || '')
-    console.log(agent)
-
+    const { data: inquiries, isLoading: inquiriesLoading, refetch } = useAgentsInquiries(profile?.id || '')
+    const { data: notes, isLoading: notesLoading } = useInquiryNotes(selectedInquiry?.id || '')
+    const addNoteMutation = useAddInquiryNote()
     // Don't render anything until we have a valid profile ID
     if (!profile?.id) {
         return (
@@ -234,13 +154,16 @@ export default function AgentPage() {
         )
     }
     const getStatusBadge = (status: string) => {
+        if (!status) return null
         const statusConfig = {
             new: { color: "bg-blue-100 text-blue-800", icon: AlertCircle },
-            contacted: { color: "bg-yellow-100 text-yellow-800", icon: UserCheck },
+            assigned: { color: "bg-purple-100 text-purple-800", icon: UserCheck },
+            contacted: { color: "bg-cyan-100 text-cyan-800", icon: CheckCircle },
             follow_up: { color: "bg-orange-100 text-orange-800", icon: Clock },
             completed: { color: "bg-green-100 text-green-800", icon: CheckCircle }
         }
         const config = statusConfig[status as keyof typeof statusConfig]
+        if (!config) return null
         const Icon = config.icon
         return (
             <Badge className={`${config.color} flex items-center gap-1`}>
@@ -264,7 +187,7 @@ export default function AgentPage() {
         )
     }
 
-    const formatDate = (dateString: string) => {
+    const formatDate = (dateString: Date) => {
         return new Date(dateString).toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
@@ -273,7 +196,7 @@ export default function AgentPage() {
         })
     }
 
-    const filteredInquiries = mockAssignedInquiries.filter(inquiry => {
+    const filteredInquiries = inquiries?.filter(inquiry => {
         const matchesSearch = inquiry.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             inquiry.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
             inquiry.itemInterested.toLowerCase().includes(searchTerm.toLowerCase())
@@ -286,7 +209,6 @@ export default function AgentPage() {
         setSelectedInquiry(inquiry)
         setEditForm({
             status: inquiry.status,
-            notes: inquiry.notes || '',
             priority: inquiry.priority
         })
         setOpenEditDialog(true)
@@ -294,24 +216,20 @@ export default function AgentPage() {
 
     const handleUpdateInquiry = async () => {
         setIsUpdating(true)
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000))
-
-        // Update the inquiry in the mock data
-        const updatedInquiries = mockAssignedInquiries.map(inquiry =>
-            inquiry.id === selectedInquiry.id
-                ? { ...inquiry, ...editForm }
-                : inquiry
-        )
-
+        const result = await agentUpdateInquiry(selectedInquiry.id, editForm)
+        if (!result) {
+            toast.success('Inquiry updated successfully')
+            refetch()
+        } else {
+            toast.error('Failed to update inquiry')
+        }
         setIsUpdating(false)
         setOpenEditDialog(false)
-        // In real app, you would call an API here
-        console.log('Updated inquiry:', { ...selectedInquiry, ...editForm })
     }
 
     const getStatusOptions = () => [
         { value: 'new', label: 'New', icon: AlertCircle, color: 'text-blue-600' },
+        { value: 'assigned', label: 'Assigned', icon: UserCheck, color: 'text-purple-600' },
         { value: 'contacted', label: 'Contacted', icon: UserCheck, color: 'text-yellow-600' },
         { value: 'follow_up', label: 'Follow Up', icon: Clock, color: 'text-orange-600' },
         { value: 'completed', label: 'Completed', icon: CheckCircle, color: 'text-green-600' }
@@ -322,6 +240,32 @@ export default function AgentPage() {
         { value: 'medium', label: 'Medium Priority', color: 'text-yellow-600' },
         { value: 'low', label: 'Low Priority', color: 'text-green-600' }
     ]
+
+    const handleAddNote = async () => {
+        if (!newNote.trim() || !selectedInquiry?.id || !profile?.id) return
+
+        setIsAddingNote(true)
+        try {
+            await addNoteMutation.mutateAsync({
+                inquiryId: selectedInquiry.id,
+                agentId: profile.id,
+                agent_name: agent.first_name + " " + agent.last_name,
+                note: newNote.trim()
+            })
+            setNewNote("")
+            setShowNoteForm(false)
+            toast.success('Note added successfully')
+        } catch (error) {
+            toast.error('Failed to add note')
+        } finally {
+            setIsAddingNote(false)
+        }
+    }
+
+    const handleCancelNote = () => {
+        setNewNote("")
+        setShowNoteForm(false)
+    }
 
     // Cart functions
     const addToCart = (product: any) => {
@@ -391,6 +335,10 @@ export default function AgentPage() {
                                 <Settings className="h-4 w-4 mr-2" />
                                 Settings
                             </Button>
+                            <Button variant="outline" size="sm" onClick={signOut}>
+                                <LogOut className="h-4 w-4 mr-2" />
+                                Sign Out
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -458,7 +406,7 @@ export default function AgentPage() {
                                     <DollarSign className="h-4 w-4 text-muted-foreground" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">${mockAgent.total_commission.toFixed(2)}</div>
+                                    <div className="text-2xl font-bold">${2000}</div>
                                     <p className="text-xs text-muted-foreground">All time earnings</p>
                                 </CardContent>
                             </Card>
@@ -469,7 +417,7 @@ export default function AgentPage() {
                                     <TrendingUp className="h-4 w-4 text-green-600" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold text-green-600">${mockAgent.this_month_commission.toFixed(2)}</div>
+                                    <div className="text-2xl font-bold text-green-600">${200}</div>
                                     <p className="text-xs text-muted-foreground">Current month earnings</p>
                                 </CardContent>
                             </Card>
@@ -480,7 +428,7 @@ export default function AgentPage() {
                                     <UserCheck className="h-4 w-4 text-blue-600" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold text-blue-600">{mockAgent.assigned_inquiries}</div>
+                                    <div className="text-2xl font-bold text-blue-600">{inquiries?.length}</div>
                                     <p className="text-xs text-muted-foreground">Currently assigned</p>
                                 </CardContent>
                             </Card>
@@ -491,7 +439,7 @@ export default function AgentPage() {
                                     <Star className="h-4 w-4 text-yellow-600" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold text-yellow-600">{mockAgent.tier.commission_rate}%</div>
+                                    <div className="text-2xl font-bold text-yellow-600">{agent.agent_tiers.commission_rate}%</div>
                                     <p className="text-xs text-muted-foreground">Your tier rate</p>
                                 </CardContent>
                             </Card>
@@ -550,7 +498,7 @@ export default function AgentPage() {
 
                                         {/* Inquiries List */}
                                         <div className="space-y-4">
-                                            {filteredInquiries.map((inquiry) => (
+                                            {filteredInquiries?.map((inquiry) => (
                                                 <div key={inquiry.id} className="border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
                                                     <div className="flex items-start justify-between">
                                                         <div className="flex-1 space-y-3">
@@ -565,24 +513,33 @@ export default function AgentPage() {
                                                                 </div>
                                                             </div>
 
-                                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                                                                 <div className="flex items-center gap-2">
                                                                     <Phone className="h-4 w-4 text-muted-foreground" />
                                                                     <span>{inquiry.phone}</span>
                                                                 </div>
                                                                 <div className="flex items-center gap-2">
                                                                     <Package className="h-4 w-4 text-muted-foreground" />
-                                                                    <span className="truncate">{inquiry.itemInterested}</span>
+                                                                    <span className="truncate">{inquiry.item_interested}</span>
                                                                 </div>
                                                                 <div className="flex items-center gap-2">
                                                                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                                                                    <span>{formatDate(inquiry.createdAt)}</span>
+                                                                    <span>{new Date(inquiry.created_at).toLocaleDateString('en-US', {
+                                                                        month: 'short',
+                                                                        day: 'numeric',
+                                                                        hour: '2-digit',
+                                                                        minute: '2-digit'
+                                                                    })}</span>
                                                                 </div>
+
                                                             </div>
 
-                                                            <div className="flex items-center gap-2">
-                                                                <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                                                                <p className="text-sm text-muted-foreground line-clamp-2">{inquiry.comments}</p>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-xs text-muted-foreground mb-1">Comments</span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                                                                    <p className="text-sm text-muted-foreground line-clamp-2">{inquiry.comments}</p>
+                                                                </div>
                                                             </div>
                                                         </div>
 
@@ -636,7 +593,7 @@ export default function AgentPage() {
                                     </CardHeader>
                                     <CardContent>
                                         <div className="space-y-4">
-                                            {mockTierProducts.slice(0, 4).map((product) => (
+                                            {/* {mockTierProducts.slice(0, 4).map((product) => (
                                                 <div key={product.id} className="border border-border rounded-lg p-4">
                                                     <div className="flex items-center space-x-3">
                                                         <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
@@ -660,7 +617,7 @@ export default function AgentPage() {
                                                         </div>
                                                     </div>
                                                 </div>
-                                            ))}
+                                            ))} */}
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -720,7 +677,7 @@ export default function AgentPage() {
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium">Created</label>
-                                    <p className="text-sm text-muted-foreground">{formatDate(selectedInquiry.createdAt)}</p>
+                                    <p className="text-sm text-muted-foreground">{formatDate(selectedInquiry.created_at)}</p>
                                 </div>
                             </div>
                         )}
@@ -729,15 +686,8 @@ export default function AgentPage() {
 
                 {/* Edit Inquiry Dialog */}
                 <Dialog open={openEditDialog} onOpenChange={setOpenEditDialog}>
-                    <DialogContent className="sm:max-w-7xl animate-in fade-in-0 zoom-in-95 duration-200">
+                    <DialogContent className="sm:max-w-7xl max-h-[90vh] overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-200">
                         <div className="flex flex-col items-center text-center space-y-4 p-2 w-full">
-                            <div className="relative">
-                                <div className="absolute inset-0 bg-primary/20 rounded-full"></div>
-                                <div className="relative bg-primary/10 rounded-full p-4">
-                                    <Edit className="h-8 w-8 text-primary " />
-                                </div>
-                            </div>
-
                             <DialogHeader className="space-y-2 w-full">
                                 <DialogTitle className="text-xl font-semibold text-foreground">
                                     Update Inquiry
@@ -761,7 +711,7 @@ export default function AgentPage() {
                                         </div>
                                         <div>
                                             <label className="text-xs font-medium text-muted-foreground">Item Interested</label>
-                                            <p className="text-sm text-muted-foreground">{selectedInquiry.itemInterested}</p>
+                                            <p className="text-sm text-muted-foreground">{selectedInquiry.item_interested}</p>
                                         </div>
                                         <div>
                                             <label className="text-xs font-medium text-muted-foreground">Phone</label>
@@ -813,15 +763,92 @@ export default function AgentPage() {
                                         </div>
                                     </div>
 
-                                    {/* Notes */}
+                                    {/* Notes Section */}
                                     <div>
-                                        <label className="block text-sm font-medium text-foreground mb-2">Notes</label>
-                                        <Textarea
-                                            value={editForm.notes}
-                                            onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                                            placeholder="Add your notes about this inquiry..."
-                                            className="min-h-[100px] resize-none"
-                                        />
+                                        <div className="flex items-center justify-between mb-4">
+                                            <label className="block text-sm font-medium text-foreground">Notes</label>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => setShowNoteForm(!showNoteForm)}
+                                                className="flex items-center gap-2"
+                                            >
+                                                <Plus className="h-4 w-4" />
+                                                Add Note
+                                            </Button>
+                                        </div>
+
+                                        {/* Previous Notes */}
+                                        {notesLoading ? (
+                                            <div className="flex items-center justify-center py-8">
+                                                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                                            </div>
+                                        ) : notes && notes.length > 0 ? (
+                                            <div className="space-y-3 mb-4">
+                                                {notes.map((note) => (
+                                                    <div key={note.id} className="bg-muted/30 rounded-lg p-4 border border-border">
+                                                        <div className="flex items-start justify-between mb-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <User className="h-4 w-4 text-muted-foreground" />
+                                                                <span className="text-sm font-medium text-foreground">
+                                                                    {note.profiles?.first_name} {note.profiles?.last_name}
+                                                                </span>
+                                                                <span className="text-xs text-muted-foreground">
+                                                                    {formatDate(note.created_at)}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-sm text-foreground text-start w-full">{note.note}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-6 text-muted-foreground">
+                                                <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                                <p className="text-sm">No notes yet</p>
+                                            </div>
+                                        )}
+
+                                        {/* Add Note Form */}
+                                        {showNoteForm && (
+                                            <div className="border border-border rounded-lg p-4 bg-muted/20">
+                                                <div className="space-y-3">
+                                                    <Textarea
+                                                        value={newNote}
+                                                        onChange={(e) => setNewNote(e.target.value)}
+                                                        placeholder="Add your notes about this inquiry..."
+                                                        className="min-h-[100px] resize-none"
+                                                    />
+                                                    <div className="flex gap-2">
+                                                        <Button
+                                                            variant="outline"
+                                                            onClick={handleCancelNote}
+                                                            disabled={isAddingNote}
+                                                            className="flex-1"
+                                                        >
+                                                            Cancel
+                                                        </Button>
+                                                        <Button
+                                                            onClick={handleAddNote}
+                                                            disabled={isAddingNote || !newNote.trim()}
+                                                            className="flex-1"
+                                                        >
+                                                            {isAddingNote ? (
+                                                                <>
+                                                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                                    Adding...
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <MessageSquare className="h-4 w-4 mr-2" />
+                                                                    Post Note
+                                                                </>
+                                                            )}
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Action Buttons */}
@@ -879,13 +906,12 @@ export default function AgentPage() {
                         {cartItems.length === 0 ? (
                             <div className="text-center py-12">
                                 <div className="relative mb-6">
-                                    <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping"></div>
+                                    <div className="absolute inset-0 bg-primary/20 rounded-full"></div>
                                     <div className="relative bg-primary/10 rounded-full p-6">
-                                        <ShoppingCart className="h-12 w-12 text-primary animate-pulse" />
+                                        <ShoppingCart className="h-12 w-12 self-center text-primary animate-pulse" />
                                     </div>
                                 </div>
                                 <h3 className="text-xl font-semibold text-foreground mb-3">Your cart is empty</h3>
-                                <p className="text-muted-foreground mb-6">Discover amazing products at your tier pricing</p>
                                 <Button
                                     onClick={() => {
                                         setActiveTab('products')
@@ -1002,15 +1028,15 @@ export default function AgentPage() {
                                             <select
                                                 value={selectedInquiryForCart?.id || ''}
                                                 onChange={(e) => {
-                                                    const inquiry = mockAssignedInquiries.find(i => i.id === parseInt(e.target.value))
+                                                    const inquiry = inquiries?.find(i => i.id === parseInt(e.target.value))
                                                     setSelectedInquiryForCart(inquiry || null)
                                                 }}
                                                 className="w-full px-3 py-2 border border-border rounded-md"
                                             >
                                                 <option value="">Choose an inquiry...</option>
-                                                {mockAssignedInquiries.map((inquiry) => (
+                                                {inquiries?.map((inquiry) => (
                                                     <option key={inquiry.id} value={inquiry.id}>
-                                                        {inquiry.name} - {inquiry.itemInterested}
+                                                        {inquiry.name} - {inquiry.item_interested}
                                                     </option>
                                                 ))}
                                             </select>

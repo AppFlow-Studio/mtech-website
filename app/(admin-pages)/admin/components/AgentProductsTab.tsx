@@ -122,7 +122,7 @@ export default function AgentProductsTab({
                 </div>
                 <Badge variant="outline" className="flex items-center gap-2">
                     <Star className="h-4 w-4" />
-                    {agent.agent_tiers.name} Tier Discount
+                    {agent.agent_tiers.name}
                 </Badge>
             </div>
 

@@ -20,6 +20,7 @@ import DashboardOverview from './components/DashboardOverview'
 import TagManagement from './components/TagManagement'
 import { TagProvider } from './components/TagContext'
 import ContactInquiries from './components/ContactInquiries'
+import { useInquiries } from '@/components/states/inquiries'
 
 type TabType = 'agents' | 'products' | 'pricing' | 'tags' | 'contact-inquiries' | null
 
@@ -28,6 +29,7 @@ export default function AdminDashboard() {
     const signOut = useSignOut()
     const [activeTab, setActiveTab] = useState<TabType | null>(null)
     const [searchTerm, setSearchTerm] = useState('')
+    const { data: inquiries, isLoading } = useInquiries()
 
     // const filteredProducts = mockProducts.filter(product =>
     //     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
