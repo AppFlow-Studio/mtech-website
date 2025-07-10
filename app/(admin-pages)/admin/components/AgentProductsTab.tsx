@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useProfile } from "@/lib/hooks/useProfile"
 import { useGetAgentById, useGetAgentProducts } from "../actions/AgentStore"
+import { toast } from "sonner"
 const tags = [
     "atm parts",
     "pos parts",
@@ -295,7 +296,10 @@ export default function AgentProductsTab({
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                onClick={() => handleAddToCart(agent_product)}
+                                                onClick={() => {
+                                                    handleAddToCart(agent_product)
+                                                    toast.success('Product added to cart')
+                                                }}
                                                 className="hover:bg-green-50 hover:border-green-300 hover:text-green-700"
                                             >
                                                 <Plus className="h-4 w-4" />
