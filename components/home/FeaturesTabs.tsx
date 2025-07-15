@@ -78,7 +78,7 @@ const FeatureTabs: React.FC<FeatureTabsProps> = ({ features }) => {
   };
 
   return (
-    <section ref={sectionRef} className="py-16 sm:py-24">
+    <section ref={sectionRef} className="py-16 sm:py-24 ">
       <div className="container mx-auto px-4">
         {/* Mobile Layout (below md breakpoint) */}
         <div className="lg:hidden">
@@ -211,7 +211,7 @@ const FeatureTabs: React.FC<FeatureTabsProps> = ({ features }) => {
                   }}
                   className={`
                     relative overflow-hidden rounded-2xl shadow-lg cursor-pointer
-                    bg-[#672AB233] dark:bg-[#672AB233]
+                    bg-[#380D52]
                     ${isActive ? "lg:min-h-[450px]" : ""}
                   `}
                   onClick={() => !isActive && handleCardClick(index)}
@@ -240,14 +240,14 @@ const FeatureTabs: React.FC<FeatureTabsProps> = ({ features }) => {
                               transition={{ delay: 0.6, duration: 0.4 }}
                               className="w-full min-w-1/2 flex flex-col"
                             >
-                              <span className="text-xl font-bold text-gray-700 dark:text-gray-400">
+                              <span className="text-xl font-bold text-white dark:text-gray-400">
                                 {`0${index + 1}`}
                               </span>
-                              <h3 className="text-base font-normal my-2 text-[#2C3551] dark:text-white">
+                              <h3 className="text-base font-normal my-2 text-white dark:text-white">
                                 {feature.title}
                               </h3>
                               <div className="min-h-[120px] lg:min-h-[100px]">
-                                <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed max-w-lg">
+                                <p className="text-sm text-white dark:text-gray-300 leading-relaxed max-w-lg">
                                   {feature.description}
                                 </p>
                               </div>
@@ -315,7 +315,7 @@ const FeatureTabs: React.FC<FeatureTabsProps> = ({ features }) => {
                         }}
                         className="p-4 h-full flex flex-col items-center justify-between hover:bg-[#E9E5F5] dark:hover:bg-[#382E5A] transition-colors duration-300"
                       >
-                        <span className="font-bold text-gray-700 dark:text-gray-400">
+                        <span className="font-bold text-white dark:text-gray-400">
                           {`0${index + 1}`}
                         </span>
 
@@ -324,7 +324,7 @@ const FeatureTabs: React.FC<FeatureTabsProps> = ({ features }) => {
                             className="
                               font-semibold text-sm whitespace-nowrap
                               [writing-mode:vertical-rl] rotate-180
-                              text-gray-800 dark:text-white
+                              text-white dark:text-white
                             "
                           >
                             {feature.title}

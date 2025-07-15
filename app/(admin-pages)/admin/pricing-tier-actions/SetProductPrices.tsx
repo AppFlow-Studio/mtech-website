@@ -168,7 +168,7 @@ export default function SetProductPricesPopup({ tier }: { tier: Tier }) {
         setProductPrices(productPrices.map((product: any) => ({ ...product, price })))
         setOpenBulkPriceDialog(false)
         setBulkPrice('')
-        toast.success(`Updated ${filteredProducts.length} products to $${price.toFixed(2)}`)
+        toast.success(`Updated ${filteredProducts.length} products to $${price?.toFixed(2)}`)
     }
 
     const getVisibleProductsCount = () => {
@@ -430,7 +430,7 @@ export default function SetProductPricesPopup({ tier }: { tier: Tier }) {
                                     <div key={product.id} className="flex items-center justify-between text-sm p-2 bg-muted/30 rounded">
                                         <span className="truncate flex-1">{product.name}</span>
                                         <span className="text-muted-foreground ml-2">
-                                            ${product.price.toFixed(2)} → {bulkPrice ? `$${parseFloat(bulkPrice).toFixed(2)}` : '$0.00'}
+                                            ${product?.price?.toFixed(2)} → {bulkPrice ? `$${parseFloat(bulkPrice).toFixed(2)}` : '$0.00'}
                                         </span>
                                     </div>
                                 ))}

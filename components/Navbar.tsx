@@ -130,14 +130,14 @@ const Navbar = () => {
     <div>
       <nav className="shadow-lg duration-300">
         {/* Top bar with phone number */}
-        <div className="py-2 px-4">
+        {/* <div className="py-2 px-4">
           <div className="max-w-7xl mx-auto flex justify-end items-center">
             <div className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300">
               <Phone size={16} />
               <Link href="tel:888-411-7063">888-411-7063</Link>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Main navigation */}
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -214,6 +214,15 @@ const Navbar = () => {
                   )}
                 </div>
               ))}
+            </div>
+
+            <div className="py-2 px-4">
+              <div className="max-w-7xl mx-auto flex justify-end items-center">
+                <div className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300">
+                  <Phone size={16} />
+                  <Link href="tel:888-411-7063">888-411-7063</Link>
+                </div>
+              </div>
             </div>
 
             {/* Right side buttons - Desktop only */}
