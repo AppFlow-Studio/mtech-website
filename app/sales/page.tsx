@@ -400,49 +400,7 @@ export default function AgentPage() {
                     <>
                         {/* Stats Overview */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                            <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Total Commission</CardTitle>
-                                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">${2000}</div>
-                                    <p className="text-xs text-muted-foreground">All time earnings</p>
-                                </CardContent>
-                            </Card>
-
-                            <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">This Month</CardTitle>
-                                    <TrendingUp className="h-4 w-4 text-green-600" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold text-green-600">${200}</div>
-                                    <p className="text-xs text-muted-foreground">Current month earnings</p>
-                                </CardContent>
-                            </Card>
-
-                            <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Active Inquiries</CardTitle>
-                                    <UserCheck className="h-4 w-4 text-blue-600" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold text-blue-600">{inquiries?.length}</div>
-                                    <p className="text-xs text-muted-foreground">Currently assigned</p>
-                                </CardContent>
-                            </Card>
-
-                            <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Commission Rate</CardTitle>
-                                    <Star className="h-4 w-4 text-yellow-600" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold text-yellow-600">{agent.agent_tiers.commission_rate}%</div>
-                                    <p className="text-xs text-muted-foreground">Your tier rate</p>
-                                </CardContent>
-                            </Card>
+                
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -452,12 +410,12 @@ export default function AgentPage() {
                                     <CardHeader>
                                         <div className="flex items-center justify-between">
                                             <div>
-                                                <CardTitle>Assigned Inquiries</CardTitle>
-                                                <CardDescription>Manage your customer inquiries and follow-ups</CardDescription>
+                                                <CardTitle>Manage Your Orders</CardTitle>
+                                                <CardDescription>Manage your orders and their status</CardDescription>
                                             </div>
                                             <Button size="sm">
                                                 <Plus className="h-4 w-4 mr-2" />
-                                                New Follow-up
+                                                New Order
                                             </Button>
                                         </div>
                                     </CardHeader>
