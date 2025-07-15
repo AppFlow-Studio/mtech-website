@@ -71,23 +71,16 @@ const CategoryPillsScroller = () => {
 
   const expandedDuration = 5000;
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [previousIndex, setPreviousIndex] = useState<number | null>(null);
   const [maxPills, setMaxPills] = useState(6);
-  const [animationPhase, setAnimationPhase] = useState("expanded");
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Variants for the container that holds the pill and the card
   const containerVariants: Variants = {
     collapsed: {
       width: "auto",
-      transition: { duration: 0.3 },
-    },
-    "pill-visible": {
-      width: "auto",
-      transition: { duration: 0.3 },
-    },
-    expanding: {
-      width: window.innerWidth < 768 ? "12rem" : "15rem",
-      transition: { duration: 0.4, ease: "easeInOut" },
+      transition: { duration: 0.8, ease: "easeInOut" },
     },
     expanded: {
       width: window.innerWidth < 768 ? "12rem" : "15rem",
@@ -100,12 +93,24 @@ const CategoryPillsScroller = () => {
     hidden: {
       opacity: 0,
       scaleY: 0,
-      transition: { duration: 0.3, ease: "easeIn" },
+      transition: { duration: 0.4, ease: "easeInOut" },
     },
     visible: {
       opacity: 1,
       scaleY: 1,
-      transition: { delay: 0.2, duration: 0.3, ease: "easeOut" },
+      transition: { duration: 0.4, ease: "easeInOut" },
+    },
+  };
+
+  // Variants for card content (text and button)
+  const cardContentVariants: Variants = {
+    hidden: {
+      opacity: 0,
+      transition: { duration: 0.2, ease: "easeInOut" },
+    },
+    visible: {
+      opacity: 1,
+      transition: { duration: 0.2, ease: "easeInOut", delay: 0.2 },
     },
   };
 
@@ -125,29 +130,23 @@ const CategoryPillsScroller = () => {
   const startAnimationSequence = (newIndex: number) => {
     if (timerRef.current) clearInterval(timerRef.current);
 
-    // Phase 1: Shrink current card
-    setAnimationPhase("shrinking");
+    // Start transition to keep both cards visible during transition
+    setIsTransitioning(true);
+    setPreviousIndex(currentIndex);
 
+    // Change index immediately so both animations happen simultaneously
+    setCurrentIndex(newIndex);
+
+    // End transition after animation completes
     setTimeout(() => {
-      // Phase 2: Show pill for 0.2 seconds
-      setAnimationPhase("pill-visible");
+      setIsTransitioning(false);
+      setPreviousIndex(null);
 
-      setTimeout(() => {
-        // Phase 3: Change index and start expanding
-        setCurrentIndex(newIndex);
-        setAnimationPhase("expanding");
-
-        setTimeout(() => {
-          // Phase 4: Fully expanded
-          setAnimationPhase("expanded");
-
-          // Start the timer for next transition
-          timerRef.current = setTimeout(() => {
-            startAnimationSequence((newIndex + 1) % maxPills);
-          }, expandedDuration);
-        }, 600); // Time for expansion animation
-      }, 200); // 0.2 seconds for pill visibility
-    }, 300); // Time for shrinking animation
+      // Start the timer for next transition
+      timerRef.current = setTimeout(() => {
+        startAnimationSequence((newIndex + 1) % maxPills);
+      }, expandedDuration);
+    }, 400); // Duration matches the animation duration
   };
 
   // --- Timers and Effects ---
@@ -205,32 +204,21 @@ const CategoryPillsScroller = () => {
       <div className="flex items-end justify-center gap-6 px-4">
         {visibleCategories.map((category, index) => {
           const isActive = index === currentIndex;
-          const shouldShowCard =
-            isActive &&
-            (animationPhase === "expanding" || animationPhase === "expanded");
-          const shouldShowPill = !isActive || animationPhase === "pill-visible";
+          const isPrevious = isTransitioning && index === previousIndex;
+          const shouldShowCard = isActive || isPrevious;
 
           return (
             <motion.div
               key={`${category.name}-${index}`}
               variants={containerVariants}
-              animate={
-                isActive
-                  ? animationPhase === "pill-visible"
-                    ? "pill-visible"
-                    : animationPhase === "expanding" ||
-                      animationPhase === "expanded"
-                    ? "expanded"
-                    : "collapsed"
-                  : "collapsed"
-              }
+              animate={shouldShowCard ? "expanded" : "collapsed"}
               className="relative flex justify-center flex-shrink-0"
               style={{ transformOrigin: "bottom" }}
             >
               {/* Pill */}
               <motion.div
                 onClick={() => handlePillClick(index)}
-                animate={{ opacity: shouldShowPill ? 1 : 0 }}
+                animate={{ opacity: shouldShowCard ? 0 : 1 }}
                 transition={{ duration: 0.2 }}
                 className={`
                   bg-[#8B848C] backdrop-blur-sm text-[#F0F3FD]
@@ -239,7 +227,7 @@ const CategoryPillsScroller = () => {
                   font-medium border border-white/30 hover:bg-white/30
                   transition-colors duration-300 whitespace-nowrap m-1
                   cursor-pointer
-                  ${!shouldShowPill ? "pointer-events-none" : ""}
+                  ${shouldShowCard ? "pointer-events-none" : ""}
                 `}
               >
                 {category.name}
@@ -249,10 +237,10 @@ const CategoryPillsScroller = () => {
               <AnimatePresence>
                 {shouldShowCard && (
                   <motion.div
-                    key={`card-${currentIndex}`}
+                    key={`card-${index}`}
                     variants={cardVariants}
                     initial="hidden"
-                    animate="visible"
+                    animate={isActive ? "visible" : "hidden"}
                     exit="hidden"
                     className="absolute bottom-0 left-0 right-0 z-10"
                     style={{ transformOrigin: "bottom" }}
@@ -262,30 +250,37 @@ const CategoryPillsScroller = () => {
                         p-3 sm:p-4 border border-white/20 
                         w-full flex-shrink-0 relative overflow-hidden"
                     >
-                      <h3 className="text-white text-sm sm:text-base xl:text-xl font-semibold mb-2 sm:mb-3 text-center sm:text-left">
-                        {category.title}
-                      </h3>
-                      <div className="rounded-lg bg-[#B4ADB8] p-2 sm:p-3 flex flex-col items-center">
-                        <div className="mb-2 sm:mb-3">
-                          <img
-                            src={category.image}
-                            alt={category.title}
-                            className="w-full h-auto rounded-md sm:rounded-lg object-contain max-h-16 xs:max-h-20 sm:max-h-24"
-                          />
+                      <motion.div
+                        variants={cardContentVariants}
+                        initial="hidden"
+                        animate={isActive ? "visible" : "hidden"}
+                        exit="hidden"
+                      >
+                        <h3 className="text-white text-sm sm:text-base xl:text-xl font-semibold mb-2 sm:mb-3 text-center sm:text-left">
+                          {category.title}
+                        </h3>
+                        <div className="rounded-lg bg-[#B4ADB8] p-2 sm:p-3 flex flex-col items-center">
+                          <div className="mb-2 sm:mb-3">
+                            <img
+                              src={category.image}
+                              alt={category.title}
+                              className="w-full h-auto rounded-md sm:rounded-lg object-contain max-h-16 xs:max-h-20 sm:max-h-24"
+                            />
+                          </div>
+                          <button
+                            onClick={handleShopNow}
+                            className="w-full bg-gradient-to-r from-[#662CB2] to-[#2C134C] text-white 
+                            text-xs sm:text-sm py-2 sm:py-2.5 px-3 sm:px-4 rounded-full 
+                            font-semibold hover:from-purple-700 hover:to-blue-700 
+                            transform hover:scale-105 transition-all duration-200 lg:shadow-md"
+                          >
+                            Shop Now
+                          </button>
                         </div>
-                        <button
-                          onClick={handleShopNow}
-                          className="w-full bg-gradient-to-r from-[#662CB2] to-[#2C134C] text-white 
-                          text-xs sm:text-sm py-2 sm:py-2.5 px-3 sm:px-4 rounded-full 
-                          font-semibold hover:from-purple-700 hover:to-blue-700 
-                          transform hover:scale-105 transition-all duration-200 lg:shadow-md"
-                        >
-                          Shop Now
-                        </button>
-                      </div>
+                      </motion.div>
 
                       {/* Progress Bar */}
-                      {animationPhase === "expanded" && (
+                      {!isTransitioning && (
                         <div className="absolute bottom-0 left-0 right-0 h-2 z-50 bg-white/20 rounded-b-xl sm:rounded-b-2xl overflow-hidden">
                           <motion.div
                             key={`progress-${currentIndex}`}

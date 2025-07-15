@@ -4,20 +4,22 @@ import Image from "next/image";
 
 const ingenicoProducts: Product[] = [
   {
-    name: "INGENICO MOBY 5500 CARD R...",
+    name: "Ingenico Moby 5500 Card Reader",
     description:
-      "Accepts all card-based payments: EMV, magstripe and NFC/contactless PIN-on-M...",
+      "The Ingenico Moby 5500 is a versatile and secure mobile point-of-sale (mPOS) card reader designed for modern commerce. It accepts all major card-based payment methods, including traditional magstripe, secure EMV chip cards, and convenient NFC/contactless payments. A standout feature is its 'PIN-on-Mobile' capability, which allows for secure PIN entry directly on a consumer-grade smartphone or tablet. This makes it an incredibly flexible and cost-effective solution for merchants who need to accept secure payments anywhere their business takes them.",
     imageSrc: "/products/product-61.png",
-    link: "#",
+    link: "ingenico-moby-5500-card-reader",
     inStock: true,
+    tags: ["credit card terminals", "pos accessories"],
   },
   {
-    name: "INGENICO LANE 3000 PIN PAD",
+    name: "Ingenico Lane 3000 PIN Pad",
     description:
-      "Robust design for even the most demanding situations High-end keypad fo...",
+      "The Ingenico Lane 3000 is a robust and reliable PIN pad designed to enhance the checkout process in even the most demanding retail environments. It features a high-end, durable keypad that provides a comfortable and secure PIN entry experience for customers. Its compact design saves counter space, while its fast processor ensures transactions are completed quickly. The Lane 3000 supports all modern payment methods, making it a versatile and long-lasting addition to any integrated point-of-sale system.",
     imageSrc: "/products/product-62.png",
-    link: "#",
+    link: "ingenico-lane-3000-pin-pad",
     inStock: true,
+    tags: ["credit card terminals", "pos accessories"],
   },
 ];
 

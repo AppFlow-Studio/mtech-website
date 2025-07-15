@@ -4,28 +4,31 @@ import Image from "next/image";
 
 const atmTopperProducts: Product[] = [
   {
-    name: "High Bright Topper w/ Blue Grap...",
+    name: "High Bright Topper with Blue Graphics",
     description:
-      "Includes power cable to system power supply; use P/N: 130211081 to extend it to...",
+      "Make your ATM impossible to miss with this High Bright Topper featuring attractive blue graphics. This illuminated sign is designed to sit on top of your ATM, increasing its height and visibility across any retail or event space. The 'high bright' illumination ensures it stands out even in brightly lit environments, drawing customer attention effectively. The package includes the necessary power cable for a straightforward connection to the system's power supply, making it an easy-to-install upgrade that can significantly boost machine awareness and usage.",
     imageSrc: "/products/product-79.png",
-    link: "#",
+    link: "high-bright-topper-with-blue-graphics",
     inStock: true,
+    tags: ["atm parts", "atm signage"],
   },
   {
-    name: "Digital Media Topper II w/ Flat Ba...",
+    name: "Digital Media Topper II with Flat Base",
     description:
-      "Digital Media Topper II w/ Flat Base Great for Advertising your business and products",
+      "Transform your ATM into a dynamic advertising platform with the Digital Media Topper II. This modern topper features a digital screen on a stable flat base, allowing you to display customized advertisements, promotions, and information about your business and its products. It's a powerful tool for cross-selling and up-selling to a captive audience, turning your ATM from a simple cash dispenser into a revenue-generating marketing asset. Engage customers and drive sales with vibrant, eye-catching digital content right at the point of service.",
     imageSrc: "/products/product-80.png",
-    link: "#",
+    link: "digital-media-topper-ii-with-flat-base",
     inStock: true,
+    tags: ["atm parts", "atm signage"],
   },
   {
-    name: "NEW REVISION STANDARD TOP...",
+    name: "New Revision Standard Topper",
     description:
-      "19x17x7 (When Using On Rev 10 or Lower NH1800SE Requires Rev 10 Topper Brack...",
+      "This New Revision Standard Topper is an updated OEM component designed for various Genmega and Hyosung ATM models. Measuring 19x17x7 inches, this topper provides a clean, professional look and essential signage space for your machine. It is important to note the compatibility requirements; for example, when using this topper on a Nautilus Hyosung NH1800SE model (Revision 10 or lower), a specific Rev 10 Topper Bracket is required for proper installation. This ensures a secure and correct fit, maintaining the intended design and stability of the ATM.",
     imageSrc: "/products/product-81.png",
-    link: "#",
+    link: "new-revision-standard-topper",
     inStock: true,
+    tags: ["atm parts", "atm signage"],
   },
 ];
 

@@ -4,74 +4,85 @@ import Image from "next/image";
 
 const partsProducts: Product[] = [
   {
-    name: "Nautilus Hyosung ATM Topper Br...",
+    name: "Nautilus Hyosung ATM Topper Bracket",
     description:
-      "Nautilus Hyosung ATM Topper Bracket Angled Top NH2600 Halo II...",
+      "This Nautilus Hyosung ATM Topper Bracket is an essential mounting component for securely attaching a topper to your machine. Specifically designed with an angled top, this bracket is compatible with models like the NH2600 and HALO II, ensuring a perfect fit and a professional appearance. Using the correct OEM bracket is crucial for maintaining the stability and safety of your ATM topper, preventing it from becoming loose or damaged. This durable bracket provides the proper support for your signage, enhancing your ATM's visibility and branding.",
     imageSrc: "/products/product-82.png",
-    link: "#",
+    link: "nautilus-hyosung-atm-topper-bracket",
     inStock: true,
+    tags: ["atm parts", "atm signage"],
   },
   {
-    name: "LCD ASSEMBLY, I F BOARD (INV...",
+    name: "LCD Assembly with Inverter Board",
     description:
-      "The LCD Assembly with v/f (inverter) board for 1800SE and MX 4000W ATMS is a criti...",
+      "This complete LCD Assembly is a critical replacement part for Nautilus Hyosung 1800SE and MX 4000W ATM models. The assembly includes both the LCD screen and the vital I/F (inverter) board, which is responsible for powering the screen's backlight. Replacing the entire unit ensures compatibility and simplifies the repair process, restoring a clear and bright display for your customers. A functioning screen is essential for user interaction, making this assembly a key component for maintaining your ATM's operational readiness and professional appearance.",
     imageSrc: "/products/product-83.png",
-    link: "#",
+    link: "lcd-assembly-if-board-inverter",
     inStock: true,
+    tags: ["atm parts", "pos parts"],
   },
   {
-    name: 'GENMEGA AND HANTLE 7" Col...',
-    description: 'GENMEGA AND HANTLE 7" Color LCD for 1700W, G1900 & GT3000',
+    name: 'Genmega and Hantle 7" Color LCD',
+    description:
+      "Restore the visual interface of your ATM with this 7-inch Color LCD screen. This high-quality display is a direct replacement part for several popular Genmega and Hantle ATM models, including the 1700W, G1900, and GT3000. A crisp, bright, and fully functional screen is crucial for guiding customers through transactions smoothly and providing a professional user experience. This component ensures that on-screen prompts and information are clearly visible, which is essential for the day-to-day operation and reliability of your ATM.",
     imageSrc: "/products/product-84.png",
-    link: "#",
+    link: "genmega-and-hantle-7-color-lcd",
     inStock: true,
+    tags: ["atm parts"],
   },
   {
-    name: "HYOSUNG, 1800SE LCD SCREEN",
+    name: "Hyosung 1800SE LCD Screen",
     description:
-      "HYOSUNG LCD SCREEN ONLY COMPATIBLE WITH MX4000W , NH1800SE...",
+      "This is a replacement LCD screen specifically designed for use with Nautilus Hyosung ATM models, including the widely-used NH1800SE and the through-the-wall MX4000W. This listing is for the LCD screen panel only and does not include the inverter board or other assembly components. It is the perfect solution for when the screen itself is cracked, scratched, or has dead pixels, but the surrounding electronics are still functional. Swapping out just the screen is a cost-effective repair to bring your ATM's display back to its original clarity.",
     imageSrc: "/products/product-85.png",
-    link: "#",
+    link: "hyosung-1800se-lcd-screen",
     inStock: true,
+    tags: ["atm parts"],
   },
   {
-    name: "Hyosung 1K New Style CDU Side...",
+    name: "Hyosung 1K New Style CDU Side Cover",
     description:
-      "Hyosung 1K New Style CDU Side Cover Part Number S4310000340...",
+      "This Hyosung 1K New Style CDU Side Cover is an authentic OEM replacement part, identified by part number S4310000340. This cover is designed to fit and protect the side of the 1,000-note capacity Cash Dispensing Unit (CDU) in various newer-style Hyosung ATMs. It plays a crucial role in shielding the internal mechanisms of the dispenser from dust, debris, and potential tampering. Using genuine replacement parts like this side cover ensures a perfect fit and maintains the integrity and security of your ATM's cash handling components.",
     imageSrc: "/products/product-86.png",
-    link: "#",
+    link: "hyosung-1k-new-style-cdu-side-cover",
     inStock: true,
+    tags: ["atm parts"],
   },
   {
     name: "Hyosung Rubber Note Pick Wheel",
     description:
-      "Compatible with HALO II, MX5200SE, MX5200S, MX5100T, MX5600L, MX560...",
+      "The Hyosung Rubber Note Pick Wheel is a small but critical component in the cash dispensing unit of many Hyosung ATMs. This high-friction rubber wheel is responsible for accurately picking and separating individual banknotes from the stack in the cassette. It is compatible with a wide range of popular models, including the HALO II, MX5200SE, MX5600, and more. Over time, these wheels can wear down, leading to note jams and dispensing errors. Replacing them is a common and essential maintenance task to ensure the smooth and reliable operation of your ATM.",
     imageSrc: "/products/product-87.png",
-    link: "#",
+    link: "hyosung-rubber-note-pick-wheel",
     inStock: true,
+    tags: ["atm parts"],
   },
   {
     name: "Genmega GT5000 ATM Series",
     description:
-      "Genmega introduces the GT5000 series ATM. A high performance yet economical...",
+      "The Genmega GT5000 series represents a leap forward in through-the-wall ATM technology, offering high-end features at an accessible price. This rear-load ATM is designed for financial institutions and high-volume retail locations, featuring a large 15-inch display, high-capacity dispensers, and robust security. It's an economical yet powerful solution for businesses looking to provide a full suite of self-service options, including cash withdrawal and potentially deposit automation. The GT5000 delivers reliable, secure, around-the-clock service, making it a valuable asset for any location.",
     imageSrc: "/products/product-88.png",
-    link: "#",
+    link: "genmega-gt5000-atm-series-2",
     inStock: true,
+    tags: ["atm machines"],
   },
   {
     name: "Hyosung Halo II Rubber Function Pad",
-    description: "Hyosung Halo II Rubber Function Pad. Part Number S4960000344",
+    description:
+      "This is a genuine replacement Rubber Function Pad for the Nautilus Hyosung Halo II ATM, identified by part number S4960000344. This pad contains the rubber buttons for the function keys located on either side of the ATM's screen. Constant use can cause these buttons to wear out, crack, or become unresponsive, hindering the customer's ability to navigate transaction menus. Replacing the function pad restores the tactile feel and responsiveness of these keys, ensuring a smooth and frustration-free user experience on your Halo II machine.",
     imageSrc: "/products/product-89.png",
-    link: "#",
+    link: "hyosung-halo-ii-rubber-function-pad",
     inStock: true,
+    tags: ["atm parts"],
   },
   {
-    name: "Hyosung Upper Fascia Bezel Unit...",
+    name: "Hyosung Upper Fascia Bezel Unit for Halo II",
     description:
-      "Hyosung Upper Fascia Bezel Unit For Halo II Part Number S4570002531",
+      "This is the official Hyosung Upper Fascia Bezel Unit specifically designed for the Halo II ATM model, with part number S4570002531. This component is the upper plastic frame or 'bezel' that surrounds the screen and other interface elements, forming a key part of the ATM's distinctive and stylish appearance. It is an essential part for repairs where the original fascia has been cracked, scratched, or otherwise damaged. Using this genuine OEM part ensures a perfect fit and restores the sleek, factory-fresh look of your Halo II machine.",
     imageSrc: "/products/product-90.png",
-    link: "#",
+    link: "hyosung-upper-fascia-bezel-unit",
     inStock: true,
+    tags: ["atm parts"],
   },
 ];
 
