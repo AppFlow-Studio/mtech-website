@@ -10,7 +10,8 @@ import {
     Settings,
     LogOut,
     Tag,
-    MessageSquare
+    MessageSquare,
+    ListOrdered
 } from 'lucide-react'
 
 import AgentManagement from './components/AgentManagement'
@@ -19,18 +20,15 @@ import PricingTiers from './components/PricingTiers'
 import DashboardOverview from './components/DashboardOverview'
 import TagManagement from './components/TagManagement'
 import { TagProvider } from './components/TagContext'
-import ContactInquiries from './components/ContactInquiries'
-import { useInquiries } from '@/components/states/inquiries'
+import OrderManagementPage from './components/OrderManagementPage'
 
-type TabType = 'agents' | 'products' | 'pricing' | 'tags' | 'contact-inquiries' | null
+type TabType = 'agents' | 'products' | 'pricing' | 'tags' | 'orders' | null
 
 export default function AdminDashboard() {
     const { profile } = useProfile()
     const signOut = useSignOut()
     const [activeTab, setActiveTab] = useState<TabType | null>(null)
     const [searchTerm, setSearchTerm] = useState('')
-    const { data: inquiries, isLoading } = useInquiries()
-
     // const filteredProducts = mockProducts.filter(product =>
     //     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     //     product.description.toLowerCase().includes(searchTerm.toLowerCase())
@@ -112,7 +110,7 @@ export default function AdminDashboard() {
                             <Tag className="h-4 w-4" />
                             Tag Management
                         </button>
-                        <button
+                        {/* <button
                             onClick={() => setActiveTab('contact-inquiries')}
                             className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'contact-inquiries'
                                 ? 'bg-background text-foreground shadow-sm'
@@ -121,6 +119,16 @@ export default function AdminDashboard() {
                         >
                             <MessageSquare className="h-4 w-4" />
                             Contact Inquiries
+                        </button> */}
+                        <button
+                            onClick={() => setActiveTab('orders')}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'orders'
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
+                                }`}
+                        >
+                            <ListOrdered className="h-4 w-4" />
+                            Orders
                         </button>
                     </div>
 
@@ -129,7 +137,8 @@ export default function AdminDashboard() {
                     {activeTab === 'products' && <ProductManagement searchTerm={searchTerm} setSearchTerm={setSearchTerm} />}
                     {activeTab === 'pricing' && <PricingTiers />}
                     {activeTab === 'tags' && <TagManagement />}
-                    {activeTab === 'contact-inquiries' && <ContactInquiries />}
+                    {activeTab === 'orders' && <OrderManagementPage />}
+                    {/* {activeTab === 'contact-inquiries' && <ContactInquiries />} */}
                     {/* Dashboard Overview - Show when no specific tab is selected */}
                     {!activeTab && <DashboardOverview />}
                 </div>

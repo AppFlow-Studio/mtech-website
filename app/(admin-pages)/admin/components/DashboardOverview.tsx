@@ -4,7 +4,10 @@ import { useTiers } from "../actions/TeirsStores"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Package, Users, DollarSign, Settings, Plus, Mail, AlertCircle, UserCheck, CheckCircle, Clock } from "lucide-react"
+import { Package, Users, DollarSign, Settings, Plus, Mail, AlertCircle, UserCheck, CheckCircle, Clock, ListOrdered } from "lucide-react"
+import { useSubmittedOrders } from "../actions/OrderStore"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useState } from "react";
 
 // Mock contact form data for dashboard
 const mockContactForms = [
@@ -57,6 +60,7 @@ export default function DashboardOverview() {
     const totalProducts = products?.length || 0
     const inStockProducts = products?.filter((p: any) => p.inStock).length || 0
     const outOfStockProducts = totalProducts - inStockProducts
+    const { data: submittedOrders, isLoading: isSubmittedOrdersLoading } = useSubmittedOrders()
 
     // Contact form statistics
     const totalInquiries = mockContactForms.length
@@ -142,11 +146,26 @@ export default function DashboardOverview() {
                             </p>
                         </CardContent>
                     </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Submitted Orders</CardTitle>
+                            <ListOrdered className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            {submittedOrders instanceof Error ? (
+                                <div className="text-2xl font-bold">Error: {submittedOrders.message}</div>
+                            ) : (
+                                <div className="text-2xl font-bold">{submittedOrders?.length || 0}</div>
+                            )}
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
 
+
+
             {/* Contact Forms Section */}
-            <div>
+            {/* <div>
                 <h3 className="text-lg font-semibold text-foreground mb-4">Contact Forms</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                     <Card>
@@ -261,7 +280,31 @@ export default function DashboardOverview() {
                         </CardContent>
                     </Card>
                 </div>
-            </div>
+            </div> */}
+
+            {/* Orders Section */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>All Orders</CardTitle>
+                    <CardDescription>All orders that have been submitted</CardDescription>
+                </CardHeader>
+                <CardContent>
+                {isSubmittedOrdersLoading ? (
+                    <div className="text-muted-foreground py-8">Loading orders...</div>
+                ) : submittedOrders instanceof Error ? (
+                    <div className="text-red-600 py-8">Error: {submittedOrders.message}</div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {submittedOrders?.map((order: any) => (
+                            <OrderDashboardCard key={order.id} order={order} />
+                        ))}
+                    </div>
+                )}  
+                </CardContent>
+            </Card>
+
+
+
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card className="col-span-2">
@@ -295,4 +338,142 @@ export default function DashboardOverview() {
             </div>
         </div>
     )
+}
+
+// Helper: status badge
+function statusBadge(status: string) {
+    const config: Record<string, { color: string; label: string }> = {
+        draft: { color: "bg-gray-100 text-gray-800", label: "Draft" },
+        submitted: { color: "bg-blue-100 text-blue-800", label: "Submitted" },
+        approved: { color: "bg-green-100 text-green-800", label: "Approved" },
+        fulfilled: { color: "bg-purple-100 text-purple-800", label: "Fulfilled" },
+    };
+    const c = config[status] || config.draft;
+    return <Badge className={`${c.color} font-medium`}>{c.label}</Badge>;
+}
+
+function formatDate(date: string) {
+    return new Date(date).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+}
+
+function OrderDashboardCard({ order }: { order: any }) {
+    const [open, setOpen] = useState(false);
+    const hasItems = order.order_items && order.order_items.length > 0;
+    const total = hasItems ? order.order_items.reduce((acc: number, item: any) => acc + item.price_at_order * item.quantity, 0) : 0;
+    return (
+        <Card className="border border-border rounded-lg hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <div>
+                    <CardTitle className="text-lg font-semibold text-foreground truncate">{order.order_name}</CardTitle>
+                    <CardDescription className="text-xs text-muted-foreground">Created {formatDate(order.created_at)}</CardDescription>
+                </div>
+                <div className="flex gap-2 items-center">{statusBadge(order.status)}</div>
+            </CardHeader>
+            <CardContent className="flex flex-row gap-0">
+                {/* Order Info */}
+                <section className="w-1/2 pr-6 flex flex-col justify-between">
+                    <div>
+                        <span className="block text-xs font-medium text-muted-foreground mb-1">Notes</span>
+                        <p className="text-sm text-foreground whitespace-pre-line min-h-[24px]">{order.notes || <span className="italic text-muted-foreground">No notes</span>}</p>
+                    </div>
+                    <div className="flex mt-4">
+                        <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
+                            View Details
+                        </Button>
+                    </div>
+                </section>
+                {/* Vertical Divider */}
+                <div className="w-px bg-border mx-6" />
+                {/* Items in the order */}
+                <section className="w-1/2 flex flex-col justify-center">
+                    <div className="mb-2">
+                        <span className="block text-xs font-medium text-muted-foreground mb-1">Cart Items</span>
+                        {hasItems ? (
+                            <ul className="space-y-2">
+                                {order.order_items.slice(0, 2).map((item: any) => (
+                                    <li key={item.product_id} className="flex items-center gap-3">
+                                        {item.products?.imageSrc && (
+                                            <img src={item.products.imageSrc} alt={item.products.name} className="w-10 h-10 object-cover rounded border" />
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                            <span className="block font-medium text-foreground truncate">{item.products?.name}</span>
+                                            <span className="block text-xs text-muted-foreground">Qty: {item.quantity} &bull; ${item.price_at_order}</span>
+                                        </div>
+                                    </li>
+                                ))}
+                                {order.order_items.length > 2 && (
+                                    <li className="text-xs text-muted-foreground italic">+{order.order_items.length - 2} more item(s)...</li>
+                                )}
+                            </ul>
+                        ) : (
+                            <div className="text-xs text-muted-foreground italic py-4">No items in cart</div>
+                        )}
+                    </div>
+                </section>
+            </CardContent>
+            {/* View Details Dialog */}
+            <Dialog open={open} onOpenChange={setOpen}>
+                <DialogContent className="max-w-2xl sm:max-w-[calc(90vw-2rem)] max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold text-foreground">Order Details</DialogTitle>
+                        <DialogDescription>Detailed view of this order and its cart items.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 mt-2">
+                        <div className="flex flex-col md:flex-row gap-8">
+                            <div className="flex-1 space-y-2">
+                                <div>
+                                    <span className="block text-xs font-medium text-muted-foreground mb-1">Order Name</span>
+                                    <p className="text-base font-semibold text-foreground">{order.order_name}</p>
+                                </div>
+                                <div>
+                                    <span className="block text-xs font-medium text-muted-foreground mb-1">Status</span>
+                                    {statusBadge(order.status)}
+                                </div>
+                                <div>
+                                    <span className="block text-xs font-medium text-muted-foreground mb-1">Created</span>
+                                    <p className="text-sm text-muted-foreground">{formatDate(order.created_at)}</p>
+                                </div>
+                                <div>
+                                    <span className="block text-xs font-medium text-muted-foreground mb-1">Notes</span>
+                                    <p className="text-sm text-foreground whitespace-pre-line min-h-[24px]">{order.notes || <span className="italic text-muted-foreground">No notes</span>}</p>
+                                </div>
+                            </div>
+                            <div className="flex-1">
+                                <span className="block text-xs font-medium text-muted-foreground mb-1">Cart Items</span>
+                                {hasItems ? (
+                                    <ul className="space-y-3 max-h-[300px] overflow-y-auto">
+                                        {order.order_items.map((item: any) => (
+                                            <li key={item.product_id} className="flex items-center gap-4 border-b border-border pb-2 last:border-b-0">
+                                                {item.products?.imageSrc && (
+                                                    <img src={item.products.imageSrc} alt={item.products.name} className="w-12 h-12 object-cover rounded border" />
+                                                )}
+                                                <div className="flex-1 min-w-0">
+                                                    <span className="block font-medium text-foreground truncate">{item.products?.name}</span>
+                                                    <span className="block text-xs text-muted-foreground">Qty: {item.quantity} &bull; ${item.price_at_order}</span>
+                                                </div>
+                                                <span className="text-sm font-semibold text-foreground">${(item.price_at_order * item.quantity).toFixed(2)}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <div className="text-xs text-muted-foreground italic py-4">No items in cart</div>
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex justify-end pt-4">
+                            <Button variant="outline" onClick={() => setOpen(false)}>
+                                Close
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </Card>
+    );
 }
