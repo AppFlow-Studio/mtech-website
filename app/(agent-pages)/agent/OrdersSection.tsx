@@ -7,9 +7,10 @@ interface OrdersSectionProps {
     orders: Order[];
     refetchOrders: () => void;
     setSelectedInquiryForCart: (inquiry: Order) => void;
+    setCartItems: (items: any[]) => void;
 }
 
-export default function OrdersSection({ orders, refetchOrders, setSelectedInquiryForCart }: OrdersSectionProps) {
+export default function OrdersSection({ orders, refetchOrders, setSelectedInquiryForCart, setCartItems }: OrdersSectionProps) {
     return (
         <div className="space-y-4">
             {orders.length === 0 ? (
@@ -21,6 +22,7 @@ export default function OrdersSection({ orders, refetchOrders, setSelectedInquir
                         order={order}
                         refetchOrders={refetchOrders}
                         setSelectedInquiryForCart={setSelectedInquiryForCart}
+                        setCartItems={setCartItems}
                     />
                 ))
             )}

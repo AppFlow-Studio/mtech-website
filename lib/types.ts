@@ -77,3 +77,24 @@ export interface AuthStore extends AuthState {
   logout: () => void
   initialize: () => Promise<void>
 }
+
+
+export interface Product {
+  id: string
+  name: string
+  description: string
+  imageSrc: string
+  link: string
+  default_price: number
+  inStock: boolean
+  tags?: string[]
+}
+
+export interface AgentProduct {
+  id: string
+  product: Product
+  price: number
+  product_id: string
+  agent_tier_id: string
+  created_at: string
+}

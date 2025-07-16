@@ -35,7 +35,9 @@ import {
     CreditCard,
     UserPlus,
     LogOut,
-    Users
+    Users,
+    ShoppingBag,
+    Plane
 } from "lucide-react"
 import { useProfile } from "@/lib/hooks/useProfile"
 import makeNewOrder from "../actions/make-new-order"
@@ -49,6 +51,10 @@ import AgentProductsTab from "@/app/(agent-pages)/components/AgentProductsTab"
 import NewOrderDialog from "./NewOrderDialog";
 import useOrderState from "../components/order-state"
 import OrdersSection from "./OrdersSection";
+import { assignOrderItems } from "../actions/assign-order-items"
+import { Product } from "@/lib/types"
+import { createOrderWithItems } from "../actions/create-order-with-items"
+import { syncOrderItems } from "../actions/sync-order-items"
 
 
 
@@ -71,6 +77,7 @@ export default function AgentPage() {
     const [cartItems, setCartItems] = useState<any[]>([])
     const [isCartOpen, setIsCartOpen] = useState(false)
     const [cartMode, setCartMode] = useState<'guest' | 'inquiry'>('guest')
+    const [isAssigningOrderItems, setIsAssigningOrderItems] = useState(false)
     const [selectedInquiryForCart, setSelectedInquiryForCart] = useState<any>(null)
     const onSetSelectedInquiryForCart = (inquiry: any) => {
         setSelectedInquiryForCart(inquiry)
@@ -80,6 +87,12 @@ export default function AgentPage() {
     const [newNote, setNewNote] = useState("")
     const [isAddingNote, setIsAddingNote] = useState(false)
     const [openOrderDialog, setOpenOrderDialog] = useState(false);
+    const [openCreateOrderDialog, setOpenCreateOrderDialog] = useState(false);
+    const [newOrderForm, setNewOrderForm] = useState({
+        order_name: "",
+        notes: ""
+    });
+    const [isCreatingOrder, setIsCreatingOrder] = useState(false);
     const { data: agent, isLoading } = useGetAgentById(profile?.id || '')
     const { data: inquiries, isLoading: inquiriesLoading, refetch } = useAgentsInquiries(profile?.id || '')
     const { data: orders, isLoading: ordersLoading, refetch: refetchAgentOrders } = useOrderState(profile?.id || '')
@@ -284,7 +297,7 @@ export default function AgentPage() {
             if (existingItem) {
                 return prev.map(item =>
                     item.id === product.id
-                        ? { ...item, quantity: item.quantity + 1 }
+                        ? { ...item, quantity: Number(item.quantity) + 1 }
                         : item
                 )
             }
@@ -326,6 +339,38 @@ export default function AgentPage() {
         setCartMode('guest')
     }
 
+    const handleAssignOrderItems = async ({ cartItems, selectedInquiryForCart }: {
+        cartItems: {
+            id: string,
+            quantity: number,
+            price: number
+        }[], selectedInquiryForCart: any
+    }) => {
+        if (!selectedInquiryForCart) {
+            toast.error('Please select an order to assign items to')
+            return
+        }
+        setIsAssigningOrderItems(true)
+        const orders_items = cartItems.map((item) => ({
+            order_id: selectedInquiryForCart.id,
+            product_id: item.id,
+            quantity: Number(item.quantity),
+            price_at_order: item.price
+        }))
+        console.log('Selected Inquiry For Cart items', orders_items)
+        console.log('Order Items', orders_items)
+        const result = await syncOrderItems(selectedInquiryForCart.id, orders_items)
+        if (result instanceof Error) {
+            toast.error(result.message)
+        } else {
+            toast.success('Order items assigned successfully')
+            setIsCartOpen(false)
+            clearCart()
+            refetchAgentOrders()
+        }
+        setIsAssigningOrderItems(false)
+    }
+    
     return (
         <div className="min-h-screen bg-background">
             <div className="container mx-auto px-4 py-8">
@@ -473,15 +518,19 @@ export default function AgentPage() {
                                                     Loading orders...
                                                 </div>
                                             ) : orders instanceof Error ? (
-                                                <div className="flex items-center gap-2 justify-center py-8">
-                                                    <AlertCircle className="h-8 w-8 text-destructive" />
-                                                    Failed to load orders
+                                                <div className="flex flex-col items-center gap-2">
+                                                    <div className="flex items-center gap-2 justify-center py-8">
+                                                        <AlertCircle className="h-8 w-8 text-destructive" />
+                                                        Failed to load orders
+                                                    </div>
+                                                    <div className="text-sm text-muted-foreground"> Error: {orders.message}</div>
                                                 </div>
                                             ) : (
                                                 <OrdersSection
                                                     orders={orders || []}
                                                     refetchOrders={refetchAgentOrders}
                                                     setSelectedInquiryForCart={onSetSelectedInquiryForCart}
+                                                    setCartItems={setCartItems}
                                                 />
                                             )}
                                         </section>
@@ -502,259 +551,6 @@ export default function AgentPage() {
                         selectedInquiryForCart={selectedInquiryForCart}
                     />
                 )}
-
-                {/* Inquiry Detail Dialog */}
-                <Dialog open={openInquiryDialog} onOpenChange={setOpenInquiryDialog}>
-                    <DialogContent className="max-w-2xl">
-                        <DialogHeader>
-                            <DialogTitle>Inquiry Details</DialogTitle>
-                            <DialogDescription>
-                                Complete information about this customer inquiry
-                            </DialogDescription>
-                        </DialogHeader>
-                        {selectedInquiry && (
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-sm font-medium">Name</label>
-                                        <p className="text-sm text-muted-foreground">{selectedInquiry.name}</p>
-                                    </div>
-                                    <div>
-                                        <label className="text-sm font-medium">Email</label>
-                                        <p className="text-sm text-muted-foreground">{selectedInquiry.email}</p>
-                                    </div>
-                                    <div>
-                                        <label className="text-sm font-medium">Phone</label>
-                                        <p className="text-sm text-muted-foreground">{selectedInquiry.phone}</p>
-                                    </div>
-                                    <div>
-                                        <label className="text-sm font-medium">Item Interested</label>
-                                        <p className="text-sm text-muted-foreground">{selectedInquiry.itemInterested}</p>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium">Comments</label>
-                                    <p className="text-sm text-muted-foreground mt-1">{selectedInquiry.comments}</p>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-sm font-medium">Status</label>
-                                        <div className="mt-1">{getStatusBadge(selectedInquiry.status)}</div>
-                                    </div>
-                                    <div>
-                                        <label className="text-sm font-medium">Priority</label>
-                                        <div className="mt-1">{getPriorityBadge(selectedInquiry.priority)}</div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium">Created</label>
-                                    <p className="text-sm text-muted-foreground">{formatDate(selectedInquiry.created_at)}</p>
-                                </div>
-                            </div>
-                        )}
-                    </DialogContent>
-                </Dialog>
-
-                {/* Edit Inquiry Dialog */}
-                <Dialog open={openEditDialog} onOpenChange={setOpenEditDialog}>
-                    <DialogContent className="sm:max-w-7xl max-h-[90vh] overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-200">
-                        <div className="flex flex-col items-center text-center space-y-4 p-2 w-full">
-                            <DialogHeader className="space-y-2 w-full">
-                                <DialogTitle className="text-xl font-semibold text-foreground">
-                                    Update Inquiry
-                                </DialogTitle>
-                                <DialogDescription className="text-muted-foreground">
-                                    Update the status and add notes for this customer inquiry
-                                </DialogDescription>
-                            </DialogHeader>
-
-                            {selectedInquiry && (
-                                <div className="w-full space-y-6">
-                                    {/* Customer Info */}
-                                    <div className="bg-muted/30 rounded-lg p-4 space-y-2">
-                                        <div>
-                                            <label className="text-xs font-medium text-muted-foreground">Name</label>
-                                            <h4 className="font-medium text-foreground">{selectedInquiry.name}</h4>
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-medium text-muted-foreground">Email</label>
-                                            <p className="text-sm text-muted-foreground">{selectedInquiry.email}</p>
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-medium text-muted-foreground">Item Interested</label>
-                                            <p className="text-sm text-muted-foreground">{selectedInquiry.item_interested}</p>
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-medium text-muted-foreground">Phone</label>
-                                            <p className="text-sm text-muted-foreground">{selectedInquiry.phone}</p>
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-medium text-muted-foreground">Comments</label>
-                                            <p className="text-sm text-muted-foreground">{selectedInquiry.comments}</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Status Selection */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-foreground mb-3">Status</label>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            {getStatusOptions().map((option) => {
-                                                const Icon = option.icon
-                                                return (
-                                                    <Button
-                                                        key={option.value}
-                                                        variant={editForm.status === option.value ? "default" : "outline"}
-                                                        size="sm"
-                                                        onClick={() => setEditForm({ ...editForm, status: option.value })}
-                                                        className="flex items-center gap-2 h-auto py-3"
-                                                    >
-                                                        <Icon className={`h-4 w-4 ${option.color}`} />
-                                                        {option.label}
-                                                    </Button>
-                                                )
-                                            })}
-                                        </div>
-                                    </div>
-
-                                    {/* Priority Selection */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-foreground mb-3">Priority</label>
-                                        <div className="grid grid-cols-3 gap-2">
-                                            {getPriorityOptions().map((option) => (
-                                                <Button
-                                                    key={option.value}
-                                                    variant={editForm.priority === option.value ? "default" : "outline"}
-                                                    size="sm"
-                                                    onClick={() => setEditForm({ ...editForm, priority: option.value })}
-                                                    className="text-xs h-auto py-2"
-                                                >
-                                                    {option.label}
-                                                </Button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Notes Section */}
-                                    <div>
-                                        <div className="flex items-center justify-between mb-4">
-                                            <label className="block text-sm font-medium text-foreground">Notes</label>
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() => setShowNoteForm(!showNoteForm)}
-                                                className="flex items-center gap-2"
-                                            >
-                                                <Plus className="h-4 w-4" />
-                                                Add Note
-                                            </Button>
-                                        </div>
-
-                                        {/* Previous Notes */}
-                                        {notesLoading ? (
-                                            <div className="flex items-center justify-center py-8">
-                                                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                                            </div>
-                                        ) : notes && notes.length > 0 ? (
-                                            <div className="space-y-3 mb-4">
-                                                {notes.map((note) => (
-                                                    <div key={note.id} className="bg-muted/30 rounded-lg p-4 border border-border">
-                                                        <div className="flex items-start justify-between mb-2">
-                                                            <div className="flex items-center gap-2">
-                                                                <User className="h-4 w-4 text-muted-foreground" />
-                                                                <span className="text-sm font-medium text-foreground">
-                                                                    {note.profiles?.first_name} {note.profiles?.last_name}
-                                                                </span>
-                                                                <span className="text-xs text-muted-foreground">
-                                                                    {formatDate(note.created_at)}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                        <p className="text-sm text-foreground text-start w-full">{note.note}</p>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className="text-center py-6 text-muted-foreground">
-                                                <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                                <p className="text-sm">No notes yet</p>
-                                            </div>
-                                        )}
-
-                                        {/* Add Note Form */}
-                                        {showNoteForm && (
-                                            <div className="border border-border rounded-lg p-4 bg-muted/20">
-                                                <div className="space-y-3">
-                                                    <Textarea
-                                                        value={newNote}
-                                                        onChange={(e) => setNewNote(e.target.value)}
-                                                        placeholder="Add your notes about this inquiry..."
-                                                        className="min-h-[100px] resize-none"
-                                                    />
-                                                    <div className="flex gap-2">
-                                                        <Button
-                                                            variant="outline"
-                                                            onClick={handleCancelNote}
-                                                            disabled={isAddingNote}
-                                                            className="flex-1"
-                                                        >
-                                                            Cancel
-                                                        </Button>
-                                                        <Button
-                                                            onClick={handleAddNote}
-                                                            disabled={isAddingNote || !newNote.trim()}
-                                                            className="flex-1"
-                                                        >
-                                                            {isAddingNote ? (
-                                                                <>
-                                                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                                                    Adding...
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <MessageSquare className="h-4 w-4 mr-2" />
-                                                                    Post Note
-                                                                </>
-                                                            )}
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Action Buttons */}
-                                    <div className="flex gap-3 w-full pt-2">
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => setOpenEditDialog(false)}
-                                            className="flex-1 hover:bg-accent transition-colors"
-                                            disabled={isUpdating}
-                                        >
-                                            Cancel
-                                        </Button>
-                                        <Button
-                                            onClick={handleUpdateInquiry}
-                                            disabled={isUpdating || !editForm.status}
-                                            className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 hover:scale-105"
-                                        >
-                                            {isUpdating ? (
-                                                <>
-                                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                                    Updating...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <CheckCircle className="h-4 w-4 mr-2" />
-                                                    Update Inquiry
-                                                </>
-                                            )}
-                                        </Button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </DialogContent>
-                </Dialog>
 
                 {/* Shopping Cart Dialog */}
                 <Dialog open={isCartOpen} onOpenChange={setIsCartOpen}>
@@ -777,8 +573,8 @@ export default function AgentPage() {
                         {cartItems.length === 0 ? (
                             <div className="text-center py-12">
                                 <div className="relative mb-6">
-                                    <div className="absolute inset-0 bg-primary/20 rounded-full"></div>
-                                    <div className="relative bg-primary/10 rounded-full p-6">
+                                    <div className="absolute inset-0 rounded-full"></div>
+                                    <div className="relative bg-primary/10 flex items-center justify-center w-fit mx-auto rounded-full p-6">
                                         <ShoppingCart className="h-12 w-12 self-center text-primary animate-pulse" />
                                     </div>
                                 </div>
@@ -823,7 +619,7 @@ export default function AgentPage() {
                                                         <Button
                                                             size="sm"
                                                             variant="outline"
-                                                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                                            onClick={() => updateQuantity(item.id, Number(item.quantity) - 1)}
                                                             className="h-6 w-6 p-0"
                                                         >
                                                             <Minus className="h-3 w-3" />
@@ -832,7 +628,7 @@ export default function AgentPage() {
                                                         <Button
                                                             size="sm"
                                                             variant="outline"
-                                                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                                            onClick={() => updateQuantity(item.id, Number(item.quantity) + 1)}
                                                             className="h-6 w-6 p-0"
                                                         >
                                                             <Plus className="h-3 w-3" />
@@ -872,25 +668,28 @@ export default function AgentPage() {
 
                                 {/* Checkout Options */}
                                 <div className="space-y-4">
-                                    <div className="flex gap-2">
-                                        <Button
-                                            variant={cartMode === 'guest' ? 'default' : 'outline'}
-                                            size="sm"
-                                            onClick={() => setCartMode('guest')}
-                                            className="flex-1"
-                                        >
-                                            <UserPlus className="h-4 w-4 mr-2" />
-                                            Guest Checkout
-                                        </Button>
-                                        <Button
-                                            variant={cartMode === 'inquiry' ? 'default' : 'outline'}
-                                            size="sm"
-                                            onClick={() => setCartMode('inquiry')}
-                                            className="flex-1"
-                                        >
-                                            <User className="h-4 w-4 mr-2" />
-                                            Assign to Inquiry
-                                        </Button>
+                                    {/* Replace the green cart summary box with a dropdown */}
+                                    <div className="mb-6 flex items-center gap-2">
+                                        <div className="flex-1">
+                                            <label className="block text-sm font-medium mb-1">Assign Cart to Order</label>
+                                            <select
+                                                className="w-full px-3 py-2 border border-green-200 rounded-lg bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-200"
+                                                value={selectedInquiryForCart?.id || ""}
+                                                onChange={e => {
+                                                    const selected = Array.isArray(orders) ? orders.find((order: any) => order.id === e.target.value) || null : null;
+                                                    setSelectedInquiryForCart(selected);
+                                                }}
+                                                disabled={!Array.isArray(orders) || orders.length === 0}
+                                            >
+                                                <option value="">Select an order...</option>
+                                                {Array.isArray(orders) && orders.length > 0 && orders.map((order: any) => (
+                                                    <option key={order.id} value={order.id}>{order.order_name}</option>
+                                                ))}
+                                            </select>
+                                            {(!Array.isArray(orders) || orders.length === 0) && (
+                                                <div className="text-xs text-muted-foreground mt-2">No orders available. Create an order first.</div>
+                                            )}
+                                        </div>
                                     </div>
 
                                     {cartMode === 'inquiry' && (
@@ -922,23 +721,52 @@ export default function AgentPage() {
                                         >
                                             Clear Cart
                                         </Button>
-                                        <Button
-                                            onClick={() => {
-                                                // Handle checkout logic here
-                                                console.log('Checkout:', {
-                                                    items: cartItems,
-                                                    mode: cartMode,
-                                                    inquiry: selectedInquiryForCart,
-                                                    total: getGrandTotal()
-                                                })
-                                                clearCart()
-                                                setIsCartOpen(false)
-                                            }}
-                                            className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
-                                        >
-                                            <CreditCard className="h-4 w-4 mr-2" />
-                                            {cartMode === 'guest' ? 'Guest Checkout' : 'Assign & Checkout'}
-                                        </Button>
+                                        {selectedInquiryForCart &&
+                                            <Button
+                                                onClick={async () => {
+                                                    await handleAssignOrderItems({ cartItems, selectedInquiryForCart })
+                                                }}
+                                                className="flex-1 bg-blue-600 text-white hover:bg-blue-700"
+                                                disabled={isAssigningOrderItems}
+                                            >
+                                                {isAssigningOrderItems ? (
+                                                    <>
+                                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                        Assigning...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <ShoppingBag className="h-4 w-4 mr-2" />
+                                                        Assign to Order
+                                                    </>
+                                                )}
+                                            </Button>}
+                                        {selectedInquiryForCart ?
+                                            <Button
+                                                onClick={() => {
+                                                    // Handle checkout logic here
+                                                    console.log('Checkout:', {
+                                                        items: cartItems,
+                                                        mode: cartMode,
+                                                        inquiry: selectedInquiryForCart,
+                                                        total: getGrandTotal()
+                                                    })
+                                                    clearCart()
+                                                    setIsCartOpen(false)
+                                                }}
+                                                className="flex-1 bg-green-600 text-white hover:bg-green-700"
+                                            >
+                                                <Plane className="h-4 w-4 mr-2" />
+                                                Submit Order
+                                            </Button> :
+                                            <Button
+                                                onClick={() => setOpenCreateOrderDialog(true)}
+                                                className="flex-1 bg-green-600 text-white hover:bg-green-700"
+                                            >
+                                                <Plus className="h-4 w-4 mr-2" />
+                                                Create New Order
+                                            </Button>
+                                        }
                                     </div>
                                 </div>
                             </div>
@@ -952,6 +780,85 @@ export default function AgentPage() {
                     onOpenChange={setOpenOrderDialog}
                     refetchAgentOrders={refetchAgentOrders}
                 />
+
+                {/* Create New Order Dialog */}
+                <Dialog open={openCreateOrderDialog} onOpenChange={setOpenCreateOrderDialog}>
+                    <DialogContent className="max-w-lg">
+                        <DialogHeader>
+                            <DialogTitle>Create New Order</DialogTitle>
+                            <DialogDescription>
+                                Create a new order and assign current cart items to it.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <form
+                            className="space-y-6"
+                            onSubmit={async (e) => {
+                                e.preventDefault();
+                                setIsCreatingOrder(true);
+                                const order_items = cartItems.map((item) => ({
+                                    product_id: item.id,
+                                    quantity: item.quantity,
+                                    price_at_order: item.price
+                                }))
+                                try {
+                                    
+                                    const result = await createOrderWithItems(profile.id, newOrderForm.order_name, newOrderForm.notes, order_items);
+                                    if (result instanceof Error) {
+                                        toast.error(result.message)
+                                    }
+                                    else{
+                                        toast.success('Order created successfully')
+                                        setOpenCreateOrderDialog(false);
+                                        setNewOrderForm({ order_name: "", notes: "" });
+                                        clearCart();
+                                        refetchAgentOrders();
+                                        setIsCartOpen(false);
+                                    }
+                                } finally {
+                                    setIsCreatingOrder(false);
+                                }
+                            }}
+                        >
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Order Name</label>
+                                <input
+                                    className="w-full px-3 py-2 border border-border rounded-md"
+                                    value={newOrderForm.order_name}
+                                    onChange={e => setNewOrderForm(f => ({ ...f, order_name: e.target.value }))}
+                                    placeholder="Enter order name"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Notes</label>
+                                <textarea
+                                    className="w-full px-3 py-2 border border-border rounded-md min-h-[80px] resize-none"
+                                    value={newOrderForm.notes}
+                                    onChange={e => setNewOrderForm(f => ({ ...f, notes: e.target.value }))}
+                                    placeholder="Add any notes for this order..."
+                                />
+                            </div>
+                            <div className="flex gap-2 pt-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setOpenCreateOrderDialog(false)}
+                                    className="flex-1"
+                                    disabled={isCreatingOrder}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+                                    disabled={isCreatingOrder || !newOrderForm.order_name}
+                                >
+                                    {isCreatingOrder ? "Creating..." : "Create Order"}
+                                </Button>
+                            </div>
+                        </form>
+                    </DialogContent>
+                </Dialog>
 
             </div>
         </div>

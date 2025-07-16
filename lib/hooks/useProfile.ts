@@ -29,7 +29,6 @@ export function useProfile(): UseProfile {
         const { data : user_profile } = await response.json();
         setProfile(user_profile);
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Failed to fetch profile");
         setProfile(null);
       }
     }
