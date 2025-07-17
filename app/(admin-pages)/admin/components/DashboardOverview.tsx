@@ -285,8 +285,28 @@ export default function DashboardOverview() {
             {/* Orders Section */}
             <Card>
                 <CardHeader>
-                    <CardTitle>All Orders</CardTitle>
+                    <CardTitle>Submitted Orders</CardTitle>
                     <CardDescription>All orders that have been submitted</CardDescription>
+                </CardHeader>
+                <CardContent>
+                {isSubmittedOrdersLoading ? (
+                    <div className="text-muted-foreground py-8">Loading orders...</div>
+                ) : submittedOrders instanceof Error ? (
+                    <div className="text-red-600 py-8">Error: {submittedOrders.message}</div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {submittedOrders?.map((order: any) => (
+                            <OrderDashboardCard key={order.id} order={order} />
+                        ))}
+                    </div>
+                )}  
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Order Fulfillments</CardTitle>
+                    <CardDescription>All orders that are fulfilled and ready to be shipped</CardDescription>
                 </CardHeader>
                 <CardContent>
                 {isSubmittedOrdersLoading ? (

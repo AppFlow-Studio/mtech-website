@@ -37,7 +37,11 @@ import {
     LogOut,
     Users,
     ShoppingBag,
-    Plane
+    Plane,
+    ClipboardList,
+    Send,
+    PackageCheck,
+    List
 } from "lucide-react"
 import { useProfile } from "@/lib/hooks/useProfile"
 import makeNewOrder from "../actions/make-new-order"
@@ -55,6 +59,7 @@ import { assignOrderItems } from "../actions/assign-order-items"
 import { Product } from "@/lib/types"
 import { createOrderWithItems } from "../actions/create-order-with-items"
 import { syncOrderItems } from "../actions/sync-order-items"
+import AgentOrdersScreen from "../components/AgentOrdersScreen"
 
 
 
@@ -96,6 +101,7 @@ export default function AgentPage() {
     const { data: agent, isLoading } = useGetAgentById(profile?.id || '')
     const { data: inquiries, isLoading: inquiriesLoading, refetch } = useAgentsInquiries(profile?.id || '')
     const { data: orders, isLoading: ordersLoading, refetch: refetchAgentOrders } = useOrderState(profile?.id || '')
+
     const { data: notes, isLoading: notesLoading } = useInquiryNotes(selectedInquiry?.id || '')
     const addNoteMutation = useAddInquiryNote()
     // Don't render anything until we have a valid profile ID
@@ -370,7 +376,8 @@ export default function AgentPage() {
         }
         setIsAssigningOrderItems(false)
     }
-    
+
+    console.log(orders)
     return (
         <div className="min-h-screen bg-background">
             <div className="container mx-auto px-4 py-8">
@@ -427,6 +434,18 @@ export default function AgentPage() {
                                         Products
                                     </div>
                                 </button>
+                                <button
+                                    onClick={() => setActiveTab('orders')}
+                                    className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'orders'
+                                        ? 'border-primary text-primary'
+                                        : 'border-transparent text-muted-foreground hover:text-foreground'
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <List className="h-4 w-4" />
+                                        Orders
+                                    </div>
+                                </button>
                             </div>
 
                             {/* Shopping Cart Button */}
@@ -455,7 +474,74 @@ export default function AgentPage() {
                     <>
                         {/* Stats Overview */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-
+                            {/* Total Orders */}
+                            <div className="bg-white dark:bg-muted rounded-xl shadow-md p-6 flex flex-col items-start gap-2 animate-in fade-in-0 slide-in-from-bottom-2">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <ClipboardList className="h-6 w-6 text-blue-600 animate-pulse" />
+                                    <span className="text-lg font-semibold">Total Orders</span>
+                                </div>
+                                <span className="text-3xl font-bold text-blue-700">{Array.isArray(orders) ? orders.length : 0}</span>
+                            </div>
+                            {/* Orders Submitted */}
+                            <div className="bg-white dark:bg-muted rounded-xl shadow-md p-6 flex flex-col items-start gap-2 animate-in fade-in-0 slide-in-from-bottom-2 delay-100">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Send className="h-6 w-6 text-green-600 " />
+                                    <span className="text-lg font-semibold">Submitted</span>
+                                </div>
+                                <span className="text-3xl font-bold text-green-700">{Array.isArray(orders) ? orders.filter((o: any) => o.status === 'submitted').length : 0}</span>
+                            </div>
+                            {/* Orders Fulfilled */}
+                            <div className="bg-white dark:bg-muted rounded-xl shadow-md p-6 flex flex-col items-start gap-2 animate-in fade-in-0 slide-in-from-bottom-2 delay-200">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <PackageCheck className="h-6 w-6 text-purple-600 " />
+                                    <span className="text-lg font-semibold">Fulfilled</span>
+                                </div>
+                                <span className="text-3xl font-bold text-purple-700">{Array.isArray(orders) ? orders.filter((o: any) => o.status === 'fulfilled' || o.status === 'completed').length : 0}</span>
+                            </div>
+                            {/* Most Recently Updated Order/Cart Item */}
+                            <div className="bg-white dark:bg-muted rounded-xl shadow-md p-6 flex flex-col items-start gap-2 animate-in fade-in-0 slide-in-from-bottom-2 delay-300">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Clock className="h-6 w-6 text-orange-600 animate-spin-slow" />
+                                    <span className="text-lg font-semibold">Most Recent Update</span>
+                                </div>
+                                {Array.isArray(orders) && orders.length > 0 ? (
+                                    (() => {
+                                        // Find the most recently updated order or order item
+                                        let mostRecentOrder = orders[0];
+                                        for (const curr of orders) {
+                                            if (new Date(curr.created_at) > new Date(mostRecentOrder.created_at)) {
+                                                mostRecentOrder = curr;
+                                            }
+                                        }
+                                        let mostRecentItem: any = null;
+                                        for (const order of orders) {
+                                            for (const item of order.order_items) {
+                                                if (!mostRecentItem || new Date(item.updated_at) > new Date(mostRecentItem.updated_at)) {
+                                                    mostRecentItem = { ...item, order_name: order.order_name };
+                                                }
+                                            }
+                                        }
+                                        if (mostRecentItem && new Date(mostRecentItem.created_at) > new Date(mostRecentOrder.created_at)) {
+                                            return (
+                                                <div className="text-sm text-muted-foreground">
+                                                    <span className="font-semibold">Cart Item:</span> {mostRecentItem.products?.name || 'N/A'}<br />
+                                                    <span className="font-semibold">Order:</span> {mostRecentItem.order_name}<br />
+                                                    <span className="font-semibold">Updated:</span> {new Date(mostRecentItem.updated_at).toLocaleString()}
+                                                </div>
+                                            );
+                                        } else {
+                                            return (
+                                                <div className="text-sm text-muted-foreground">
+                                                    <span className="font-semibold">Order:</span> {mostRecentOrder.order_name}<br />
+                                                    <span className="font-semibold">Updated:</span> {new Date(mostRecentOrder.updated_at).toLocaleString()}
+                                                </div>
+                                            );
+                                        }
+                                    })()
+                                ) : (
+                                    <span className="text-muted-foreground">No recent updates</span>
+                                )}
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -544,12 +630,14 @@ export default function AgentPage() {
                             </div>
                         </div>
                     </>
-                ) : (
+                ) : activeTab === 'products' ? (
                     <AgentProductsTab
                         agent_id={profile?.id || ''}
                         addToCart={addToCart}
                         selectedInquiryForCart={selectedInquiryForCart}
                     />
+                ) : (
+                    <AgentOrdersScreen />
                 )}
 
                 {/* Shopping Cart Dialog */}
@@ -801,12 +889,12 @@ export default function AgentPage() {
                                     price_at_order: item.price
                                 }))
                                 try {
-                                    
+
                                     const result = await createOrderWithItems(profile.id, newOrderForm.order_name, newOrderForm.notes, order_items);
                                     if (result instanceof Error) {
                                         toast.error(result.message)
                                     }
-                                    else{
+                                    else {
                                         toast.success('Order created successfully')
                                         setOpenCreateOrderDialog(false);
                                         setNewOrderForm({ order_name: "", notes: "" });

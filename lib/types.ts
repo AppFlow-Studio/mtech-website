@@ -98,3 +98,30 @@ export interface AgentProduct {
   agent_tier_id: string
   created_at: string
 }
+
+export interface Orders {
+  id: string
+  order_name: string
+  notes: string
+  created_at: string
+  updated_at: string
+  agent_id: string
+  status: "draft" | "submitted" | "approved" | "completed"
+  order_items: OrderItems[]
+}
+
+export interface OrderItems {
+  id: string
+  order_id: string
+  product_id: string
+  products : Product
+  quantity: number
+  price_at_order: number
+  created_at: string
+  fulfillment_type : "PICKUP" | "SHIPPING"
+  order_status : "PENDING" | "READY_FOR_PICKUP" | "SHIPPED" | "COMPLETED"
+  tracking_number : string | null
+  carrier : string | null
+  pickup_details : string | null
+  updated_at : string
+}
