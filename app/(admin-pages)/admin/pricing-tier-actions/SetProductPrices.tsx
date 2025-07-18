@@ -13,6 +13,7 @@ import { toast } from "sonner"
 import { PostgrestError } from "@supabase/supabase-js"
 import { Badge } from "@/components/ui/badge"
 import { useTags } from "../components/TagContext"
+import { bulkUpdateProducts } from "../product-actions/bulk-update-products"
 
 export type Tier = {
     id: string;
@@ -40,7 +41,7 @@ export default function SetProductPricesPopup({ tier }: { tier: Tier }) {
     const [openBulkPriceDialog, setOpenBulkPriceDialog] = useState(false)
     const [bulkPrice, setBulkPrice] = useState('')
     const [bulkPriceError, setBulkPriceError] = useState('')
-    const { data: tierAndProducts, isLoading, isError } = useTierAndProducts(tier.id)
+    const { data: tierAndProducts, isLoading, isError, refetch } = useTierAndProducts(tier.id)
     const [productPrices, setProductPrices] = useState<{ id: string, price: number, agent_product_id: string }[]>([])
     //console.log('Product Prices', productPrices)
     //console.log(productPrices)
@@ -53,19 +54,14 @@ export default function SetProductPricesPopup({ tier }: { tier: Tier }) {
     const onUpdate = async () => {
         if (!productPrices) return
         setIsSaving(true)
-        try {
-            const result = await updateTierPrices(tier.id, productPrices.map((product) => ({ id: product.agent_product_id, price: product.price })))
-            if (typeof result !== typeof PostgrestError) {
-                toast.success('Prices updated successfully')
-                setOpen(false) // Close dialog on success
-            } else {
-                toast.error('Failed to update prices')
-            }
-        } catch (error) {
-            toast.error('Error updating prices')
-            console.error(error)
-        } finally {
+        const result = await bulkUpdateProducts(productPrices.map((product: any) => ({ product_id: product.id, agent_tier_id: tier.id, price: product.price })))   
+        if(result instanceof Error){
+            toast.error('Failed to update prices')
+            console.error(result)
+        } else {
+            toast.success(`Updated ${filteredProducts.length} products`)
             setIsSaving(false)
+            refetch()
         }
     }
     if (isLoading) {
@@ -152,7 +148,7 @@ export default function SetProductPricesPopup({ tier }: { tier: Tier }) {
 
     const hasActiveFilters = selectedCategory !== 'all' || selectedTags.length > 0 || priceRange.min || priceRange.max
 
-    const handleBulkPriceSet = () => {
+    const handleBulkPriceSet =  async () => {
         if (!bulkPrice || isNaN(parseFloat(bulkPrice))) {
             setBulkPriceError('Please enter a valid price')
             return
@@ -165,15 +161,27 @@ export default function SetProductPricesPopup({ tier }: { tier: Tier }) {
         }
 
         setBulkPriceError('')
-        setProductPrices(productPrices.map((product: any) => ({ ...product, price })))
-        setOpenBulkPriceDialog(false)
-        setBulkPrice('')
-        toast.success(`Updated ${filteredProducts.length} products to $${price?.toFixed(2)}`)
+        setProductPrices(productPrices.map((p: any) => 
+            filteredProducts.some((fp: any) => fp.id === p.id)
+                ? { ...p, price }
+                : p
+        ));
+        const result = await bulkUpdateProducts(filteredProducts.map((product: any) => ({ product_id: product.id, agent_tier_id: tier.id, price })))   
+        if(result instanceof Error){
+            toast.error('Failed to update prices')
+            console.error(result)
+        } else {
+            toast.success(`Updated ${filteredProducts.length} products to $${price?.toFixed(2)}`)
+            setOpenBulkPriceDialog(false)
+            setBulkPrice('')
+            refetch()
+        }
     }
 
     const getVisibleProductsCount = () => {
         return filteredProducts.length
     }
+
 
     return (
         <>
