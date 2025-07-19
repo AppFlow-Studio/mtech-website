@@ -50,7 +50,7 @@ import { useAgentsInquiries } from "@/components/states/inquiries"
 import { useInquiryNotes, useAddInquiryNote } from "@/components/states/notes"
 import { agentUpdateInquiry } from "@/components/actions/agent-update inquirey"
 import { toast } from "sonner"
-import { useGetAgentById } from "@/app/(admin-pages)/admin/actions/AgentStore"
+import { useGetAgentById } from "@/app/(master-admin)/master-admin/actions/AgentStore"
 import AgentProductsTab from "@/app/(agent-pages)/components/AgentProductsTab"
 import NewOrderDialog from "./NewOrderDialog";
 import useOrderState from "../components/order-state"

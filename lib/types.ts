@@ -78,6 +78,42 @@ export interface AuthStore extends AuthState {
   initialize: () => Promise<void>
 }
 
+export interface AgentTier {
+  id: string
+  name: string
+  description: string
+  commission_rate: number
+}
+
+export interface AgentProductWithPrices {
+  id: string
+  product_id : string
+  agent_tier_id : string
+  price : number,
+  products : Product
+}
+
+export interface AgentProductTierAndPrices {
+  agent_tiers : AgentTier
+  agent_product_prices : AgentProductWithPrices[]
+}
+
+export interface AgentProductPrices { 
+  id: string
+  product_id : string
+  agent_tier_id : string
+  price : number
+}
+
+export interface AgentInfoAndProductTierAndPrices {
+  id: string
+  first_name: string
+  last_name: string
+  email: string
+  phone_number: string
+  agent_tiers: AgentProductTierAndPrices
+}
+
 
 export interface Product {
   id: string

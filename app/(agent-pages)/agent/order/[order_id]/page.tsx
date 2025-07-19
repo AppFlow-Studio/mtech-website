@@ -1,6 +1,6 @@
 "use client"
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { GetOrderInfo } from '@/app/(admin-pages)/admin/actions/order-actions/get-order-info';
+import { GetOrderInfo } from '@/app/(master-admin)/master-admin/actions/order-actions/get-order-info';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
