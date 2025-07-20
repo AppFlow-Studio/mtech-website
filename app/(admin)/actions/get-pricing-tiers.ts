@@ -7,7 +7,6 @@ export async function GetPricingTiers() {
         id,
         name,
         description,
-        commission_rate,
         created_at,
         agent_product_prices (
             id,
@@ -16,7 +15,7 @@ export async function GetPricingTiers() {
                 name
             )
         )
-    `).order('commission_rate', { ascending: true });
+    `).order('created_at', { ascending: true });
 
     if (error) {
         throw new Error(error.message);

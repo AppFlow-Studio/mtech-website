@@ -60,7 +60,7 @@ import { Product } from "@/lib/types"
 import { createOrderWithItems } from "../actions/create-order-with-items"
 import { syncOrderItems } from "../actions/sync-order-items"
 import AgentOrdersScreen from "../components/AgentOrdersScreen"
-
+import { useRouter, useSearchParams } from "next/navigation";
 
 
 
@@ -78,7 +78,27 @@ export default function AgentPage() {
         priority: ''
     })
     const [isUpdating, setIsUpdating] = useState(false)
-    const [activeTab, setActiveTab] = useState('dashboard')
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const initialTab = searchParams?.get("tab") || "dashboard";
+    const [activeTab, _setActiveTab] = useState(initialTab);
+
+    // Keep tab in URL and state in sync
+    const setActiveTab = (tab: string) => {
+        _setActiveTab(tab);
+        const params = new URLSearchParams(window.location.search);
+        params.set("tab", tab);
+        router.replace(`?${params.toString()}`, { scroll: false });
+    };
+
+    useEffect(() => {
+        // If the URL changes (e.g. via browser navigation), update the tab state
+        const tabFromUrl = searchParams?.get("tab");
+        if (tabFromUrl && tabFromUrl !== activeTab) {
+            _setActiveTab(tabFromUrl);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams]);
     const [cartItems, setCartItems] = useState<any[]>([])
     const [isCartOpen, setIsCartOpen] = useState(false)
     const [cartMode, setCartMode] = useState<'guest' | 'inquiry'>('guest')
@@ -613,6 +633,7 @@ export default function AgentPage() {
                                                 </div>
                                             ) : (
                                                 <OrdersSection
+                                                    statusFilter={statusFilter}
                                                     orders={orders || []}
                                                     refetchOrders={refetchAgentOrders}
                                                     setSelectedInquiryForCart={onSetSelectedInquiryForCart}

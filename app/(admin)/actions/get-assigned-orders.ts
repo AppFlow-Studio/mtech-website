@@ -6,23 +6,13 @@ export async function GetAssignedOrders(adminId: string) {
     const { data, error } = await supabase.from('orders').select(`
         *,
         profiles (
-            id,
-            first_name,
-            last_name,
-            email,
-            phone_number
+            *
         ),
         order_items (
-            id,
-            quantity,
-            price_at_order,
-            products (
-                id,
-                name,
-                description
-            )
+           *
         )
-    `).eq('assigned_to', adminId).order('created_at', { ascending: false });
+        )
+    `).eq('admin_assigned', adminId).order('created_at', { ascending: false });
 
     if (error) {
         throw new Error(error.message);

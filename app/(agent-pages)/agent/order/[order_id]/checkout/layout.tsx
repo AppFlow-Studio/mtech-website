@@ -1,7 +1,7 @@
 import { QueryClient, dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { GetOrderInfo } from '@/app/(master-admin)/master-admin/actions/order-actions/get-order-info';
 
-export default async function AgentOrderLayout({
+export default async function AgentOrderCheckoutLayout({
     params,
     children
 }: {

@@ -59,7 +59,7 @@ export default async function RootLayout({
                 <Footer />
               </TanstackProvider>
             </AuthProvider>
-            <Toaster />
+            <Toaster position="top-center" richColors/>
         </ThemeProvider>
       </body>
     </html>

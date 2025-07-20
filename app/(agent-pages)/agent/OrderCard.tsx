@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Pencil, Trash2, ShoppingCart, PlaneLanding, PlaneTakeoff, Eye } from "lucide-react";
+import { Pencil, Trash2, ShoppingCart, PlaneLanding, PlaneTakeoff, Eye, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Product } from "@/lib/types";
@@ -144,9 +144,15 @@ export default function OrderCard({ order, refetchOrders, setSelectedInquiryForC
                             <Button size="sm" variant="outline" onClick={onEdit}>
                                 <Eye className="h-4 w-4 mr-1" /> View
                             </Button>
-                            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={onShop}>
-                                <ShoppingCart className="h-4 w-4 mr-1" /> Shop for Order
-                            </Button>
+                            {order.status === 'approved' ? (
+                                <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={onShop}>
+                                    <CheckCircle className="h-4 w-4 mr-1" />Checkout 
+                                </Button>
+                            ) : (
+                                <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={onShop}>
+                                    <ShoppingCart className="h-4 w-4 mr-1" /> Shop for Order
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </section>

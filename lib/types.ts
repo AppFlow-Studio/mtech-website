@@ -161,3 +161,9 @@ export interface OrderItems {
   pickup_details : string | null
   updated_at : string
 }
+
+
+export interface AdminPrivileges {
+  can_edit_order : boolean
+  
+}

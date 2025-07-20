@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Loader2, CheckCircle, AlertCircle, ShoppingCart, Mail, Phone } from 'lucide-react';
 import { OrderItems } from '@/lib/types';
+import { useState } from 'react';
 
 function statusBadge(status: string) {
     const config: Record<string, { color: string; label: string }> = {
@@ -34,10 +36,21 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
         queryKey: ['order', params.order_id],
         queryFn: () => GetOrderInfo(params.order_id),
     });
+    console.log('Agent Order Details Page', OrderInfo)
     const router = useRouter();
+    const [showApprovalDialog, setShowApprovalDialog] = useState(false);
     const total = OrderInfo.order_items.reduce((acc: number, item: OrderItems) => acc + item.price_at_order * Number(item.quantity), 0);
     const tax = total * 0.08;
     const totalWithTax = total + tax;
+
+    const handleCheckout = () => {
+        if (OrderInfo.status !== 'approved') {
+            setShowApprovalDialog(true);
+        } else {
+            // Navigate to checkout page for approved orders
+            router.push(`/agent/order/${params.order_id}/checkout`);
+        }
+    };
 
     if (OrderInfoLoading) {
         return (
@@ -80,10 +93,10 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
                     {/* Agent Info */}
                     <div className="w-full md:w-1/3 bg-muted/40 rounded-lg p-4 flex flex-col gap-2 animate-in fade-in-0 slide-in-from-left-2">
                         <h4 className="font-semibold text-foreground mb-2">Agent Info</h4>
-                        <div className="text-sm"><span className="font-medium">Name:</span> {OrderInfo.profiles.first_name} {OrderInfo.profiles.last_name}</div>
-                        <div className="text-sm"><span className="font-medium">Email:</span> {OrderInfo.profiles.email}</div>
-                        <div className="text-sm"><span className="font-medium">Phone:</span> {OrderInfo.profiles.phone_number}</div>
-                        <div className="text-sm"><span className="font-medium">Tier:</span> {OrderInfo.profiles.agent_tiers.name}</div>
+                        <div className="text-sm"><span className="font-medium">Name:</span> {OrderInfo.agent.first_name} {OrderInfo.agent.last_name}</div>
+                        <div className="text-sm"><span className="font-medium">Email:</span> {OrderInfo.agent.email}</div>
+                        <div className="text-sm"><span className="font-medium">Phone:</span> {OrderInfo.agent.phone_number}</div>
+                        <div className="text-sm"><span className="font-medium">Tier:</span> {OrderInfo.agent.agent_tiers.name}</div>
                     </div>
                     {/* Order Info */}
                     <div className="flex-1 flex flex-col gap-4">
@@ -107,6 +120,51 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
                 <CardHeader>
                     <CardTitle>Cart Items</CardTitle>
                     <CardDescription>Details of the items in this order</CardDescription>
+
+                    {/* Admin Approval Disclaimer */}
+                    {OrderInfo.status === 'approved' && (
+                        <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
+                            <div className="flex items-start gap-3">
+                                <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                                <div className="text-sm">
+                                    <p className="font-medium text-green-800 mb-1">Order Approved by Admin</p>
+                                    <p className="text-green-700 mb-3">
+                                        This order has been reviewed and approved by our admin team. You can now proceed with checkout.
+                                    </p>
+                                    {OrderInfo.admin_assigned && (
+                                        <div className="bg-white flex flex-col gap-1 rounded-md p-3 border border-green-200">
+                                            <p className="text-xs font-medium text-green-800 mb-1">Approved by:</p>
+                                            <p className="text-sm text-green-700">
+                                                {OrderInfo.admin.first_name} {OrderInfo.admin.last_name}
+                                            </p>
+                                            <p className="text-xs flex items-center gap-1 text-green-600">
+                                                <Mail className="h-4 w-4" />
+                                                {OrderInfo.admin.email}
+                                            </p>
+                                            <p className="text-xs flex items-center gap-1 text-green-600">
+                                                <Phone className="h-4 w-4" />
+                                                {OrderInfo.admin.phone_number || "No phone number provided"}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Checkout Button */}
+                    <div className="mt-4 flex justify-end">
+                        <Button
+                            onClick={handleCheckout}
+                            className={`flex items-center gap-2 ${OrderInfo.status === 'approved'
+                                ? 'bg-green-600 hover:bg-green-700 text-white'
+                                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                }`}
+                        >
+                            <ShoppingCart className="h-4 w-4" />
+                            {OrderInfo.status === 'approved' ? 'Proceed to Checkout' : 'Request Checkout'}
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
@@ -156,6 +214,54 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Approval Required Dialog */}
+            <Dialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <AlertCircle className="h-5 w-5 text-yellow-600" />
+                            Order Approval Required
+                        </DialogTitle>
+                        <DialogDescription className="text-left">
+                            <div className="space-y-3">
+                                <p>
+                                    Your order is currently in <strong>{OrderInfo.status}</strong> status and requires admin approval before you can proceed with checkout.
+                                </p>
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                    <p className="text-sm text-blue-800">
+                                        <strong>Next Steps:</strong>
+                                    </p>
+                                    <ul className="text-sm text-blue-700 mt-1 space-y-1">
+                                        <li>• Submit your order for admin review</li>
+                                        <li>• Wait for admin approval notification</li>
+                                        <li>• Return here to complete checkout once approved</li>
+                                    </ul>
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                    You'll receive a notification once your order has been reviewed and approved by our admin team.
+                                </p>
+                            </div>
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex justify-end gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowApprovalDialog(false)}
+                        >
+                            Close
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                setShowApprovalDialog(false);
+                                router.push('/agent');
+                            }}
+                        >
+                            View All Orders
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

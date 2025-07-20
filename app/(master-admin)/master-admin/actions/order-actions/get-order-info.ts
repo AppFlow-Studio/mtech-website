@@ -6,10 +6,11 @@ export async function GetOrderInfo(order_id: string) {
     const { data, error } = await supabase.from('orders').select(
         `
         *,
-        profiles ( 
-        *,
-        agent_tiers ( * )
-        ),
+         agent:profiles!agent_id ( 
+      *,
+      agent_tiers ( * )
+    ),
+    admin:profiles!admin_assigned ( * ),
         order_items (
             *,
             products (

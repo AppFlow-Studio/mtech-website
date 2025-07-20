@@ -29,10 +29,21 @@ export type Tier = {
     }[];
 }
 
+const tags =  [
+    "atm parts",
+    "pos parts",
+    "network devices",
+    "atm signage",
+    "credit card terminals",
+    "pos system",
+    "pos accessories",
+    "atm machines",
+    "scales",
+]
 export default function SetProductPricesPopup({ tier }: { tier: Tier }) {
     const [pricingSearchTerm, setPricingSearchTerm] = useState('')
     const [isSaving, setIsSaving] = useState(false)
-    const { tags } = useTags()
+    // const { tags } = useTags()
 
     const [open, setOpen] = useState(false)
     const [selectedCategory, setSelectedCategory] = useState('all')
