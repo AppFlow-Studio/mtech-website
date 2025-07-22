@@ -15,24 +15,27 @@ interface UseProfile {
   profile: Profile | null;
   updateProfile: (data: ProfileFormData) => Promise<void>;
   isLoading: boolean;
+  fetchProfile: () => Promise<void>;
 }
 
 export function useProfile(): UseProfile {
   const [isLoading, setIsLoading] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
 
-  useEffect(() => {
-    async function fetchProfile() {
-      try {
-        const response = await fetch("/api/profile");
-        if (!response.ok) throw new Error("Failed to fetch profile");
-        const { data : user_profile } = await response.json();
-        setProfile(user_profile);
-      } catch (error) {
-        setProfile(null);
-      }
+  async function fetchProfile() {
+    try {
+      const response = await fetch("/api/profile");
+      if (!response.ok) throw new Error("Failed to fetch profile");
+      const { data : user_profile } = await response.json();
+      setProfile(user_profile);
+      return user_profile;
+    } catch (error) {
+      setProfile(null);
+      return null;
     }
+  }
 
+  useEffect(() => {
     fetchProfile();
   }, []);
 
@@ -57,5 +60,5 @@ export function useProfile(): UseProfile {
     }
   };
 
-  return { profile, updateProfile, isLoading };
+  return { profile, updateProfile, isLoading, fetchProfile };
 }

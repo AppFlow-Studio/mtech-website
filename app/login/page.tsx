@@ -9,11 +9,14 @@ import { LoginFormData, loginSchema } from '@/lib/validations/auth'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
+import { useProfile } from '@/lib/hooks/useProfile'
+import router from 'next/router'
 
 export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false)
     const [isSignup, setIsSignup] = useState(false)
     const { isLoading, login } = useAuthLogin()
+    const { fetchProfile } = useProfile()
 
     const form = useForm<LoginFormData>({
       resolver: zodResolver(loginSchema),
@@ -42,7 +45,9 @@ export default function LoginPage() {
                 </div>
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(login)} className="space-y-4">
+                    <form onSubmit={form.handleSubmit(async (data) => {
+                        await login(data)
+                    })} className="space-y-4">
                         <FormField
                         control={form.control}
                         name="email"

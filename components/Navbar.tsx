@@ -10,7 +10,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "./ThemeProvider";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
@@ -23,7 +23,12 @@ const Navbar = () => {
   const [hoveredItem, setHoveredItem] = useState<number | null>(null);
   const pathname = usePathname();
   const { user } = useAuthStore()
-  const { profile } = useProfile()
+  const { profile, fetchProfile } = useProfile()
+  useEffect(() => {
+    if (user) {
+      fetchProfile()
+    }
+  }, [user])
   // Check if current path matches or is a child of the href
   const isActive = (href: string) => {
     return pathname === href || pathname.startsWith(`${href}/`);
