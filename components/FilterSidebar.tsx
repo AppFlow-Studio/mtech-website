@@ -179,18 +179,6 @@ const FilterSidebar = ({
           </h3>
           <div className="mt-3 space-y-2">
             <Checkbox
-              id="featured"
-              label="Featured"
-              checked={currentSortOption === "featured"}
-              onChange={() => handleSortToggle("featured")}
-            />
-            <Checkbox
-              id="best-selling"
-              label="Best selling"
-              checked={currentSortOption === "best-selling"}
-              onChange={() => handleSortToggle("best-selling")}
-            />
-            <Checkbox
               id="alpha-az"
               label="Alphabetical, A-Z"
               checked={currentSortOption === "alpha-az"}
@@ -201,30 +189,6 @@ const FilterSidebar = ({
               label="Alphabetical, Z-A"
               checked={currentSortOption === "alpha-za"}
               onChange={() => handleSortToggle("alpha-za")}
-            />
-            <Checkbox
-              id="price-low-high"
-              label="Price, low to high"
-              checked={currentSortOption === "price-low-high"}
-              onChange={() => handleSortToggle("price-low-high")}
-            />
-            <Checkbox
-              id="price-high-low"
-              label="Price, high to low"
-              checked={currentSortOption === "price-high-low"}
-              onChange={() => handleSortToggle("price-high-low")}
-            />
-            <Checkbox
-              id="date-old-new"
-              label="Date, old to new"
-              checked={currentSortOption === "date-old-new"}
-              onChange={() => handleSortToggle("date-old-new")}
-            />
-            <Checkbox
-              id="date-new-old"
-              label="Date, new to old"
-              checked={currentSortOption === "date-new-old"}
-              onChange={() => handleSortToggle("date-new-old")}
             />
           </div>
         </div>

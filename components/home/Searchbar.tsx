@@ -6,18 +6,18 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 
-import { mockProducts as allProducts } from "@/lib/mockdata";
 import type { Product } from "@/lib/types";
+import { useProducts } from "@/app/(master-admin)/master-admin/actions/ProductsServerState";
 
 interface SearchbarProps {
   isVisible: boolean;
 }
 
 function Searchbar({ isVisible }: SearchbarProps) {
+  const { data : allProducts, isLoading } = useProducts();
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const router = useRouter();
-
   // This effect runs whenever the user changes the search query
   useEffect(() => {
     if (searchQuery.trim().length > 0) {
@@ -78,7 +78,7 @@ function Searchbar({ isVisible }: SearchbarProps) {
           </div>
 
           {/* --- Search Suggestions Dropdown with very high z-index --- */}
-          {filteredProducts.length > 0 && (
+          {filteredProducts.length > 0 && !isLoading && (
             <div
               className="absolute top-full mt-2 w-full bg-[#2A1F4A]/95 backdrop-blur-md rounded-xl shadow-2xl border border-white/20 overflow-hidden"
               style={{ zIndex: 9999 }}
