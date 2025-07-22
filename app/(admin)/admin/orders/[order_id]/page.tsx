@@ -162,7 +162,7 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
             <Button
                 variant="outline"
                 className="mb-4"
-                onClick={() => router.push("/admin")}
+                onClick={() => router.back()}
             >
                 ← Back to Orders
             </Button>
@@ -190,10 +190,10 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
                     {/* Agent Info */}
                     <div className="w-full md:w-1/3 bg-muted/40 rounded-lg p-4 flex flex-col gap-2 animate-in fade-in-0 slide-in-from-left-2">
                         <h4 className="font-semibold text-foreground mb-2">Agent Info</h4>
-                        <div className="text-sm"><span className="font-medium">Name:</span> {OrderInfo.profiles.first_name} {OrderInfo.profiles.last_name}</div>
-                        <div className="text-sm"><span className="font-medium">Email:</span> {OrderInfo.profiles.email}</div>
-                        <div className="text-sm"><span className="font-medium">Phone:</span> {OrderInfo.profiles.phone_number}</div>
-                        <div className="text-sm"><span className="font-medium">Tier:</span> {OrderInfo.profiles.agent_tiers.name}</div>
+                        <div className="text-sm"><span className="font-medium">Name:</span> {OrderInfo.agent.first_name} {OrderInfo.agent.last_name}</div>
+                        <div className="text-sm"><span className="font-medium">Email:</span> {OrderInfo.agent.email}</div>
+                        <div className="text-sm"><span className="font-medium">Phone:</span> {OrderInfo.agent.phone_number}</div>
+                        <div className="text-sm"><span className="font-medium">Tier:</span> {OrderInfo.agent.agent_tiers.name}</div>
                     </div>
                     {/* Order Info */}
                     <div className="flex-1 flex flex-col gap-4">
@@ -396,9 +396,9 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
             {
                 showAddItemDialog && (
                     <OrderProductShopping
-                        agent_id={OrderInfo.profiles.id}
-                        agent_tier={OrderInfo.profiles.agent_tiers}
-                        agent_profile={OrderInfo.profiles}
+                        agent_id={OrderInfo.agent.id}
+                        agent_tier={OrderInfo.agent.agent_tiers}
+                        agent_profile={OrderInfo.agent}
                         agent_notes={OrderInfo.notes}
                         order_id={params.order_id}
                         setShowAddItemDialog={setShowAddItemDialog}
@@ -446,7 +446,7 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
                                 </div>
                                 <div className="flex justify-between text-sm">
                                     <span className="text-muted-foreground">Agent:</span>
-                                    <span className="font-medium">{OrderInfo.profiles.first_name} {OrderInfo.profiles.last_name}</span>
+                                    <span className="font-medium">{OrderInfo.agent.first_name} {OrderInfo.agent.last_name}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
                                     <span className="text-muted-foreground">Items:</span>

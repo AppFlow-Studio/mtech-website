@@ -179,10 +179,6 @@ export default function PricingTiers() {
                         <p className="text-sm text-muted-foreground mb-4 w-full">{tier.description}</p>
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium text-foreground">Commission Rate:</span>
-                                <span className="text-lg font-bold text-primary">{tier.commission_rate}%</span>
-                            </div>
-                            <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium text-foreground">Products Priced:</span>
                                 <span className="text-sm text-muted-foreground">
                                     {tier.agent_product_prices.length} products

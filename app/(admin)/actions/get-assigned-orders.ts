@@ -5,7 +5,10 @@ export async function GetAssignedOrders(adminId: string) {
     const supabase = await createClient();
     const { data, error } = await supabase.from('orders').select(`
         *,
-        profiles (
+        agent:profiles!agent_id (
+            *
+        ),
+        admin:profiles!admin_assigned (
             *
         ),
         order_items (

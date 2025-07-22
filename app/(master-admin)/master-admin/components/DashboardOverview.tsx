@@ -146,6 +146,10 @@ export default function DashboardOverview() {
                             </p>
                         </CardContent>
                     </Card>
+                </div>
+
+                {/* Order Statistics Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Submitted Orders</CardTitle>
@@ -155,8 +159,67 @@ export default function DashboardOverview() {
                             {submittedOrders instanceof Error ? (
                                 <div className="text-2xl font-bold">Error: {submittedOrders.message}</div>
                             ) : (
-                                <div className="text-2xl font-bold">{submittedOrders?.length || 0}</div>
+                                <div className="text-2xl font-bold text-blue-600">
+                                    {submittedOrders?.filter((order: any) => order.status === 'submitted').length || 0}
+                                </div>
                             )}
+                            <p className="text-xs text-muted-foreground">
+                                Awaiting approval
+                            </p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Approved Orders</CardTitle>
+                            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            {submittedOrders instanceof Error ? (
+                                <div className="text-2xl font-bold">Error: {submittedOrders.message}</div>
+                            ) : (
+                                <div className="text-2xl font-bold text-green-600">
+                                    {submittedOrders?.filter((order: any) => order.status === 'approved').length || 0}
+                                </div>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                                Ready for fulfillment
+                            </p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Fulfilled Orders</CardTitle>
+                            <Package className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            {submittedOrders instanceof Error ? (
+                                <div className="text-2xl font-bold">Error: {submittedOrders.message}</div>
+                            ) : (
+                                <div className="text-2xl font-bold text-purple-600">
+                                    {submittedOrders?.filter((order: any) => order.status === 'fulfilled').length || 0}
+                                </div>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                                Ready to ship
+                            </p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+                            <DollarSign className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            {submittedOrders instanceof Error ? (
+                                <div className="text-2xl font-bold">Error: {submittedOrders.message}</div>
+                            ) : (
+                                <div className="text-2xl font-bold">
+                                    {submittedOrders?.length || 0}
+                                </div>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                                All time orders
+                            </p>
                         </CardContent>
                     </Card>
                 </div>
@@ -289,25 +352,25 @@ export default function DashboardOverview() {
                     <CardDescription>All orders that have been submitted</CardDescription>
                 </CardHeader>
                 <CardContent>
-                {isSubmittedOrdersLoading ? (
-                    <div className="text-muted-foreground py-8">Loading orders...</div>
-                ) : submittedOrders instanceof Error ? (
-                    <div className="text-red-600 py-8">Error: {submittedOrders.message}</div>
-                ) : (
-                    (submittedOrders && submittedOrders.length === 0) ? (
-                        <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-                            <Clock className="h-12 w-12 text-blue-400 mb-4" />
-                            <div className="text-lg font-semibold mb-1">No submitted orders yet</div>
-                            <div className="text-sm">All caught up! New orders will appear here as soon as they're submitted.</div>
-                        </div>
+                    {isSubmittedOrdersLoading ? (
+                        <div className="text-muted-foreground py-8">Loading orders...</div>
+                    ) : submittedOrders instanceof Error ? (
+                        <div className="text-red-600 py-8">Error: {submittedOrders.message}</div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {submittedOrders?.map((order: any) => (
-                                <OrderDashboardCard key={order.id} order={order} />
-                            ))}
-                        </div>
-                    )
-                )}  
+                        (submittedOrders && submittedOrders.length === 0) ? (
+                            <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+                                <Clock className="h-12 w-12 text-blue-400 mb-4" />
+                                <div className="text-lg font-semibold mb-1">No submitted orders yet</div>
+                                <div className="text-sm">All caught up! New orders will appear here as soon as they're submitted.</div>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {submittedOrders?.map((order: any) => (
+                                    <OrderDashboardCard key={order.id} order={order} />
+                                ))}
+                            </div>
+                        )
+                    )}
                 </CardContent>
             </Card>
 
@@ -317,32 +380,32 @@ export default function DashboardOverview() {
                     <CardDescription>All orders that are fulfilled and ready to be shipped</CardDescription>
                 </CardHeader>
                 <CardContent>
-                {isSubmittedOrdersLoading ? (
-                    <div className="text-muted-foreground py-8">Loading orders...</div>
-                ) : submittedOrders instanceof Error ? (
-                    <div className="text-red-600 py-8">Error: {submittedOrders.message}</div>
-                ) : (
-                    (() => {
-                        // Filter for fulfilled orders
-                        const fulfilledOrders = submittedOrders?.filter((order: any) => order.status === "fulfilled") || [];
-                        if (fulfilledOrders.length === 0) {
+                    {isSubmittedOrdersLoading ? (
+                        <div className="text-muted-foreground py-8">Loading orders...</div>
+                    ) : submittedOrders instanceof Error ? (
+                        <div className="text-red-600 py-8">Error: {submittedOrders.message}</div>
+                    ) : (
+                        (() => {
+                            // Filter for fulfilled orders
+                            const fulfilledOrders = submittedOrders?.filter((order: any) => order.status === "fulfilled") || [];
+                            if (fulfilledOrders.length === 0) {
+                                return (
+                                    <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+                                        <CheckCircle className="h-12 w-12 text-green-400 mb-4" />
+                                        <div className="text-lg font-semibold mb-1">No fulfilled orders yet</div>
+                                        <div className="text-sm">Once orders are fulfilled and ready to ship, they will appear here.</div>
+                                    </div>
+                                );
+                            }
                             return (
-                                <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-                                    <CheckCircle className="h-12 w-12 text-green-400 mb-4" />
-                                    <div className="text-lg font-semibold mb-1">No fulfilled orders yet</div>
-                                    <div className="text-sm">Once orders are fulfilled and ready to ship, they will appear here.</div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {fulfilledOrders.map((order: any) => (
+                                        <OrderDashboardCard key={order.id} order={order} />
+                                    ))}
                                 </div>
                             );
-                        }
-                        return (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {fulfilledOrders.map((order: any) => (
-                                    <OrderDashboardCard key={order.id} order={order} />
-                                ))}
-                            </div>
-                        );
-                    })()
-                )}  
+                        })()
+                    )}
                 </CardContent>
             </Card>
 

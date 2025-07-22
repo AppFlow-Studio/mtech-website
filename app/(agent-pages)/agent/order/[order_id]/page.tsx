@@ -73,7 +73,7 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
             <Button
                 variant="outline"
                 className="mb-4"
-                onClick={() => router.push("/agent")}
+                onClick={() => router.back()}
             >
                 ← Back to Orders
             </Button>
@@ -180,7 +180,7 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
                                     <div className="flex-1 flex-row flex">
                                         <div className="flex flex-col gap-1">
                                             <div className="font-semibold text-foreground">{item.products?.name}</div>
-                                            <div className="text-xs text-muted-foreground mb-1">{item.products?.description}</div>
+                                            <div className="text-xs text-muted-foreground mb-1">{item.products?.description.slice(0, 100)}...</div>
                                             <div className="flex flex-wrap gap-2 items-center text-xs">
                                                 <Badge>{item.order_status}</Badge>
                                                 <span>Qty: <span className="font-medium">{item.quantity}</span></span>

@@ -16,7 +16,7 @@ export async function getSubmittedOrders() {
             )
         )
         `
-    ).eq('status', 'submitted')
+    ).neq('status', 'draft')
     if (error) {
         return new Error(error.message)
     }

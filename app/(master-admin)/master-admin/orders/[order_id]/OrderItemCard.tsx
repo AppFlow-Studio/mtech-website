@@ -107,7 +107,7 @@ export function OrderItemCard({ item, order_id, refetchOrderInfo }: OrderItemCar
 
                         <div className="flex flex-col gap-1">
                             <div className="font-semibold text-foreground">{item.products?.name}</div>
-                            <div className="text-xs text-muted-foreground mb-1">{item.products?.description}</div>
+                            <div className="text-xs text-muted-foreground mb-1">{item.products?.description.slice(0, 100)}...</div>
                             <div className="flex flex-wrap gap-2 items-center text-xs">
                                 {statusBadge(item.order_status)}
                                 <span>Qty: <span className="font-medium">{item.quantity}</span></span>
@@ -158,7 +158,7 @@ export function OrderItemCard({ item, order_id, refetchOrderInfo }: OrderItemCar
                             )}
                             <div>
                                 <div className="font-medium text-foreground">{item.products?.name}</div>
-                                <div className="text-xs text-muted-foreground">{item.products?.description}</div>
+                                <div className="text-xs text-muted-foreground">{item.products?.description.slice(0, 100)}...</div>
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">

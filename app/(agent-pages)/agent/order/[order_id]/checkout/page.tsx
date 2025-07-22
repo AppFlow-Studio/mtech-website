@@ -152,7 +152,7 @@ export default function AgentOrderCheckoutPage({ params }: { params: { order_id:
                                                         {item.products?.name}
                                                     </h4>
                                                     <p className="text-sm text-muted-foreground mt-1">
-                                                        {item.products?.description}
+                                                        {item.products?.description.slice(0, 100)}...
                                                     </p>
                                                     <div className="flex items-center gap-2 mt-2">
                                                         <span className="text-sm text-muted-foreground">

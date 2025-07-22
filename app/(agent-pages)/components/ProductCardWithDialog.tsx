@@ -44,7 +44,7 @@ export default function ProductCardWithDialog({ product, agent_product_price, on
                     <div className="space-y-3">
                         <div>
                             <h3 className="font-semibold text-foreground text-lg">{product.name}</h3>
-                            <p className="text-sm text-muted-foreground">{product.description}</p>
+                            <p className="text-sm text-muted-foreground">{product.description.slice(0, 200)}...</p>
                         </div>
 
                         {/* Pricing */}

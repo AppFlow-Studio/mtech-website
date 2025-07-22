@@ -69,12 +69,12 @@ function Searchbar({ isVisible }: SearchbarProps) {
                 className="flex-1 bg-transparent text-white placeholder-white/70 outline-none text-xs sm:text-sm lg:text-base py-1.5 sm:py-2 w-full"
               />
             </div>
-            <button
+            {/* <button
               type="submit"
               className="bg-gradient-to-r from-[#662CB2] to-[#2C134C] text-white text-xs sm:text-sm px-4 sm:px-6 lg:px-8 py-1.5 sm:py-2.5 lg:py-3 rounded-full font-semibold hover:from-purple-700 hover:to-purple-800 transform hover:scale-105 transition-all duration-200"
             >
               Search
-            </button>
+            </button> */}
           </div>
 
           {/* --- Search Suggestions Dropdown with very high z-index --- */}

@@ -233,7 +233,7 @@ export default function AdminDashboard() {
                                             <div className="flex items-center gap-4">
                                                 <div className="flex flex-col">
                                                     <h4 className="font-medium text-foreground">{order.order_name}</h4>
-                                                    <p className="text-sm text-muted-foreground">Agent: {order.profiles.first_name} {order.profiles.last_name}</p>
+                                                    <p className="text-sm text-muted-foreground">Agent: {order.agent.first_name} {order.agent.last_name}</p>
                                                     <p className="text-xs text-muted-foreground">{formatDate(order.created_at)}</p>
                                                 </div>
                                             </div>
@@ -315,7 +315,7 @@ export default function AdminDashboard() {
                                                 <Users className="h-4 w-4 text-muted-foreground" />
                                                 <div>
                                                     <p className="text-sm font-medium">Agent</p>
-                                                    <p className="text-sm text-muted-foreground">{order.profiles.first_name} {order.profiles.last_name}</p>
+                                                    <p className="text-sm text-muted-foreground">{order.agent.first_name} {order.agent.last_name}</p>
                                                 </div>
                                             </div>
                                             <div className="flex items-start gap-2">

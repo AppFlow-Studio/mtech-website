@@ -29,7 +29,7 @@ export type Tier = {
     }[];
 }
 
-const tags =  [
+const tags = [
     "atm parts",
     "pos parts",
     "network devices",
@@ -52,6 +52,13 @@ export default function SetProductPricesPopup({ tier }: { tier: Tier }) {
     const [openBulkPriceDialog, setOpenBulkPriceDialog] = useState(false)
     const [bulkPrice, setBulkPrice] = useState('')
     const [bulkPriceError, setBulkPriceError] = useState('')
+    const [bulkMarkupPercentage, setBulkMarkupPercentage] = useState('20')
+    const [bulkMarkupMultiplier, setBulkMarkupMultiplier] = useState('1.2')
+    const [bulkPriceMode, setBulkPriceMode] = useState<'fixed' | 'markup' | 'markup-current'>('fixed')
+    const [openMarkupDialog, setOpenMarkupDialog] = useState(false)
+    const [selectedProductForMarkup, setSelectedProductForMarkup] = useState<any>(null)
+    const [markupPercentage, setMarkupPercentage] = useState('20')
+    const [markupMultiplier, setMarkupMultiplier] = useState('1.2')
     const { data: tierAndProducts, isLoading, isError, refetch } = useTierAndProducts(tier.id)
     const [productPrices, setProductPrices] = useState<{ id: string, price: number, agent_product_id: string }[]>([])
     //console.log('Product Prices', productPrices)
@@ -65,8 +72,8 @@ export default function SetProductPricesPopup({ tier }: { tier: Tier }) {
     const onUpdate = async () => {
         if (!productPrices) return
         setIsSaving(true)
-        const result = await bulkUpdateProducts(productPrices.map((product: any) => ({ product_id: product.id, agent_tier_id: tier.id, price: product.price })))   
-        if(result instanceof Error){
+        const result = await bulkUpdateProducts(productPrices.map((product: any) => ({ product_id: product.id, agent_tier_id: tier.id, price: product.price })))
+        if (result instanceof Error) {
             toast.error('Failed to update prices')
             console.error(result)
         } else {
@@ -159,7 +166,7 @@ export default function SetProductPricesPopup({ tier }: { tier: Tier }) {
 
     const hasActiveFilters = selectedCategory !== 'all' || selectedTags.length > 0 || priceRange.min || priceRange.max
 
-    const handleBulkPriceSet =  async () => {
+    const handleBulkPriceSet = async () => {
         if (!bulkPrice || isNaN(parseFloat(bulkPrice))) {
             setBulkPriceError('Please enter a valid price')
             return
@@ -172,13 +179,13 @@ export default function SetProductPricesPopup({ tier }: { tier: Tier }) {
         }
 
         setBulkPriceError('')
-        setProductPrices(productPrices.map((p: any) => 
+        setProductPrices(productPrices.map((p: any) =>
             filteredProducts.some((fp: any) => fp.id === p.id)
                 ? { ...p, price }
                 : p
         ));
-        const result = await bulkUpdateProducts(filteredProducts.map((product: any) => ({ product_id: product.id, agent_tier_id: tier.id, price })))   
-        if(result instanceof Error){
+        const result = await bulkUpdateProducts(filteredProducts.map((product: any) => ({ product_id: product.id, agent_tier_id: tier.id, price })))
+        if (result instanceof Error) {
             toast.error('Failed to update prices')
             console.error(result)
         } else {
@@ -191,6 +198,127 @@ export default function SetProductPricesPopup({ tier }: { tier: Tier }) {
 
     const getVisibleProductsCount = () => {
         return filteredProducts.length
+    }
+
+    const getBulkPreviewData = () => {
+        if (!filteredProducts.length) return null
+
+        let totalCurrentValue = 0
+        let totalNewValue = 0
+        let sampleProducts = filteredProducts.slice(0, 3)
+
+        if (bulkPriceMode === 'fixed' && bulkPrice) {
+            const newPrice = parseFloat(bulkPrice)
+            totalCurrentValue = filteredProducts.reduce((sum, product) => sum + (product.price || 0), 0)
+            totalNewValue = newPrice * filteredProducts.length
+            sampleProducts = sampleProducts.map(product => ({
+                ...product,
+                newPrice: newPrice
+            }))
+        } else if (bulkPriceMode === 'markup' && bulkMarkupPercentage) {
+            const percentage = parseFloat(bulkMarkupPercentage)
+            totalCurrentValue = filteredProducts.reduce((sum, product) => sum + (product.price || 0), 0)
+            totalNewValue = filteredProducts.reduce((sum, product) => {
+                const newPrice = calculateMarkupPrice((product as any).default_price || 0, percentage)
+                return sum + newPrice
+            }, 0)
+            sampleProducts = sampleProducts.map(product => ({
+                ...product,
+                newPrice: calculateMarkupPrice((product as any).default_price || 0, percentage)
+            }))
+        } else if (bulkPriceMode === 'markup-current' && bulkMarkupPercentage) {
+            const percentage = parseFloat(bulkMarkupPercentage)
+            totalCurrentValue = filteredProducts.reduce((sum, product) => sum + (product.price || 0), 0)
+            totalNewValue = filteredProducts.reduce((sum, product) => {
+                const newPrice = calculateMarkupPrice(product.price || 0, percentage)
+                return sum + newPrice
+            }, 0)
+            sampleProducts = sampleProducts.map(product => ({
+                ...product,
+                newPrice: calculateMarkupPrice(product.price || 0, percentage)
+            }))
+        }
+
+        return {
+            totalCurrentValue,
+            totalNewValue,
+            sampleProducts,
+            productCount: filteredProducts.length
+        }
+    }
+
+    const handleBulkMarkupSet = async () => {
+        if (!bulkMarkupPercentage) return
+
+        const percentage = parseFloat(bulkMarkupPercentage)
+        const updatedPrices = productPrices.map((product: any) => {
+            const matchingProduct = filteredProducts.find(p => p.id === product.id)
+            if (matchingProduct) {
+                const newPrice = calculateMarkupPrice((matchingProduct as any).default_price || 0, percentage)
+                return { ...product, price: newPrice }
+            }
+            return product
+        })
+
+        setProductPrices(updatedPrices)
+        setOpenBulkPriceDialog(false)
+        setBulkMarkupPercentage('20')
+        setBulkMarkupMultiplier('1.2')
+    }
+
+    const handleBulkMarkupCurrentSet = async () => {
+        if (!bulkMarkupPercentage) return
+
+        const percentage = parseFloat(bulkMarkupPercentage)
+        const updatedPrices = productPrices.map((product: any) => {
+            const matchingProduct = filteredProducts.find(p => p.id === product.id)
+            if (matchingProduct) {
+                const newPrice = calculateMarkupPrice(matchingProduct.price || 0, percentage)
+                return { ...product, price: newPrice }
+            }
+            return product
+        })
+
+        setProductPrices(updatedPrices)
+        setOpenBulkPriceDialog(false)
+        setBulkMarkupPercentage('20')
+        setBulkMarkupMultiplier('1.2')
+    }
+
+    const openMarkupCalculator = (product: any) => {
+        setSelectedProductForMarkup(product)
+        setOpenMarkupDialog(true)
+    }
+
+    const calculateMarkupPrice = (basePrice: number, percentage: number) => {
+        return basePrice * (1 + percentage / 100)
+    }
+
+    const calculateMultiplierPrice = (basePrice: number, multiplier: number) => {
+        return basePrice * multiplier
+    }
+
+    const applyMarkupPrice = () => {
+        if (!selectedProductForMarkup) return
+
+        const basePrice = selectedProductForMarkup.default_price || 0
+        let newPrice = 0
+
+        if (markupPercentage) {
+            newPrice = calculateMarkupPrice(basePrice, parseFloat(markupPercentage))
+        } else if (markupMultiplier) {
+            newPrice = calculateMultiplierPrice(basePrice, parseFloat(markupMultiplier))
+        }
+
+        if (productPrices) {
+            setProductPrices(productPrices.map((p: any) => ({
+                ...p,
+                price: p.id === selectedProductForMarkup.id ? newPrice : p.price
+            })))
+        }
+
+        setOpenMarkupDialog(false)
+        setSelectedProductForMarkup(null)
     }
 
 
@@ -208,7 +336,14 @@ export default function SetProductPricesPopup({ tier }: { tier: Tier }) {
                         Manage Product Prices
                     </Button>
                 </DialogTrigger>
-                <DialogContent className="w-full max-w-[calc(100%-2rem)] sm:max-w-7xl max-h-[90vh] overflow-y-auto">
+                <DialogContent
+                    onInteractOutside={(e) => {
+                        e.preventDefault();
+                    }}
+                    onEscapeKeyDown={(e) => {
+                        e.preventDefault();
+                    }}
+                    className="w-full max-w-[calc(100%-2rem)] sm:max-w-7xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>
                             Product Pricing for {tier.name}
@@ -237,6 +372,7 @@ export default function SetProductPricesPopup({ tier }: { tier: Tier }) {
                             Bulk Set Price ({getVisibleProductsCount()} products)
                         </Button>
                     </div>
+                    
                     {/* Tags and Product Filters */}
                     <div className="space-y-4 mb-6">
                         {/* Tags Filter */}
@@ -314,42 +450,68 @@ export default function SetProductPricesPopup({ tier }: { tier: Tier }) {
                     <div className="space-y-4">
                         {filteredProducts.map((product: any) => {
                             const currentPrice = product.price
+                            const purchaseCost = product.default_price || 0
                             return (
-                                <div key={product.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
-                                    <div className="flex items-center space-x-4">
-                                        <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
-                                            <img
-                                                src={product.imageSrc}
-                                                alt={product.name}
-                                                className="w-8 h-8 object-cover rounded"
+                                <div key={product.id} className="p-4 border border-border rounded-lg">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center space-x-4">
+                                            <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
+                                                <img
+                                                    src={product.imageSrc}
+                                                    alt={product.name}
+                                                    className="w-8 h-8 object-cover rounded"
+                                                />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-medium text-foreground">{product.name}</h4>
+                                                <p className="text-sm text-muted-foreground line-clamp-1">
+                                                    {product.description}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <span className="text-sm text-muted-foreground">$</span>
+                                            <Input
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                value={currentPrice}
+                                                key={product.id}
+                                                onChange={(e) => {
+                                                    const newPrice = parseFloat(e.target.value)
+                                                    if (productPrices) {
+                                                        setProductPrices(productPrices.map((p: any) => ({ ...p, price: p.id === product.id ? newPrice : p.price })))
+                                                    }
+                                                }}
+                                                className="w-24"
+                                                placeholder="0.00"
                                             />
                                         </div>
-                                        <div>
-                                            <h4 className="font-medium text-foreground">{product.name}</h4>
-                                            <p className="text-sm text-muted-foreground line-clamp-1">
-                                                {product.description}
-                                            </p>
-                                        </div>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                        <span className="text-sm text-muted-foreground">$</span>
-                                        <Input
-                                            type="number"
-                                            min="0"
-                                            step="0.01"
-                                            value={currentPrice}
-                                            key={product.id}
 
-                                            onChange={(e) => {
-                                                const newPrice = parseFloat(e.target.value)
-                                                if (productPrices) {
-                                                    setProductPrices(productPrices.map((p: any) => ({ ...p, price: p.id === product.id ? newPrice : p.price })))
-                                                }
-                                                // TODO: Update tier in database
-                                            }}
-                                            className="w-24"
-                                            placeholder="0.00"
-                                        />
+                                    {/* Purchase Cost and Markup Section */}
+                                    <div className="flex items-center justify-between bg-muted/50 rounded-lg p-3">
+                                        <div className="flex items-center space-x-4">
+                                            <div className="text-sm">
+                                                <span className="text-muted-foreground">Purchase Cost:</span>
+                                                <span className="ml-2 font-medium text-foreground">${purchaseCost.toFixed(2)}</span>
+                                            </div>
+                                            <div className="text-sm">
+                                                <span className="text-muted-foreground">Current Markup:</span>
+                                                <span className={`ml-2 font-medium ${currentPrice > purchaseCost ? 'text-green-600' : 'text-red-600'}`}>
+                                                    {purchaseCost > 0 ? ((currentPrice - purchaseCost) / purchaseCost * 100).toFixed(1) : '0'}%
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => openMarkupCalculator(product)}
+                                            className="flex items-center gap-2"
+                                        >
+                                            <Tag className="h-4 w-4" />
+                                            Markup Calculator
+                                        </Button>
                                     </div>
                                 </div>
                             )
@@ -381,24 +543,54 @@ export default function SetProductPricesPopup({ tier }: { tier: Tier }) {
 
             {/* Bulk Price Dialog */}
             <Dialog open={openBulkPriceDialog} onOpenChange={setOpenBulkPriceDialog}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <DollarSign className="h-5 w-5 text-primary" />
                             Bulk Set Prices
                         </DialogTitle>
                         <DialogDescription>
-                            Set the same price for all {getVisibleProductsCount()} visible products
+                            Set prices for all {getVisibleProductsCount()} visible products
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="space-y-4">
-                        {/* Price Input */}
+                    <div className="space-y-6">
+                        {/* Mode Selection */}
                         <div>
-                            <label className="block text-sm font-medium text-foreground mb-2">
-                                Price per Product
+                            <label className="block text-sm font-medium text-foreground mb-3">
+                                Pricing Mode
                             </label>
-                            <div className="relative">
+                            <div className="flex space-x-2">
+                                <Button
+                                    variant={bulkPriceMode === 'fixed' ? 'default' : 'outline'}
+                                    size="sm"
+                                    onClick={() => setBulkPriceMode('fixed')}
+                                >
+                                    Fixed Price
+                                </Button>
+                                <Button
+                                    variant={bulkPriceMode === 'markup' ? 'default' : 'outline'}
+                                    size="sm"
+                                    onClick={() => setBulkPriceMode('markup')}
+                                >
+                                    Markup from Cost
+                                </Button>
+                                <Button
+                                    variant={bulkPriceMode === 'markup-current' ? 'default' : 'outline'}
+                                    size="sm"
+                                    onClick={() => setBulkPriceMode('markup-current')}
+                                >
+                                    Markup from Current
+                                </Button>
+                            </div>
+                        </div>
+
+                        {/* Fixed Price Mode */}
+                        {bulkPriceMode === 'fixed' && (
+                            <div>
+                                <label className="block text-sm font-medium text-foreground mb-2">
+                                    Price per Product
+                                </label>
                                 <Input
                                     type="number"
                                     min="0"
@@ -406,80 +598,332 @@ export default function SetProductPricesPopup({ tier }: { tier: Tier }) {
                                     value={bulkPrice}
                                     onChange={(e) => {
                                         setBulkPrice(e.target.value)
-                                        if (bulkPriceError) setBulkPriceError('')
+                                        setBulkPriceError('')
                                     }}
                                     placeholder="0.00"
-                                    className="pl-8"
-                                    autoFocus
+                                    className={bulkPriceError ? 'border-red-500' : ''}
                                 />
+                                {bulkPriceError && (
+                                    <p className="text-sm text-red-500 mt-1">{bulkPriceError}</p>
+                                )}
                             </div>
-                            {bulkPriceError && (
-                                <p className="text-sm text-destructive mt-1">{bulkPriceError}</p>
+                        )}
+
+                        {/* Markup Mode */}
+                        {(bulkPriceMode === 'markup' || bulkPriceMode === 'markup-current') && (
+                            <div>
+                                <label className="block text-sm font-medium text-foreground mb-2">
+                                    Markup Percentage
+                                </label>
+                                <div className="flex items-center space-x-2">
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        step="0.1"
+                                        value={bulkMarkupPercentage}
+                                        onChange={(e) => {
+                                            setBulkMarkupPercentage(e.target.value)
+                                            if (e.target.value) {
+                                                const percentage = parseFloat(e.target.value)
+                                                setBulkMarkupMultiplier((1 + percentage / 100).toFixed(2))
+                                            }
+                                        }}
+                                        placeholder="20"
+                                        className="flex-1"
+                                    />
+                                    <span className="text-sm text-muted-foreground">%</span>
+                                </div>
+                                <div className="flex space-x-2 mt-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                            setBulkMarkupPercentage('10')
+                                            setBulkMarkupMultiplier('1.1')
+                                        }}
+                                    >
+                                        10%
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                            setBulkMarkupPercentage('20')
+                                            setBulkMarkupMultiplier('1.2')
+                                        }}
+                                    >
+                                        20%
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                            setBulkMarkupPercentage('50')
+                                            setBulkMarkupMultiplier('1.5')
+                                        }}
+                                    >
+                                        50%
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                            setBulkMarkupPercentage('100')
+                                            setBulkMarkupMultiplier('2.0')
+                                        }}
+                                    >
+                                        100%
+                                    </Button>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-2">
+                                    {bulkPriceMode === 'markup'
+                                        ? 'Markup will be applied to each product\'s purchase cost'
+                                        : 'Markup will be applied to each product\'s current agent price'
+                                    }
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Preview Section */}
+                        {(() => {
+                            const previewData = getBulkPreviewData()
+                            if (!previewData) return null
+
+                            return (
+                                <div className="bg-muted/50 rounded-lg p-4 space-y-4">
+                                    <h4 className="text-sm font-medium text-foreground">Preview</h4>
+
+                                    {/* Summary Stats */}
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                            <span className="text-muted-foreground">Products to update:</span>
+                                            <span className="ml-2 font-medium">{previewData.productCount}</span>
+                                        </div>
+                                        <div>
+                                            <span className="text-muted-foreground">Current total value:</span>
+                                            <span className="ml-2 font-medium">${previewData.totalCurrentValue.toFixed(2)}</span>
+                                        </div>
+                                        <div>
+                                            <span className="text-muted-foreground">New total value:</span>
+                                            <span className="ml-2 font-medium text-green-600">${previewData.totalNewValue.toFixed(2)}</span>
+                                        </div>
+                                        <div>
+                                            <span className="text-muted-foreground">Value change:</span>
+                                            <span className={`ml-2 font-medium ${previewData.totalNewValue >= previewData.totalCurrentValue ? 'text-green-600' : 'text-red-600'}`}>
+                                                {previewData.totalNewValue >= previewData.totalCurrentValue ? '+' : ''}${(previewData.totalNewValue - previewData.totalCurrentValue).toFixed(2)}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Sample Products */}
+                                    <div>
+                                        <h5 className="text-xs font-medium text-muted-foreground mb-2">Sample Products</h5>
+                                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                                            {previewData.sampleProducts.map((product: any) => (
+                                                <div key={product.id} className="flex items-center justify-between text-sm p-2 bg-background rounded border">
+                                                    <span className="truncate flex-1">{product.name}</span>
+                                                    <span className="text-muted-foreground ml-2">
+                                                        ${product.price?.toFixed(2)} → <span className="font-medium text-green-600">${product.newPrice?.toFixed(2)}</span>
+                                                    </span>
+                                                </div>
+                                            ))}
+                                            {previewData.productCount > 3 && (
+                                                <div className="text-xs text-muted-foreground text-center py-1">
+                                                    +{previewData.productCount - 3} more products
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        })()}
+                    </div>
+
+                    <div className="flex justify-end gap-2 mt-6">
+                        <Button variant="outline" onClick={() => setOpenBulkPriceDialog(false)}>
+                            Cancel
+                        </Button>
+                        {bulkPriceMode === 'fixed' ? (
+                            <Button
+                                onClick={handleBulkPriceSet}
+                                disabled={!bulkPrice || !!bulkPriceError}
+                            >
+                                Apply Fixed Price
+                            </Button>
+                        ) : bulkPriceMode === 'markup' ? (
+                            <Button
+                                onClick={handleBulkMarkupSet}
+                                disabled={!bulkMarkupPercentage}
+                            >
+                                Apply Markup from Cost
+                            </Button>
+                        ) : (
+                            <Button
+                                onClick={handleBulkMarkupCurrentSet}
+                                disabled={!bulkMarkupPercentage}
+                            >
+                                Apply Markup from Current
+                            </Button>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Markup Calculator Dialog */}
+            <Dialog open={openMarkupDialog} onOpenChange={setOpenMarkupDialog}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Tag className="h-5 w-5 text-primary" />
+                            Markup Calculator
+                        </DialogTitle>
+                        <DialogDescription>
+                            Calculate sale price based on purchase cost for {selectedProductForMarkup?.name}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-6">
+                        {/* Product Info */}
+                        {selectedProductForMarkup && (
+                            <div className="bg-muted/50 rounded-lg p-4">
+                                <div className="flex items-center space-x-3">
+                                    <img
+                                        src={selectedProductForMarkup.imageSrc}
+                                        alt={selectedProductForMarkup.name}
+                                        className="w-12 h-12 object-cover rounded"
+                                    />
+                                    <div>
+                                        <h4 className="font-medium text-foreground">{selectedProductForMarkup.name}</h4>
+                                        <p className="text-sm text-muted-foreground">
+                                            Purchase Cost: <span className="font-medium">${selectedProductForMarkup.default_price?.toFixed(2) || '0.00'}</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Markup Percentage */}
+                        <div>
+                            <label className="block text-sm font-medium text-foreground mb-2">
+                                Markup Percentage
+                            </label>
+                            <div className="flex items-center space-x-2">
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.1"
+                                    value={markupPercentage}
+                                    onChange={(e) => {
+                                        setMarkupPercentage(e.target.value)
+                                        if (e.target.value && selectedProductForMarkup) {
+                                            const percentage = parseFloat(e.target.value)
+                                            const newPrice = calculateMarkupPrice(selectedProductForMarkup.default_price || 0, percentage)
+                                            setMarkupMultiplier((newPrice / (selectedProductForMarkup.default_price || 1)).toFixed(2))
+                                        }
+                                    }}
+                                    placeholder="20"
+                                    className="flex-1"
+                                />
+                                <span className="text-sm text-muted-foreground">%</span>
+                            </div>
+                            {markupPercentage && selectedProductForMarkup && (
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    Sale Price: <span className="font-medium text-green-600">
+                                        ${calculateMarkupPrice(selectedProductForMarkup.default_price || 0, parseFloat(markupPercentage)).toFixed(2)}
+                                    </span>
+                                </p>
                             )}
                         </div>
 
-                        {/* Preview */}
-                        <div className="bg-muted/50 rounded-lg p-4">
-                            <h4 className="text-sm font-medium text-foreground mb-2">Preview</h4>
-                            <div className="space-y-2">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">Products to update:</span>
-                                    <span className="font-medium">{getVisibleProductsCount()}</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">New price:</span>
-                                    <span className="font-medium">
-                                        {bulkPrice ? `$${parseFloat(bulkPrice).toFixed(2)}` : '$0.00'}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">Total value:</span>
-                                    <span className="font-medium">
-                                        {bulkPrice ? `$${(parseFloat(bulkPrice) * getVisibleProductsCount()).toFixed(2)}` : '$0.00'}
-                                    </span>
-                                </div>
+                        {/* Markup Multiplier */}
+                        <div>
+                            <label className="block text-sm font-medium text-foreground mb-2">
+                                Markup Multiplier
+                            </label>
+                            <div className="flex items-center space-x-2">
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.1"
+                                    value={markupMultiplier}
+                                    onChange={(e) => {
+                                        setMarkupMultiplier(e.target.value)
+                                        if (e.target.value && selectedProductForMarkup) {
+                                            const multiplier = parseFloat(e.target.value)
+                                            const newPrice = calculateMultiplierPrice(selectedProductForMarkup.default_price || 0, multiplier)
+                                            setMarkupPercentage(((newPrice - (selectedProductForMarkup.default_price || 0)) / (selectedProductForMarkup.default_price || 1) * 100).toFixed(1))
+                                        }
+                                    }}
+                                    placeholder="1.2"
+                                    className="flex-1"
+                                />
+                                <span className="text-sm text-muted-foreground">×</span>
                             </div>
+                            {markupMultiplier && selectedProductForMarkup && (
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    Sale Price: <span className="font-medium text-green-600">
+                                        ${calculateMultiplierPrice(selectedProductForMarkup.default_price || 0, parseFloat(markupMultiplier)).toFixed(2)}
+                                    </span>
+                                </p>
+                            )}
                         </div>
 
-                        {/* Sample Products */}
+                        {/* Quick Markup Buttons */}
                         <div>
-                            <h4 className="text-sm font-medium text-foreground mb-2">Sample Products</h4>
-                            <div className="space-y-2 max-h-32 overflow-y-auto">
-                                {filteredProducts.slice(0, 3).map((product: any) => (
-                                    <div key={product.id} className="flex items-center justify-between text-sm p-2 bg-muted/30 rounded">
-                                        <span className="truncate flex-1">{product.name}</span>
-                                        <span className="text-muted-foreground ml-2">
-                                            ${product?.price?.toFixed(2)} → {bulkPrice ? `$${parseFloat(bulkPrice).toFixed(2)}` : '$0.00'}
-                                        </span>
-                                    </div>
-                                ))}
-                                {filteredProducts.length > 3 && (
-                                    <div className="text-xs text-muted-foreground text-center py-1">
-                                        +{filteredProducts.length - 3} more products
-                                    </div>
-                                )}
+                            <label className="block text-sm font-medium text-foreground mb-2">
+                                Quick Markup Options
+                            </label>
+                            <div className="grid grid-cols-2 gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        setMarkupPercentage('10')
+                                        setMarkupMultiplier('1.1')
+                                    }}
+                                >
+                                    10% Markup
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        setMarkupPercentage('20')
+                                        setMarkupMultiplier('1.2')
+                                    }}
+                                >
+                                    20% Markup
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        setMarkupPercentage('50')
+                                        setMarkupMultiplier('1.5')
+                                    }}
+                                >
+                                    50% Markup
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        setMarkupPercentage('100')
+                                        setMarkupMultiplier('2.0')
+                                    }}
+                                >
+                                    2× Price
+                                </Button>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex gap-2 pt-4">
-                        <Button
-                            variant="outline"
-                            onClick={() => {
-                                setOpenBulkPriceDialog(false)
-                                setBulkPrice('')
-                                setBulkPriceError('')
-                            }}
-                            className="flex-1"
-                        >
+                    <div className="flex justify-end gap-2 mt-6">
+                        <Button variant="outline" onClick={() => setOpenMarkupDialog(false)}>
                             Cancel
                         </Button>
-                        <Button
-                            onClick={handleBulkPriceSet}
-                            disabled={!bulkPrice || isNaN(parseFloat(bulkPrice)) || parseFloat(bulkPrice) < 0}
-                            className="flex-1"
-                        >
-                            Update {getVisibleProductsCount()} Products
+                        <Button onClick={applyMarkupPrice}>
+                            Apply Markup
                         </Button>
                     </div>
                 </DialogContent>
