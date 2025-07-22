@@ -10,7 +10,7 @@ const collectionData = [
     title: "Credit Card Terminals",
     imageSrc: "/products/terminals.png",
     isNew: true,
-    link: `/products/area-of-speciality?data=${encodeURIComponent(
+    link: `/products?data=${encodeURIComponent(
       JSON.stringify({ tags: ["credit card terminals"] })
     )}`,
   },
@@ -18,7 +18,7 @@ const collectionData = [
     title: "ATM Machines",
     imageSrc: "/products/atm-machines.png",
     isNew: true,
-    link: `/products/area-of-speciality?data=${encodeURIComponent(
+    link: `/products?data=${encodeURIComponent(
       JSON.stringify({ tags: ["atm machines"] })
     )}`,
   },
@@ -26,7 +26,7 @@ const collectionData = [
     title: "Network Devices",
     imageSrc: "/products/network-devices.png",
     isNew: true,
-    link: `/products/area-of-speciality?data=${encodeURIComponent(
+    link: `/products?data=${encodeURIComponent(
       JSON.stringify({ tags: ["network devices"] })
     )}`,
   },

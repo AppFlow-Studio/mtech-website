@@ -7,7 +7,7 @@ const CategoryPillsScroller = () => {
       name: "POS System",
       image: "/pos-system.png",
       title: "POS System",
-      link: `/products/area-of-speciality?data=${encodeURIComponent(
+      link: `/products?data=${encodeURIComponent(
         JSON.stringify({ tags: ["pos system"] })
       )}`,
     },
@@ -15,7 +15,7 @@ const CategoryPillsScroller = () => {
       name: "ATM Machines",
       image: "/atm-machines.png",
       title: "ATM Machines",
-      link: `/products/area-of-speciality?data=${encodeURIComponent(
+      link: `/products?data=${encodeURIComponent(
         JSON.stringify({ tags: ["atm machines"] })
       )}`,
     },
@@ -23,7 +23,7 @@ const CategoryPillsScroller = () => {
       name: "ATM Parts",
       image: "/atm-parts.png",
       title: "ATM Parts & Components",
-      link: `/products/area-of-specialite?data=${encodeURIComponent(
+      link: `/products?data=${encodeURIComponent(
         JSON.stringify({ tags: ["atm parts"] })
       )}`,
     },
@@ -31,7 +31,7 @@ const CategoryPillsScroller = () => {
       name: "POS Parts",
       image: "/pos-parts.png",
       title: "POS Parts & Accessories",
-      link: `/products/area-of-speciality?data=${encodeURIComponent(
+      link: `/products?data=${encodeURIComponent(
         JSON.stringify({ tags: ["pos parts"] })
       )}`,
     },
@@ -39,7 +39,7 @@ const CategoryPillsScroller = () => {
       name: "POS Accessories",
       image: "/pos-accessories.png",
       title: "POS Accessories",
-      link: `/products/area-of-speciality?data=${encodeURIComponent(
+      link: `/products?data=${encodeURIComponent(
         JSON.stringify({ tags: ["pos accessories"] })
       )}`,
     },
@@ -47,7 +47,7 @@ const CategoryPillsScroller = () => {
       name: "Scales",
       image: "/digital-scales.png",
       title: "Digital Scales",
-      link: `/products/area-of-speciality?data=${encodeURIComponent(
+      link: `/products?data=${encodeURIComponent(
         JSON.stringify({ tags: ["scales"] })
       )}`,
     },
@@ -55,7 +55,7 @@ const CategoryPillsScroller = () => {
       name: "ATM Signage",
       image: "/atm-signage.png",
       title: "ATM Signage Solutions",
-      link: `/products/area-of-speciality?data=${encodeURIComponent(
+      link: `/products?data=${encodeURIComponent(
         JSON.stringify({ tags: ["atm signage"] })
       )}`,
     },
@@ -63,7 +63,7 @@ const CategoryPillsScroller = () => {
       name: "ATM Cards",
       image: "/credit-card-terminals.png",
       title: "ATM Card Terminals",
-      link: `/products/area-of-speciality?data=${encodeURIComponent(
+      link: `/products?data=${encodeURIComponent(
         JSON.stringify({ tags: ["credit card terminals"] })
       )}`,
     },

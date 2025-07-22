@@ -24,31 +24,31 @@ const featureItems: FeatureItem[] = [
     title: "100% Transparent Costs",
     description:
       "Enjoy clear, upfront pricing with no hidden fees. We believe in honesty and building trust through transparent cost structures.",
-    imageSrc: "/features/feature-1-payment.png",
+    imageSrc: "/features/feature-2-transparent.png",
   },
   {
     title: "Technical Support",
     description:
       "Our expert technical support team is available around the clock to assist you with any issues or questions you may have.",
-    imageSrc: "/features/feature-1-payment.png",
+    imageSrc: "/features/feature-3-techsupport.png",
   },
   {
     title: "Right Equipment & Software",
     description:
       "Get access to the latest, most secure POS terminals and software tailored to your specific business needs.",
-    imageSrc: "/features/feature-1-payment.png",
+    imageSrc: "/features/feature-4-equipment.jpg",
   },
   {
     title: "Full Data Security & Compliance",
     description:
       "Rest easy knowing your data is protected with top-tier security measures and full PCI compliance, safeguarding you and your customers.",
-    imageSrc: "/features/feature-1-payment.png",
+    imageSrc: "/features/feature-5-security.jpg",
   },
   {
     title: "User Friendly & reliable Options",
     description:
       "Choose from a range of reliable, easy-to-use payment options that provide a seamless experience for your customers.",
-    imageSrc: "/features/feature-1-payment.png",
+    imageSrc: "/features/feature-6-user.png",
   },
 ];
 
@@ -64,31 +64,31 @@ const paymentSolutionsFeatures: FeatureItem[] = [
     title: "Optimized Cost Flow",
     description:
       "Streamline your transaction processes to reduce overhead and improve your bottom line with our efficient cost flow solutions.",
-    imageSrc: "/features/diverse-payment-options.png",
+    imageSrc: "/features/optimize-cost-flow.jpg",
   },
   {
     title: "Cost Savings",
     description:
       "Identify and implement significant cost-saving strategies to lower your payment processing fees and operational expenses, maximizing your profits.",
-    imageSrc: "/features/diverse-payment-options.png",
+    imageSrc: "/features/cost-savings.png",
   },
   {
     title: "Access Data-Driven Insights",
     description:
       "Leverage powerful analytics and reporting tools to understand customer behavior, track sales trends, and make informed business decisions.",
-    imageSrc: "/features/diverse-payment-options.png",
+    imageSrc: "/features/data-driven-insights.png",
   },
   {
     title: "Seamless Growth Potential",
     description:
       "Our scalable solutions are designed to grow with your business, supporting your expansion from a small startup to a large enterprise without friction.",
-    imageSrc: "/features/diverse-payment-options.png",
+    imageSrc: "/features/seamless-growth.png",
   },
   {
     title: "Optimized Payment Processing",
     description:
       "Benefit from fast, reliable, and secure payment processing that enhances customer satisfaction and boosts your day-to-day operational efficiency.",
-    imageSrc: "/features/diverse-payment-options.png",
+    imageSrc: "/features/optimized-payment.png",
   },
 ];
 
@@ -104,31 +104,31 @@ const modernPaymentFeatures: FeatureItem[] = [
     title: "Digital Wallets",
     description:
       "Accept payments from popular digital wallets like Apple Pay, Google Pay, and Samsung Pay, offering your customers speed and convenience.",
-    imageSrc: "/features/mobile-payment-pos.png",
+    imageSrc: "/features/wallet.png",
   },
   {
     title: "ACH Payments",
     description:
       "Process direct bank-to-bank payments securely and with lower transaction fees, ideal for recurring billing and large ticket items.",
-    imageSrc: "/features/mobile-payment-pos.png",
+    imageSrc: "/features/ach-payments.png",
   },
   {
     title: "Gift Cards",
     description:
       "Launch and manage your own branded gift card program to boost sales, attract new customers, and encourage repeat business.",
-    imageSrc: "/features/mobile-payment-pos.png",
+    imageSrc: "/features/giftcard.png",
   },
   {
     title: "NFC Payments",
     description:
       "Enable fast and secure contactless payments through Near Field Communication (NFC) technology for a modern checkout experience.",
-    imageSrc: "/features/mobile-payment-pos.png",
+    imageSrc: "/nfc-payments.png",
   },
   {
     title: "Dip / Tap / Swipe",
     description:
       "Our terminals support all standard card interactions, including traditional dip (EMV chip) and swipe, alongside modern tap-to-pay.",
-    imageSrc: "/features/mobile-payment-pos.png",
+    imageSrc: "/features/tap-dip-swipe.png",
   },
 ];
 

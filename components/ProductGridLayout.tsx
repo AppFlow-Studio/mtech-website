@@ -6,6 +6,7 @@ import ProductCard from "./ProductCard";
 import Pagination from "./Pagination";
 import type { Product } from "@/lib/types";
 import { SlidersHorizontal, LayoutGrid, List } from "lucide-react";
+import { useSearchParams, useRouter } from "next/navigation";
 
 interface ProductGridLayoutProps {
   title: string;
@@ -18,6 +19,9 @@ const ProductGridLayout = ({
   totalProducts: initialTotalProducts,
   products: initialProducts,
 }: ProductGridLayoutProps) => {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
   const [isCompareOn, setIsCompareOn] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -30,6 +34,23 @@ const ProductGridLayout = ({
   const [inStockFilter, setInStockFilter] = useState<boolean | null>(null);
   const [sortOption, setSortOption] = useState<string | null>(null);
   const [tagFilters, setTagFilters] = useState<string[]>([]);
+
+  // On mount, parse tags from URL if present
+  useEffect(() => {
+    const dataParam = searchParams.get("data");
+    if (dataParam) {
+      try {
+        const decoded = decodeURIComponent(dataParam);
+        const parsed = JSON.parse(decoded);
+        if (parsed.tags && Array.isArray(parsed.tags)) {
+          setTagFilters(parsed.tags);
+        }
+      } catch (e) {
+        // ignore parse errors
+      }
+    }
+    // Optionally, parse other filters from URL here (e.g., stock, sort)
+  }, []); // Only run on mount
 
   const productsPerPage = viewMode === "grid" ? 9 : 6;
 
@@ -69,6 +90,25 @@ const ProductGridLayout = ({
     setTotalProducts(result.length);
     setCurrentPage(1); // Reset to first page when filters change
   }, [initialProducts, tagFilters, inStockFilter, sortOption]);
+
+  // Update URL when filters change
+  useEffect(() => {
+    const data: any = {};
+    if (tagFilters.length > 0) data.tags = tagFilters;
+    // Optionally, add inStockFilter and sortOption to URL as well
+    // if (inStockFilter !== null) data.inStock = inStockFilter;
+    // if (sortOption) data.sort = sortOption;
+    const params = new URLSearchParams(searchParams.toString());
+    if (Object.keys(data).length > 0) {
+      params.set("data", encodeURIComponent(JSON.stringify(data)));
+    } else {
+      params.delete("data");
+    }
+    // Only update if changed
+    if (searchParams.get("data") !== params.get("data")) {
+      router.replace(`?${params.toString()}`);
+    }
+  }, [tagFilters]);
 
   // Calculate total pages
   const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
@@ -152,14 +192,12 @@ const ProductGridLayout = ({
               </span>
               <button
                 onClick={() => setIsCompareOn(!isCompareOn)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  isCompareOn ? "bg-purple-600" : "bg-gray-300 dark:bg-gray-600"
-                }`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isCompareOn ? "bg-purple-600" : "bg-gray-300 dark:bg-gray-600"
+                  }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    isCompareOn ? "translate-x-6" : "translate-x-1"
-                  }`}
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isCompareOn ? "translate-x-6" : "translate-x-1"
+                    }`}
                 />
               </button>
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -215,15 +253,13 @@ const ProductGridLayout = ({
 
       {/* --- Mobile Filter Drawer --- */}
       <div
-        className={`fixed inset-0 z-40 lg:hidden transition-transform duration-300 ${
-          isFilterOpen ? "translate-x-0" : "translate-x-full"
-        }`}
+        className={`fixed inset-0 z-40 lg:hidden transition-transform duration-300 ${isFilterOpen ? "translate-x-0" : "translate-x-full"
+          }`}
       >
         {/* Overlay */}
         <div
-          className={`fixed inset-0 bg-black/40 transition-opacity ${
-            isFilterOpen ? "opacity-100" : "opacity-0"
-          }`}
+          className={`fixed inset-0 bg-black/40 transition-opacity ${isFilterOpen ? "opacity-100" : "opacity-0"
+            }`}
           onClick={() => setIsFilterOpen(false)}
         ></div>
 

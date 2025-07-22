@@ -6,6 +6,7 @@ import { ChevronRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import React, { useRef, useState } from "react";
+import { useProductInfo } from "../actions/hooks/useProducts";
 
 // --- Reusable Form Input Component ---
 const FormInput = ({
@@ -42,7 +43,8 @@ const FormInput = ({
   </div>
 );
 
-function Detail({ product }: { product: Product }) {
+function Detail({ slug }: { slug: string }) {
+  const { data: product, isLoading } = useProductInfo(slug)
   const [isHovered, setIsHovered] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const imageRef = useRef<HTMLDivElement>(null);
@@ -67,6 +69,37 @@ function Detail({ product }: { product: Product }) {
     e.currentTarget.reset();
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="flex flex-col items-center">
+          <svg
+            className="animate-spin h-12 w-12 text-purple-500 mb-4"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+            ></path>
+          </svg>
+          <span className="text-lg font-medium text-gray-700 dark:text-gray-300 animate-pulse">
+            Loading product details...
+          </span>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="container mx-auto px-4 py-8 sm:py-12">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
@@ -113,11 +146,10 @@ function Detail({ product }: { product: Product }) {
           <div className="mt-8">
             <Link href="tel:888-411-7063" className="mt-4">
               <button
-                className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 font-semibold text-sm text-white rounded-full transition-colors duration-300 cursor-pointer ${
-                  product.inStock
-                    ? "bg-gradient-to-b from-[#662CB2] to-[#2C134C] hover:from-[#7a3ac5] hover:to-[#3c1961]"
-                    : "bg-[#382F44] cursor-not-allowed"
-                }`}
+                className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 font-semibold text-sm text-white rounded-full transition-colors duration-300 cursor-pointer ${product.inStock
+                  ? "bg-gradient-to-b from-[#662CB2] to-[#2C134C] hover:from-[#7a3ac5] hover:to-[#3c1961]"
+                  : "bg-[#382F44] cursor-not-allowed"
+                  }`}
               >
                 Call For Price
                 <ChevronRight className="h-4 w-4" />
@@ -158,11 +190,10 @@ function Detail({ product }: { product: Product }) {
           <div>
             <button
               type="submit"
-              className={` inline-flex items-center justify-center px-6 py-3 border border-transparent rounded-full shadow-sm text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 cursor-pointer ${
-                product.inStock
-                  ? "bg-gradient-to-b from-[#662CB2] to-[#2C134C] hover:from-[#7a3ac5] hover:to-[#3c1961]"
-                  : "bg-[#382F44] cursor-not-allowed"
-              }`}
+              className={` inline-flex items-center justify-center px-6 py-3 border border-transparent rounded-full shadow-sm text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 cursor-pointer ${product.inStock
+                ? "bg-gradient-to-b from-[#662CB2] to-[#2C134C] hover:from-[#7a3ac5] hover:to-[#3c1961]"
+                : "bg-[#382F44] cursor-not-allowed"
+                }`}
             >
               Submit Inquiry
             </button>

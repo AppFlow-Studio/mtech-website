@@ -14,25 +14,25 @@ import {
 const productLinks = [
   {
     name: "POS Systems",
-    href: `/products/area-of-speciality?data=${encodeURIComponent(
+    href: `/products?data=${encodeURIComponent(
       JSON.stringify({ tags: ["pos system"] })
     )}`,
   },
   {
     name: "Credit Card Terminals",
-    href: `/products/area-of-speciality?data=${encodeURIComponent(
+    href: `/products?data=${encodeURIComponent(
       JSON.stringify({ tags: ["credit card terminals"] })
     )}`,
   },
   {
     name: "ATM Machines",
-    href: `/products/area-of-speciality?data=${encodeURIComponent(
+    href: `/products?data=${encodeURIComponent(
       JSON.stringify({ tags: ["atm machines"] })
     )}`,
   },
   {
     name: "Integrations",
-    href: `/products/area-of-speciality?data=${encodeURIComponent(
+    href: `/products?data=${encodeURIComponent(
       JSON.stringify({ tags: ["integrations"] })
     )}`,
   },

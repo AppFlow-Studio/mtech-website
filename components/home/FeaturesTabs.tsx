@@ -113,7 +113,7 @@ const FeatureTabs: React.FC<FeatureTabsProps> = ({ features }) => {
                       </div>
                     </div>
                     {/* Image */}
-                    <div className="h-auto">
+                    <div className="max-h-auto">
                       <Image
                         src={activeFeature.imageSrc}
                         alt={activeFeature.title}
@@ -264,7 +264,7 @@ const FeatureTabs: React.FC<FeatureTabsProps> = ({ features }) => {
                                 alt={feature.title}
                                 width={600}
                                 height={400}
-                                className="rounded-xl object-cover h-full"
+                                className="rounded-xl object-cover h-full max-h-auto aspect-square z-10"
                               />
                             </motion.div>
                           </div>
