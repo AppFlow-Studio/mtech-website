@@ -1,3 +1,5 @@
+import { SanityImageSource } from "@sanity/image-url/lib/types/types";
+
 export interface Product {
   name: string;
   description: string;
@@ -167,3 +169,90 @@ export interface AdminPrivileges {
   can_edit_order : boolean
   
 }
+
+// TypeScript types based on the provided JSON data structure
+
+export interface AssetReference {
+  _ref: string;
+  _type: 'reference';
+}
+
+export interface ImageType {
+  _type: 'image';
+  asset: AssetReference;
+}
+
+export interface BusinessFeature {
+  description: string;
+  imageSrc: ImageType;
+  title: string;
+  _key: string;
+}
+
+export interface CardFeature {
+  description: string;
+  imageSrc: SanityImageSource;
+  title: string;
+  _key: string;
+}
+
+export interface PaymentFeature {
+  description: string;
+  imageSrc: ImageType;
+  title: string;
+  _key: string;
+}
+
+export interface GrowthSection {
+  Growth_Section_Header: string;
+  Growth_Section_Image: ImageType;
+  Growth_Section_SubText: string;
+}
+
+export interface InsightsSection {
+  Insights_Section_Header: string;
+  Insights_Section_SubText: string;
+}
+
+export interface ModernPayments {
+  Modern_Description: string;
+  Modern_Image: ImageType;
+  Modern_Title: string;
+}
+
+export interface WhyChooseUs {
+  Why_Choose_Us_Header: string;
+  Why_Choose_Us_Image: ImageType;
+  Why_Choose_Us_SubText: string;
+}
+
+export interface SystemInfo {
+  base: {
+    id: string;
+    rev: string;
+  };
+}
+
+export interface HomePage {
+  Features_Business: BusinessFeature[];
+  Features_Card: CardFeature[];
+  Features_Payments: PaymentFeature[];
+  Growth_Section: GrowthSection;
+  Hero_Header: string;
+  Hero_SubText: string;
+  Insights_Section: InsightsSection;
+  Modern_Payments: ModernPayments;
+  Why_Choose_Us: WhyChooseUs;
+  _createdAt: string;
+  _id: string;
+  _originalId: string;
+  _rev: string;
+  _system: SystemInfo;
+  _type: 'Home_Page';
+  _updatedAt: string;
+}
+
+// To represent the full query result, which is an array containing the HomePage object
+export type HomePageQueryResult = {
+  data: HomePage[];
+};

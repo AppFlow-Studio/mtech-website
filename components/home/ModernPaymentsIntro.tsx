@@ -1,6 +1,7 @@
 import Image from "next/image";
+import SanityImage from "../SanityImage";
 
-const ModernPaymentsIntro = () => {
+const ModernPaymentsIntro = ({ header, subtext, image }: { header: string, subtext: string, image: string }) => {
   return (
     <section className="pt-16 sm:pt-24 pb-8 sm:pb-12">
       <div className="container mx-auto px-4">
@@ -13,7 +14,7 @@ const ModernPaymentsIntro = () => {
               text-gray-900 dark:text-white
             "
             >
-              Embrace modern payment technologies for effortless transactions
+              {header}
             </h1>
             <p
               className="
@@ -21,22 +22,20 @@ const ModernPaymentsIntro = () => {
               text-gray-600 dark:text-gray-300 max-w-xl
             "
             >
-              Simplify your payment processing with all the tools you need in
-              one place. We offer cutting-edge payment terminals, POS systems,
-              eCommerce capabilities, and value-added services to create a
-              flexible and customized payment environment.
+              {subtext}
             </p>
           </div>
 
           {/* Column 2: Image with Highlight Border */}
           <div>
-            <Image
+            {/* <Image
               src="/barista-payment.png"
               alt="A customer paying a barista with a tap-to-pay card"
               width={700}
               height={500}
               className="w-full h-auto rounded-2xl"
-            />
+            /> */}
+            <SanityImage image={image} width={700} height={500} alt="Modern Payments Intro" className="w-full h-auto rounded-2xl" />
           </div>
         </div>
       </div>

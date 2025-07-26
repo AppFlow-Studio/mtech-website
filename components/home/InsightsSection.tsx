@@ -29,7 +29,7 @@ const insightsData: Insight[] = [
   },
 ];
 
-const InsightsSection = () => {
+const InsightsSection = ({ header, subtext }: { header: string, subtext: string }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Drag logic
@@ -62,13 +62,10 @@ const InsightsSection = () => {
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto px-4">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
-            Insights That Drive Your Business Forward
+            {header}
           </h2>
           <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
-            Stay informed with expert tips, industry trends, and actionable
-            advice. Our blog is your go-to resource for navigating payment
-            technology, improving operations, and staying ahead in an
-            ever-changing market.
+            {subtext}
           </p>
         </div>
 

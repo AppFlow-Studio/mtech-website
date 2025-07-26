@@ -8,6 +8,10 @@ import { AuthProvider } from "@/components/AuthProvider";
 import { cookies } from "next/headers";
 import { Toaster } from "@/components/ui/sonner"
 import TanstackProvider from "@/providers/tanstack";
+import { VisualEditing } from "next-sanity";
+import { draftMode } from "next/headers";
+import { DisableDraftMode } from "@/components/DisableDraftMode";
+import { SanityLive } from "@/utils/sanity/lib/live";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -52,14 +56,16 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased dark:bg-[#0B0119] dark:text-gray-200 bg-white text-[#2C3551] `}
       >
         <ThemeProvider initialTheme={initialTheme}>
-            <AuthProvider>
-              <TanstackProvider>
-                <Navbar />
-                {children}
-                <Footer />
-              </TanstackProvider>
-            </AuthProvider>
-            <Toaster position="top-center" richColors/>
+          <AuthProvider>
+            <TanstackProvider>
+              <Navbar />
+              {children}
+              <SanityLive />
+              {(await draftMode()).isEnabled && <VisualEditing />}
+              <Footer />
+            </TanstackProvider>
+          </AuthProvider>
+          <Toaster position="top-center" richColors />
         </ThemeProvider>
       </body>
     </html>

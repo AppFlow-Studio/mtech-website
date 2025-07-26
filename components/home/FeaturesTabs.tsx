@@ -4,9 +4,10 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FeatureTabsProps } from "@/lib/types";
+import { CardFeature, FeatureTabsProps } from "@/lib/types";
+import SanityImage from "../SanityImage";
 
-const FeatureTabs: React.FC<FeatureTabsProps> = ({ features }) => {
+const FeatureTabs: React.FC<{ features: CardFeature[]}> = ({ features }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isInView, setIsInView] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -114,13 +115,15 @@ const FeatureTabs: React.FC<FeatureTabsProps> = ({ features }) => {
                     </div>
                     {/* Image */}
                     <div className="max-h-auto">
-                      <Image
+                      {/* <Image
                         src={activeFeature.imageSrc}
                         alt={activeFeature.title}
                         width={600}
                         height={400}
                         className="rounded-xl object-cover h-full w-full"
-                      />
+                      /> */}
+                      <SanityImage image={activeFeature.imageSrc} alt={activeFeature.title} className="w-full h-auto rounded-xl shadow-lg" />
+
                     </div>
                   </div>
                   {/* Next button */}
@@ -259,13 +262,15 @@ const FeatureTabs: React.FC<FeatureTabsProps> = ({ features }) => {
                               transition={{ delay: 0.7, duration: 0.4 }}
                               className="h-auto"
                             >
-                              <Image
+                              {/* <Image
                                 src={feature.imageSrc}
                                 alt={feature.title}
                                 width={600}
                                 height={400}
                                 className="rounded-xl object-cover h-full max-h-auto aspect-square z-10"
-                              />
+                              /> */}
+                              <SanityImage image={feature.imageSrc} width={600} height={400} alt={feature.title} className="rounded-xl object-cover h-full max-h-auto aspect-square z-10" />
+
                             </motion.div>
                           </div>
                           {/* Next button */}

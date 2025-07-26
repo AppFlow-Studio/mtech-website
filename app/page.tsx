@@ -10,7 +10,12 @@ import MerchantPortal from "@/components/home/MerchantPortal";
 import Testimonials from "@/components/home/Testimonials";
 import Collection from "@/components/home/Collection";
 import PosSystems from "@/components/home/PosSystems";
-import { FeatureItem } from "@/lib/types";
+import { FeatureItem, HomePageQueryResult } from "@/lib/types";
+import { client } from "@/utils/sanity/client";
+import { type SanityDocument } from "next-sanity";
+import { draftMode } from "next/headers";
+import { sanityFetch } from '@/utils/sanity/lib/live'
+import { defineQuery } from 'next-sanity'
 
 //Used for Feature tab components
 const featureItems: FeatureItem[] = [
@@ -132,18 +137,29 @@ const modernPaymentFeatures: FeatureItem[] = [
   },
 ];
 
-export default function Home() {
+const POSTS_QUERY = defineQuery(`*[_type == 'Home_Page']`)
+
+const options = { next: { revalidate: 30 } };
+
+export default async function Home() {
+  const { isEnabled } = await draftMode();
+  const HomePageData : HomePageQueryResult = await sanityFetch({
+    query: POSTS_QUERY,
+    ...options,
+  });
+
+  console.log(HomePageData);
   return (
     <div>
-      <Hero />
+      <Hero hero_header={HomePageData.data[0].Hero_Header} hero_subtext={HomePageData.data[0].Hero_SubText} />
       <Partners />
-      <WhyChooseUs />
-      <FeaturesTabs features={featureItems} />
-      <GrowthSection />
-      <FeaturesTabs features={paymentSolutionsFeatures} />
-      <ModernPaymentsIntro />
-      <FeaturesTabs features={modernPaymentFeatures} />
-      <InsightsSection />
+      <WhyChooseUs header={HomePageData.data[0].Why_Choose_Us.Why_Choose_Us_Header} subtext={HomePageData.data[0].Why_Choose_Us.Why_Choose_Us_SubText} image={HomePageData.data[0].Why_Choose_Us.Why_Choose_Us_Image} />
+      <FeaturesTabs features={HomePageData.data[0].Features_Card} />
+      <GrowthSection header={HomePageData.data[0].Growth_Section.Growth_Section_Header} subtext={HomePageData.data[0].Growth_Section.Growth_Section_SubText} image={HomePageData.data[0].Growth_Section.Growth_Section_Image} />
+      <FeaturesTabs features={HomePageData.data[0].Features_Business} />
+      <ModernPaymentsIntro header={HomePageData.data[0].Modern_Payments.Modern_Title} subtext={HomePageData.data[0].Modern_Payments.Modern_Description} image={HomePageData.data[0].Modern_Payments.Modern_Image}   />
+      <FeaturesTabs features={HomePageData.data[0].Features_Payments} />
+      <InsightsSection header={HomePageData.data[0].Insights_Section.Insights_Section_Header} subtext={HomePageData.data[0].Insights_Section.Insights_Section_SubText} />
       <PreferredChoice />
       <MerchantPortal />
       <Testimonials />

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import Searchbar from "./Searchbar";
 import CategoryPillsScroller from "./CategoryPillsScroller";
 
-const Hero = () => {
+const Hero = ({ hero_header, hero_subtext }: { hero_header: string, hero_subtext: string }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -41,8 +41,7 @@ const Hero = () => {
               }`}
             >
               <h1 className="text-3xl xs:text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-4 sm:mb-6 lg:mb-8 leading-tight">
-                More Than Just Payment{" "}
-                <span className="block md:inline">Solutions</span>
+                {hero_header}
               </h1>
             </div>
             <div
@@ -53,11 +52,7 @@ const Hero = () => {
               }`}
             >
               <p className="text-xs xs:text-sm sm:text-base lg:text-lg text-white/90 mb-6 sm:mb-8 lg:mb-12 max-w-3xl mx-auto leading-relaxed px-2 sm:px-4">
-                At MTech Distributors, we offer end-to-end payment solutions
-                that enhance transaction security, improve operational
-                efficiency, and provide tailored integration to meet the unique
-                needs of your business. Experience seamless payment processing
-                with added value beyond the basics.
+                {hero_subtext}
               </p>
             </div>
             <Searchbar isVisible={isVisible} />
