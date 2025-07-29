@@ -1,8 +1,13 @@
 import ProductGridLayout from "@/components/ProductGridLayout";
 import { Product } from "@/lib/types";
 import Image from "next/image";
+import { client } from "@/sanity/lib/client";
+import SanityImage from "@/components/SanityImage";
+import PricingSection from "@/components/products/PricingSection";
+import { PortableText } from "@portabletext/react";
 
-const paxProducts: Product[] = [
+
+const paxProducts: Partial<Product>[] = [
   {
     name: "Pax Aries 8 Tablet POS",
     description:
@@ -86,7 +91,10 @@ const paxProducts: Product[] = [
   },
 ];
 
-function page() {
+async function page() {
+  const PAX = await client.fetch(
+    `*[_type == "POS_SYSTEM_TYPES" && POS_System_Link == "/pax"]`
+  );
   return (
     <>
       <section className="py-8 sm:py-12">
@@ -100,7 +108,7 @@ function page() {
                 text-gray-900 dark:text-white
               "
               >
-                PAX 
+                {PAX[0].POS_System_Header}
               </h1>
               <p
                 className="
@@ -109,12 +117,7 @@ function page() {
                 max-w-xl mx-auto lg:mx-0
               "
               >
-                PAX is a global leader in secure electronic payment solutions,
-                offering innovative, reliable, and user-friendly point-of-sale
-                (POS) terminals for businesses of all sizes. Known for their
-                robust hardware and advanced software features, PAX devices
-                support a wide range of payment methods, including EMV,
-                magstripe, and contactless options.
+                <PortableText value={PAX[0].POS_System_Description} />
               </p>
               <div className="mt-8">
                 <button
@@ -130,11 +133,18 @@ function page() {
               </div>
             </div>
             <div>
-              <Image
+              {/* <Image
                 src="/pax-collage.png"
                 alt="A collage of modern payment processing images"
                 width={800} // Defines the aspect ratio
                 height={550} // Defines the aspect ratio
+                className="w-full h-auto"
+              /> */}
+              <SanityImage 
+                image={PAX[0].POS_System_Image}
+                alt={PAX[0].POS_System_Header}
+                width={800}
+                height={550}
                 className="w-full h-auto"
               />
             </div>
@@ -143,9 +153,10 @@ function page() {
       </section>
       <ProductGridLayout
         title="PAX"
-        totalInitialProducts={paxProducts.length}
-        initialProducts={paxProducts}
+        totalInitialProducts={PAX[0].POS_System_Items?.length || 0}
+        initialProducts={PAX[0].POS_System_Items as Product[]}
       />
+      <PricingSection pricingPlans={PAX[0].POS_System_Pricing_Plans} header={PAX[0].POS_System_Pricing_Header} description={PAX[0].POS_System_Pricing_Description} />
     </>
   );
 }

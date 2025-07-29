@@ -30,6 +30,7 @@ export const ReturnPolicyType = defineType({
                                     // ... other styles
                                 ],
                                 lists: [{ title: 'Bullet', value: 'bullet' }],
+                                
                                 marks: {
                                     decorators: [
                                         { title: 'Strong', value: 'strong' },

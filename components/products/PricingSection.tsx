@@ -1,9 +1,50 @@
-"use client";
-
 import { CheckCircle2 } from "lucide-react";
+import { PortableText, PortableTextComponents } from "@portabletext/react";
+import { client } from "@/sanity/lib/client";
 
+
+
+const components: PortableTextComponents = {
+  list: {
+    bullet: ({ children }) => (
+      <ul className="space-y-3 sm:space-y-4 flex-grow">
+        {children}
+      </ul>
+    ),
+    number: ({ children }) => (
+      <ol className="space-y-3 sm:space-y-4 flex-grow">
+        {children}
+      </ol>
+    ),
+  },
+  listItem: {
+    bullet: ({ children }) => (
+      <li className="flex items-start gap-2 sm:gap-3">
+        <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-white fill-[#662CB2] mt-0.5" />
+        <span className="text-xs sm:text-sm leading-relaxed text-purple-100">
+          {children}
+        </span>
+      </li>
+    ),
+    number: ({ children }) => (
+      <li className="flex items-start gap-2 sm:gap-3">
+        <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-white fill-[#662CB2] mt-0.5" />
+        <span className="text-xs sm:text-sm leading-relaxed text-purple-100">
+          {children}
+        </span>
+      </li>
+    ),
+  },
+  block: {
+    normal: ({ children }) => (
+      <p className="text-xs sm:text-sm leading-relaxed text-purple-100 mb-2">
+        {children}
+      </p>
+    ),
+  },
+}
 //list the pricing plan
-const pricingPlans = [
+const defPricingPlan = [
   {
     name: "Professional Plan",
     price: 50,
@@ -48,25 +89,23 @@ const pricingPlans = [
   },
 ];
 
-const PricingSection = () => {
+const PricingSection = ({ pricingPlans, header, description }: { pricingPlans?: any, header?: string, description?: string }) => {
   return (
     <section className="py-8 sm:py-12">
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto">
           <h2 className="text-3xl md:text-5xl font-medium text-gray-900 dark:text-white">
-            Software Monthly Pricing
+            {header}
           </h2>
           <p className="mt-4 text-gray-600 dark:text-gray-300">
-            Our software monthly pricing is designed to be affordable,
-            transparent, and flexible. With no hidden fees and tiered plans to
-            match your business needs.
+            {description}
           </p>
         </div>
 
         {/* Responsive Grid for Pricing Cards */}
         <div className="mt-16 grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          {pricingPlans.map((plan) => (
+          { pricingPlans && pricingPlans.map((plan: any) => (
             <div
               key={plan.name}
               className={`
@@ -116,7 +155,7 @@ const PricingSection = () => {
               </button>
 
               {/* Only show "Includes" and features list if features exist */}
-              {plan.features.length > 0 && (
+              {plan.features && plan.features.length > 0 && (
                 <>
                   <div className="flex items-center justify-between gap-4 my-8">
                     <svg

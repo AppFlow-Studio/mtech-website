@@ -155,8 +155,6 @@ export default async function Home() {
     ...options,
   });
 
-  console.log(TestimonialsData);
-
   return (
     <div>
       <Hero hero_header={HomePageData.data[0].Hero_Header} hero_subtext={HomePageData.data[0].Hero_SubText} />

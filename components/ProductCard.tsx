@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import type { Product } from "@/lib/types";
+import SanityImage from "./SanityImage";
 
 interface ProductCardProps {
   product: Product;
@@ -12,13 +13,20 @@ const ProductCard = ({ product, viewMode }: ProductCardProps) => {
   return viewMode === "grid" ? (
     <div className="bg-[#E6E6E7] dark:bg-[#231A30] rounded-2xl shadow-lg overflow-hidden flex flex-col h-full transition-all hover:shadow-xl hover:-translate-y-1">
       <div className="m-4 rounded-lg bg-[#F0F3FD] dark:bg-[#2A2039]">
-        <Image
+       {typeof product.imageSrc === "string" && <Image
           src={product.imageSrc}
           alt={product.name}
           width={300}
           height={200}
           className="w-full h-auto object-contain aspect-[4/3]"
-        />
+        /> }
+        {typeof product.imageSrc === "object" && <SanityImage
+          image={product.imageSrc}
+          alt={product.name}
+          width={300}
+          height={200}
+          className="w-full h-auto object-contain aspect-[4/3]"
+        />}
       </div>
       <div className="p-5 flex flex-col flex-grow">
         <h3 className="font-medium text-lg text-gray-900 dark:text-white line-clamp-1">
@@ -45,13 +53,20 @@ const ProductCard = ({ product, viewMode }: ProductCardProps) => {
     <div className="bg-[#E6E6E7] dark:bg-[#231A30] rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row h-full transition-all hover:shadow-xl">
       <div className="md:w-1/3 p-4">
         <div className="rounded-lg bg-[#F0F3FD] dark:bg-[#2A2039] h-full">
-          <Image
+          {typeof product.imageSrc === "string" && <Image
             src={product.imageSrc}
             alt={product.name}
             width={400}
             height={300}
             className="w-full h-full object-contain"
-          />
+          />}
+          {typeof product.imageSrc === "object" && <SanityImage
+            image={product.imageSrc}
+            alt={product.name}
+            width={400}
+            height={300}
+            className="w-full h-full object-contain"
+          />}
         </div>
       </div>
       <div className="md:w-2/3 p-6 flex flex-col">

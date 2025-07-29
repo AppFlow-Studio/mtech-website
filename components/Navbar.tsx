@@ -56,7 +56,7 @@ const Navbar = () => {
         { name: "On The Fly POS", href: "/products/on-the-fly-pos" },
         { name: "Parts", href: "/products/parts" },
         { name: "PAX", href: "/products/pax" },
-        { name: "Pops Parts", href: "/products/pops-parts" },
+        { name: "POS Parts", href: "/products/pos-parts" },
         { name: "Stands", href: "/products/stands" },
         { name: "Supersonic POS", href: "/products/supersonic-pos" },
         { name: "Valor", href: "/products/valor" },

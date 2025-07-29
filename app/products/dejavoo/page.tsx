@@ -1,8 +1,12 @@
 import ProductGridLayout from "@/components/ProductGridLayout";
 import { Product } from "@/lib/types";
 import Image from "next/image";
+import { client } from "@/sanity/lib/client";
+import SanityImage from "@/components/SanityImage";
+import { PortableText } from "@portabletext/react";
 
-const dejavooProducts: Product[] = [
+
+const dejavooProducts: Partial<Product>[] = [
   {
     name: "Dejavoo P1 Desktop Android Terminal",
     description:
@@ -86,7 +90,11 @@ const dejavooProducts: Product[] = [
   },
 ];
 
-function page() {
+async function page() {
+  const Dejavoo = await client.fetch(
+    `*[_type == "POS_SYSTEM_TYPES" && POS_System_Link == "/dejavoo"]`
+  );
+  console.log(Dejavoo);
   return (
     <>
       <section className="py-8 sm:py-12">
@@ -100,7 +108,7 @@ function page() {
                 text-gray-900 dark:text-white
               "
               >
-                Dejavoo
+                {Dejavoo[0].POS_System_Header}
               </h1>
               <p
                 className="
@@ -109,9 +117,7 @@ function page() {
                 max-w-xl mx-auto lg:mx-0
               "
               >
-                Dejavoo offers some of the most innovative payment software
-                solutions in the industry, designed for businesses of any size
-                or from any sector.
+                <PortableText value={Dejavoo[0].POS_System_Description} />
               </p>
               <div className="mt-8">
                 <button
@@ -127,11 +133,18 @@ function page() {
               </div>
             </div>
             <div>
-              <Image
+              {/* <Image
                 src="/dejavoo-collage.png"
                 alt="A collage of modern payment processing images"
                 width={800} // Defines the aspect ratio
                 height={550} // Defines the aspect ratio
+                className="w-full h-auto"
+              /> */}
+              <SanityImage 
+                image={Dejavoo[0].POS_System_Image}
+                alt={Dejavoo[0].POS_System_Header}
+                width={800}
+                height={550}
                 className="w-full h-auto"
               />
             </div>

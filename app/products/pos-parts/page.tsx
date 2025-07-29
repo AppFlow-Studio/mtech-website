@@ -2,7 +2,7 @@ import ProductGridLayout from "@/components/ProductGridLayout";
 import { Product } from "@/lib/types";
 import Image from "next/image";
 
-const popsPartsProducts: Product[] = [
+const popsPartsProducts: Partial<Product>[] = [
   {
     name: "Nautilus Hyosung ATM Topper Bracket",
     description:
@@ -100,7 +100,7 @@ function page() {
                 text-gray-900 dark:text-white
               "
               >
-                POPS Parts
+                POS Parts
               </h1>
               <p
                 className="
@@ -142,7 +142,7 @@ function page() {
         </div>
       </section>
       <ProductGridLayout
-        title="POPS Parts"
+        title="POS Parts"
         totalInitialProducts={popsPartsProducts.length}
         initialProducts={popsPartsProducts}
       />
