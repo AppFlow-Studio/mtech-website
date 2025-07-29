@@ -103,14 +103,14 @@ const WarrantyForm = () => {
                 <InputField
                   id="first-name"
                   type="text"
-                  placeholder="Enter Childs first name"
+                  placeholder="Enter first name"
                 />
               </FormGroup>
               <FormGroup label="Last Name" htmlFor="last-name" required>
                 <InputField
                   id="last-name"
                   type="text"
-                  placeholder="Enter Childs last name"
+                  placeholder="Enter last name"
                 />
               </FormGroup>
               <FormGroup label="Email" htmlFor="email" required>

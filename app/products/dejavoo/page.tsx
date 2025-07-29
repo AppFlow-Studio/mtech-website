@@ -140,8 +140,8 @@ function page() {
       </section>
       <ProductGridLayout
         title="Dejavoo"
-        totalProducts={dejavooProducts.length}
-        products={dejavooProducts}
+        totalInitialProducts={dejavooProducts.length}
+        initialProducts={dejavooProducts}
       />
     </>
   );

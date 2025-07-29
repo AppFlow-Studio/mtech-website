@@ -21,8 +21,8 @@ function page() {
     <>
       <ProductGridLayout
         title="On the Fly POS"
-        totalProducts={onTheFlyPosProducts.length}
-        products={onTheFlyPosProducts}
+        totalInitialProducts={onTheFlyPosProducts.length}
+        initialProducts={onTheFlyPosProducts}
       />
       <PricingSection />
       <RatesComparison />

@@ -75,20 +75,22 @@ const Navbar = () => {
     {
       name: "ATM Solutions",
       href: "/atm-solutions",
-      hasDropdown: false,
+      hasDropdown: true,
+      dropdownItems: [
+        {
+          name: "ATM Cash Management",
+          href: "/atm-solutions/atm-cash-management",
+        },
+        { name: "ATM Marketing", href: "/atm-solutions/atm-marketing" },
+        { name: "ATM Placement", href: "/atm-solutions/atm-placement" },
+        { name: "ATM Transaction", href: "/atm-solutions/atm-transaction" },
+      ],
     },
     {
       name: "Dual Pricing",
       href: "/dual-pricing",
       hasDropdown: true,
       dropdownItems: [
-        {
-          name: "ATM Cash Management",
-          href: "/dual-pricing/atm-cash-management",
-        },
-        { name: "ATM Marketing", href: "/dual-pricing/atm-marketing" },
-        { name: "ATM Placement", href: "/dual-pricing/atm-placement" },
-        { name: "ATM Transaction", href: "/dual-pricing/atm-transaction" },
         {
           name: "Community Bank Partners",
           href: "/dual-pricing/community-bank-partners",
@@ -164,24 +166,20 @@ const Navbar = () => {
               {menuItems.map((item, index) => (
                 <div key={index} className="relative xl:mr-4">
                   <div
-                    className="flex items-center"
+                    className={`flex items-center transition-colors duration-200 hover:text-purple-400 text-sm rounded-full ${isActive(item.href)  ? "bg-[#672AB21A] dark:bg-[#FFFFFF1A] px-2 py-1" : ""}`}
                     onMouseEnter={() => setHoveredItem(index)}
                     onMouseLeave={() => setHoveredItem(null)}
                   >
                     <Link
                       href={item.href}
-                      className={`flex items-center space-x-1 hover:text-purple-400 transition-colors duration-200 text-sm rounded-full ${
-                        isActive(item.href)
-                          ? "bg-[#672AB21A] dark:bg-[#FFFFFF1A] px-2 py-1"
-                          : ""
-                      }`}
+                      className={`flex items-center space-x-1 `}
                     >
                       <span>{item.name}</span>
                     </Link>
                     {item.hasDropdown && (
                       <ChevronDown
                         size={14}
-                        className="ml-1 cursor-pointer hover:text-purple-400"
+                        className="ml-1 cursor-pointer"
                         onMouseEnter={() => setHoveredItem(index)}
                       />
                     )}

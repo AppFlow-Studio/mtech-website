@@ -214,7 +214,7 @@ const FeatureTabs: React.FC<{ features: CardFeature[]}> = ({ features }) => {
                   }}
                   className={`
                     relative overflow-hidden rounded-2xl shadow-lg cursor-pointer
-                    bg-[#380D52]
+                    bg-[#380D52] 
                     ${isActive ? "lg:min-h-[450px]" : ""}
                   `}
                   onClick={() => !isActive && handleCardClick(index)}
@@ -318,7 +318,7 @@ const FeatureTabs: React.FC<{ features: CardFeature[]}> = ({ features }) => {
                         transition={{
                           duration: 0.2,
                         }}
-                        className="p-4 h-full flex flex-col items-center justify-between hover:bg-[#E9E5F5] dark:hover:bg-[#382E5A] transition-colors duration-300"
+                        className="p-4 h-full flex flex-col items-center justify-between hover:hover:bg-[#382E5A] dark:hover:bg-[#382E5A] transition-colors duration-300"
                       >
                         <span className="font-bold text-white dark:text-gray-400">
                           {`0${index + 1}`}

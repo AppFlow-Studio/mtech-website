@@ -16,6 +16,7 @@ import { type SanityDocument } from "next-sanity";
 import { draftMode } from "next/headers";
 import { sanityFetch } from '@/utils/sanity/lib/live'
 import { defineQuery } from 'next-sanity'
+import { TestimonialQueryResultProps } from "@/lib/sanity-types";
 
 //Used for Feature tab components
 const featureItems: FeatureItem[] = [
@@ -139,6 +140,7 @@ const modernPaymentFeatures: FeatureItem[] = [
 
 const POSTS_QUERY = defineQuery(`*[_type == 'Home_Page']`)
 
+const TESTIMONIALS_QUERY = defineQuery(`*[_type == 'Testimonial']`)
 const options = { next: { revalidate: 30 } };
 
 export default async function Home() {
@@ -148,7 +150,13 @@ export default async function Home() {
     ...options,
   });
 
-  console.log(HomePageData);
+  const TestimonialsData : TestimonialQueryResultProps = await sanityFetch({
+    query: TESTIMONIALS_QUERY,
+    ...options,
+  });
+
+  console.log(TestimonialsData);
+
   return (
     <div>
       <Hero hero_header={HomePageData.data[0].Hero_Header} hero_subtext={HomePageData.data[0].Hero_SubText} />
@@ -162,7 +170,7 @@ export default async function Home() {
       <InsightsSection header={HomePageData.data[0].Insights_Section.Insights_Section_Header} subtext={HomePageData.data[0].Insights_Section.Insights_Section_SubText} />
       <PreferredChoice />
       <MerchantPortal />
-      <Testimonials />
+      <Testimonials testimonials={TestimonialsData.data[0].Testimonial_Cards} testimonial_header={TestimonialsData.data[0].Testimonial_Header}/>
       <Collection />
       <PosSystems />
     </div>

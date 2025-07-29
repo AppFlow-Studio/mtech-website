@@ -38,7 +38,7 @@ const Collection = () => {
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <h2 className="text-4xl md:text-5xl font-bold text-center text-gray-900 dark:text-white">
-          Best MTech Collection
+          Customer Top Picks
         </h2>
 
         {/* Responsive Grid for Cards */}

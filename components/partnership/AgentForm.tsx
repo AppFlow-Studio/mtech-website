@@ -62,13 +62,13 @@ const AgentForm = () => {
           <InputField
             id="first-name"
             label="First Name"
-            placeholder="Enter Childs first name"
+            placeholder="Enter first name"
             isRequired
           />
           <InputField
             id="last-name"
             label="Last Name"
-            placeholder="Enter Childs last name"
+            placeholder="Enter last name"
             isRequired
           />
         </div>

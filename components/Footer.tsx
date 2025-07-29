@@ -1,4 +1,3 @@
-"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -10,6 +9,11 @@ import {
   Phone,
   Mail,
 } from "lucide-react";
+import { sanityFetch } from '@/utils/sanity/lib/live'
+import { defineQuery } from 'next-sanity'
+import { FooterQueryResultProps } from "@/lib/sanity-types";
+import { draftMode } from "next/headers";
+import SanityImage from "./SanityImage";
 
 const productLinks = [
   {
@@ -52,7 +56,16 @@ const socialLinks = [
   { icon: Instagram, href: "#", name: "Instagram" },
 ];
 
-const Footer = () => {
+const Footer_Query = defineQuery(`*[_type == 'Footer']`)
+
+const options = { next: { revalidate: 30 } };
+
+const  Footer = async () => {
+  const { isEnabled } = await draftMode();
+  const FooterData : FooterQueryResultProps = await sanityFetch({
+    query: Footer_Query,
+    ...options,
+  });
   return (
     <footer className="bg-[#380D52] text-gray-300">
       <div className="container mx-auto pt-16 pb-8 px-4">
@@ -61,12 +74,16 @@ const Footer = () => {
           {/* Column 1: Logo, Description, Socials */}
           <div className="lg:col-span-2">
             <Link href="/" className="inline-block">
-              <Image src="/logo.png" alt="MTech" width={150} height={50} />
+              {/* <Image src="/logo.png" alt="MTech" width={150} height={50} /> */}
+              <SanityImage
+                image={FooterData.data[0].Footer_Logo}
+                alt="MTech"
+                width={150}
+                height={50}
+              />
             </Link>
             <p className="mt-4 max-w-md">
-              Teck Distributors delivers innovative payment solutions, including
-              card processing, POS systems, and business support tools designed
-              to help merchants grow.
+              {FooterData.data[0].Footer_Description}
             </p>
             <div className="mt-6 flex space-x-4">
               {socialLinks.map((social) => (
@@ -88,13 +105,13 @@ const Footer = () => {
           <div>
             <h3 className="font-bold text-white text-lg">Product</h3>
             <ul className="mt-4 space-y-3">
-              {productLinks.map((link) => (
-                <li key={link.name}>
+              {FooterData.data[0].Footer_Product_Links.map((link) => (
+                <li key={link.Footer_Product_Link_Name}>
                   <Link
-                    href={link.href}
+                    href={link.Footer_Product_Link_Url}
                     className="hover:text-white transition-colors"
                   >
-                    {link.name}
+                    {link.Footer_Product_Link_Name}
                   </Link>
                 </li>
               ))}
@@ -105,13 +122,13 @@ const Footer = () => {
           <div>
             <h3 className="font-bold text-white text-lg">Resources</h3>
             <ul className="mt-4 space-y-3">
-              {resourceLinks.map((link) => (
-                <li key={link.name}>
+              {FooterData.data[0].Footer_Resource_Links.map((link) => (
+                <li key={link.Footer_Resource_Link_Name}>
                   <Link
-                    href={link.href}
+                    href={link.Footer_Resource_Link_Url}
                     className="hover:text-white transition-colors"
                   >
-                    {link.name}
+                    {link.Footer_Resource_Link_Name}
                   </Link>
                 </li>
               ))}
@@ -122,11 +139,13 @@ const Footer = () => {
           <div>
             <h3 className="font-bold text-white text-lg">Contact Us</h3>
             <ul className="mt-4 space-y-3">
-              <li className="flex items-center gap-2">
-                <Phone className="h-5 w-5 flex-shrink-0" />
-                <Link href="tel:888-411-7063">888-411-7063</Link>
-              </li>
-              <li className="flex items-center gap-2">
+              {FooterData.data[0].Footer_Contact_Links.map((link) => (
+                <li key={link.Footer_Contact_Link_Name} className="flex items-center gap-2">
+                  {link.Footer_Resource_Link_Icon == "phone" ? <Phone className="h-5 w-5 flex-shrink-0" /> : <Mail className="h-5 w-5 flex-shrink-0" />}
+                  <a href={link.Footer_Resource_Link_Icon == "phone" ? `tel:${link.Footer_Contact_Link_Url}` : `mailto:${link.Footer_Contact_Link_Url}`} className="hover:text-white transition-colors break-all">{link.Footer_Contact_Link_Name}</a>
+                </li>
+              ))}
+              {/* <li className="flex items-center gap-2">
                 <Mail className="h-5 w-5 flex-shrink-0" />
                 <Link
                   href="mailto:support@mtechdistributors.com"
@@ -134,7 +153,7 @@ const Footer = () => {
                 >
                   support@mtechdistributors.com
                 </Link>
-              </li>
+              </li> */}
             </ul>
           </div>
         </div>

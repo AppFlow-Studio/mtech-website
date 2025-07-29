@@ -102,8 +102,8 @@ function page() {
       </section>
       <ProductGridLayout
         title="HYOSUNG"
-        totalProducts={hyosungAtmProducts.length}
-        products={hyosungAtmProducts}
+        totalInitialProducts={hyosungAtmProducts.length}
+        initialProducts={hyosungAtmProducts}
       />
     </>
   );

@@ -17,11 +17,11 @@ const HardwareSection = () => {
         {/* --- Section Header --- */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-12">
           <h2 className="text-3xl md:text-4xl font-medium text-gray-900 dark:text-white">
-            2025 Hardware Line
+           Hardware Line
           </h2>
           <div className="max-w-md">
             <p className=" text-gray-600 dark:text-gray-300">
-              Our 2025 Hardware Line introduces the next generation of payment
+              Our Hardware Line introduces the next generation of payment
               and business technology — combining sleek design with powerful
               performance.
             </p>

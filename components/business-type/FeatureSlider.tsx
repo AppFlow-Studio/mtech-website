@@ -24,7 +24,7 @@ const FeatureSlider = ({ sliderData }: FeatureSliderProps) => {
     className: "center",
     centerMode: true,
     infinite: true,
-    centerPadding: "300px",
+    centerPadding: "30%",
     slidesToShow: 1,
     speed: 500,
     autoplay: true,

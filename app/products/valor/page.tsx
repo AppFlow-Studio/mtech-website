@@ -114,8 +114,8 @@ function page() {
       </section>
       <ProductGridLayout
         title="Valor"
-        totalProducts={valorProducts.length}
-        products={valorProducts}
+        totalInitialProducts={valorProducts.length}
+        initialProducts={valorProducts}
       />
     </>
   );

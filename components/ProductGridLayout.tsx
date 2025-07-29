@@ -7,18 +7,21 @@ import Pagination from "./Pagination";
 import type { Product } from "@/lib/types";
 import { SlidersHorizontal, LayoutGrid, List } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useProducts } from "./actions/hooks/useProducts";
 
 interface ProductGridLayoutProps {
   title: string;
-  totalProducts: number;
-  products: Product[];
+  totalInitialProducts?: number;
+  initialProducts?: Product[];
 }
 
 const ProductGridLayout = ({
   title,
-  totalProducts: initialTotalProducts,
-  products: initialProducts,
+  totalInitialProducts,
+  initialProducts,
 }: ProductGridLayoutProps) => {
+  const { data: products, isLoading } = useProducts()
+  //console.log(products)
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -27,8 +30,8 @@ const ProductGridLayout = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [filteredProducts, setFilteredProducts] =
-    useState<Product[]>(initialProducts);
-  const [totalProducts, setTotalProducts] = useState(initialTotalProducts);
+    useState<Product[]>(initialProducts ? initialProducts : products || []);
+  const [totalProducts, setTotalProducts] = useState(totalInitialProducts ? totalInitialProducts : products?.length || 0);
 
   // Filter states
   const [inStockFilter, setInStockFilter] = useState<boolean | null>(null);
@@ -56,7 +59,7 @@ const ProductGridLayout = ({
 
   // Apply filters and sorting whenever they change
   useEffect(() => {
-    let result = [...initialProducts];
+    let result = [...initialProducts || products || []];
 
     // Apply tag filter
     if (tagFilters.length > 0) {
@@ -89,7 +92,7 @@ const ProductGridLayout = ({
     setFilteredProducts(result);
     setTotalProducts(result.length);
     setCurrentPage(1); // Reset to first page when filters change
-  }, [initialProducts, tagFilters, inStockFilter, sortOption]);
+  }, [products, tagFilters, inStockFilter, sortOption]);
 
   // Update URL when filters change
   useEffect(() => {
@@ -146,6 +149,83 @@ const ProductGridLayout = ({
     setTagFilters([]);
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="flex flex-col items-center">
+          <svg
+            className="animate-spin h-12 w-12 text-blue-500 mb-4"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+            ></path>
+          </svg>
+          <span className="text-lg font-medium text-gray-700 animate-pulse">
+            Loading products...
+          </span>
+        </div>
+      </div>
+    );
+  }
+  if (!products) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96 bg-gradient-to-b from-[#f5f3ff] to-[#ede9fe] dark:from-[#2C134C] dark:to-[#1a102b] rounded-xl shadow-lg border border-purple-200 dark:border-purple-900">
+        <svg
+          className="h-14 w-14 text-purple-400 dark:text-purple-500 mb-4"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            className="opacity-30"
+          />
+          <path
+            d="M8 12l2 2 4-4"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="opacity-80"
+          />
+        </svg>
+        <span className="text-xl font-semibold text-purple-700 dark:text-purple-200 mb-1">
+          No products found
+        </span>
+        <span className="text-sm text-gray-500 dark:text-gray-400">
+          Try adjusting your filters or check back later.
+        </span>
+      </div>
+    )
+  }
+  if(filteredProducts.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96 bg-gradient-to-b from-[#f5f3ff] to-[#ede9fe] dark:from-[#2C134C] dark:to-[#1a102b] rounded-xl shadow-lg border border-purple-200 dark:border-purple-900">
+        <span className="text-xl font-semibold text-purple-700 dark:text-purple-200 mb-1">
+          No products found
+        </span>
+      </div>
+    )
+  }
+  console.log(filteredProducts)
   return (
     <div className="py-8 sm:py-12">
       <div className="container mx-auto px-4">
@@ -178,9 +258,9 @@ const ProductGridLayout = ({
               currentStockFilter={inStockFilter}
               currentSortOption={sortOption}
               currentTagFilters={tagFilters}
-              inStockCount={initialProducts.filter((p) => p.inStock).length}
-              outOfStockCount={initialProducts.filter((p) => !p.inStock).length}
-              products={initialProducts}
+              inStockCount={filteredProducts.filter((p) => p.inStock).length}
+              outOfStockCount={filteredProducts.filter((p) => !p.inStock).length}
+              products={filteredProducts}
             />
           </div>
 
@@ -274,9 +354,9 @@ const ProductGridLayout = ({
             currentStockFilter={inStockFilter}
             currentSortOption={sortOption}
             currentTagFilters={tagFilters}
-            inStockCount={initialProducts.filter((p) => p.inStock).length}
-            outOfStockCount={initialProducts.filter((p) => !p.inStock).length}
-            products={initialProducts}
+            inStockCount={filteredProducts.filter((p) => p.inStock).length}
+            outOfStockCount={filteredProducts.filter((p) => !p.inStock).length}
+            products={filteredProducts}
           />
         </div>
       </div>

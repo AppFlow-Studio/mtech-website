@@ -117,8 +117,8 @@ function page() {
       </section>
       <ProductGridLayout
         title="Figure POS"
-        totalProducts={figurePosProducts.length}
-        products={figurePosProducts}
+        totalInitialProducts={figurePosProducts.length}
+        initialProducts={figurePosProducts}
       />
       <PricingSection />
       <RatesComparison />

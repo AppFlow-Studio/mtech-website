@@ -127,8 +127,8 @@ function page() {
       </section>
       <ProductGridLayout
         title="Clover"
-        totalProducts={cloverProducts.length}
-        products={cloverProducts}
+        totalInitialProducts={cloverProducts.length}
+        initialProducts={cloverProducts}
       />
       <PricingSection />
       <RatesComparison />

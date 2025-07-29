@@ -42,7 +42,7 @@ const DualPricingKit = ({
         */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
           {/* --- Left Column (Text + Main Card) --- */}
-          <div className="lg:col-span-1 space-y-8">
+          <div className="flex flex-col justify-between space-y-8 h-full">
             <div>
               <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
                 {title}

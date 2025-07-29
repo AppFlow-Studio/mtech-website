@@ -31,8 +31,8 @@ export default async function AreaOfSpeciality({
     <>
       <ProductGridLayout
         title="Area of Speciality"
-        totalProducts={filteredProducts.length}
-        products={filteredProducts}
+        totalInitialProducts={filteredProducts.length}
+        initialProducts={filteredProducts}
       />
       <PricingSection />
       <RatesComparison />

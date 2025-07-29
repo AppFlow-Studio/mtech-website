@@ -2,7 +2,7 @@ import ProductGridLayout from "@/components/ProductGridLayout";
 import { Product } from "@/lib/types";
 import Image from "next/image";
 
-const ingenicoProducts: Product[] = [
+const ingenicoProducts: Partial<Product>[] = [
   {
     name: "Ingenico Moby 5500 Card Reader",
     description:
@@ -79,8 +79,8 @@ function page() {
       </section>
       <ProductGridLayout
         title="Ingenico"
-        totalProducts={ingenicoProducts.length}
-        products={ingenicoProducts}
+        totalInitialProducts={ingenicoProducts.length}
+        initialProducts={ingenicoProducts}
       />
     </>
   );

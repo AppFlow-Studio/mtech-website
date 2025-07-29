@@ -5,7 +5,7 @@ import RatesComparison from "@/components/products/RatesComparison";
 import { Product } from "@/lib/types";
 import Image from "next/image";
 
-const supersonicProducts: Product[] = [
+const supersonicProducts: Partial<Product>[] = [
   {
     name: "SuperSonic POS",
     description:
@@ -146,8 +146,8 @@ function page() {
       </section>
       <ProductGridLayout
         title="Supersonic POS"
-        totalProducts={supersonicProducts.length}
-        products={supersonicProducts}
+        totalInitialProducts={supersonicProducts.length}
+        initialProducts={supersonicProducts}
       />
       <PricingSection />
       <RatesComparison />

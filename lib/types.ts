@@ -256,3 +256,5 @@ export interface HomePage {
 export type HomePageQueryResult = {
   data: HomePage[];
 };
+
+

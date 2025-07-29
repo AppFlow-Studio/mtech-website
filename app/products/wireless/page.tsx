@@ -50,8 +50,8 @@ export default function Products() {
     <>
       <ProductGridLayout
         title="Our Products"
-        totalProducts={totalProducts}
-        products={wirelessProducts}
+        totalInitialProducts={totalProducts}
+        initialProducts={wirelessProducts}
       />
       <PricingSection />
       <RatesComparison />

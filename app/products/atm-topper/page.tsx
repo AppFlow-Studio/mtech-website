@@ -90,8 +90,8 @@ function page() {
       </section>
       <ProductGridLayout
         title="ATM TOPPER"
-        totalProducts={atmTopperProducts.length}
-        products={atmTopperProducts}
+        totalInitialProducts={atmTopperProducts.length}
+        initialProducts={atmTopperProducts}
       />
     </>
   );

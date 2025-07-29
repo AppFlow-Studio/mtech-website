@@ -14,32 +14,32 @@ interface SearchbarProps {
 }
 
 function Searchbar({ isVisible }: SearchbarProps) {
-  const { data : allProducts, isLoading } = useProducts();
+  const { data: allProducts, isLoading } = useProducts();
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const router = useRouter();
   // This effect runs whenever the user changes the search query
-  useEffect(() => {
-    if (searchQuery.trim().length > 0) {
-      const results = allProducts
-        .filter((product) =>
-          product.name.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-        .slice(0, 5); // Limit to showing a max of 5 suggestions
-      setFilteredProducts(results);
-    } else {
-      setFilteredProducts([]); // Clear results if query is too short
-    }
-  }, [searchQuery]);
+  // useEffect(() => {
+  //   if (searchQuery.trim().length > 0) {
+  //     const results = allProducts
+  //       .filter((product) =>
+  //         product.name.toLowerCase().includes(searchQuery.toLowerCase())
+  //       )
+  //       ; // Limit to showing a max of 5 suggestions
+  //     setFilteredProducts(results);
+  //   } else {
+  //     setFilteredProducts([]); // Clear results if query is too short
+  //   }
+  // }, [searchQuery]);
 
-  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
-      setFilteredProducts([]); // Close suggestions on submit
-      setSearchQuery("");
-    }
-  };
+  // const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
+  //   if (searchQuery.trim()) {
+  //     router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+  //     setFilteredProducts([]); // Close suggestions on submit
+  //     setSearchQuery("");
+  //   }
+  // };
 
   const handleSuggestionClick = () => {
     setFilteredProducts([]); // Close suggestions on click
@@ -48,12 +48,11 @@ function Searchbar({ isVisible }: SearchbarProps) {
 
   return (
     <div
-      className={`transform transition-all duration-1000 delay-500 ease-out relative z-50 ${
-        isVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
-      }`}
+      className={`transform transition-all duration-1000 delay-500 ease-out relative z-50 ${isVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
+        }`}
     >
       <form
-        onSubmit={handleSearchSubmit}
+        // onSubmit={handleSearchSubmit}
         className="max-w-xs sm:max-w-sm md:max-w-md mx-auto mb-4 md:mb-8"
       >
         <div className="relative">
@@ -64,7 +63,19 @@ function Searchbar({ isVisible }: SearchbarProps) {
                 type="text"
                 placeholder="Search for Products"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value.trim().length > 0) {
+                    setSearchQuery(e.target.value);
+                    const results = allProducts?.filter((product) =>
+                      product.name.toLowerCase().includes(e.target.value.toLowerCase())
+                    )
+                      .slice(0, 5); // Limit to showing a max of 5 suggestions
+                    setFilteredProducts(results || []);
+                  } else {
+                    setSearchQuery("");
+                    setFilteredProducts([]);
+                  }
+                }}
                 autoComplete="off"
                 className="flex-1 bg-transparent text-white placeholder-white/70 outline-none text-xs sm:text-sm lg:text-base py-1.5 sm:py-2 w-full"
               />
@@ -80,7 +91,7 @@ function Searchbar({ isVisible }: SearchbarProps) {
           {/* --- Search Suggestions Dropdown with very high z-index --- */}
           {filteredProducts.length > 0 && !isLoading && (
             <div
-              className="absolute top-full mt-2 w-full bg-[#2A1F4A]/95 backdrop-blur-md rounded-xl shadow-2xl border border-white/20 overflow-hidden"
+              className="absolute top-full mt-2 w-full bg-[#2A1F4A]/95 backdrop-blur-md rounded-xl  overflow-y-auto shadow-2xl border border-white/20 overflow-hidden"
               style={{ zIndex: 9999 }}
             >
               <ul>

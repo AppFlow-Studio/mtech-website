@@ -8,6 +8,8 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import type { Swiper as SwiperCore } from "swiper";
 import "swiper/css"; // Core Swiper styles
+import { TestimonialQueryResult } from "@/lib/sanity-types";
+import SanityImage from "../SanityImage";
 
 // --- Data for the testimonials ---
 const testimonialsData = [
@@ -21,7 +23,7 @@ const testimonialsData = [
   },
   {
     quote:
-      "When I started House of Wings, it was a way to support my family. Finding the right location and staff was challenging, but MTech made everything else so much easier.",
+      "When I started Lava Restaurant, it was a way to support my family. Finding the right location and staff was challenging, but MTech made everything else so much easier.",
     rating: 5,
     author: "Lava Restaurant",
     title: "MTech simplified my business journey",
@@ -69,7 +71,7 @@ const StarRating = ({ rating }: { rating: number }) => (
   </div>
 );
 
-const Testimonials = () => {
+const Testimonials = ({testimonials, testimonial_header}: {testimonials: TestimonialQueryResult['Testimonial_Cards'], testimonial_header: string}) => {
   const [swiper, setSwiper] = useState<SwiperCore | null>(null);
 
   const slidePrev = () => swiper?.slidePrev();
@@ -79,8 +81,8 @@ const Testimonials = () => {
     <section className="py-16 sm:py-24">
       <div className="container mx-auto px-4">
         {/* Section Header */}
-        <h2 className="text-4xl md:text-5xl font-medium text-center text-gray-900 dark:text-white">
-          Sweet word from sweet Clients
+        <h2 className="text-4xl md:text-5xl w-[60%] self-center mx-auto font-medium text-center text-gray-900 dark:text-white">
+          {testimonial_header}
         </h2>
 
         <div className="relative mt-12">
@@ -104,32 +106,32 @@ const Testimonials = () => {
               disableOnInteraction: true, // Autoplay will stop on user interaction
             }}
           >
-            {testimonialsData.map((testimonial, index) => (
+            {testimonials.map((testimonial, index) => (
               <SwiperSlide key={index}>
                 <div className="bg-[#05070D1A] dark:bg-[#FFFFFF33] rounded-2xl p-3 md:p-8 shadow-lg">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch h-[900px] md:h-[500px] lg:h-[450px]">
                     <div className="order-2 lg:order-1 flex flex-col gap-6 text-center lg:text-left">
                       <div className="flex-1 flex items-center">
                         <p className="text-2xl text-gray-600 dark:text-gray-300">
-                          "{testimonial.quote}"
+                          "{testimonial.Testimonial_Card_Review}"
                         </p>
                       </div>
 
                       <div className="flex flex-col items-center lg:items-start gap-2 flex-shrink-0">
-                        <StarRating rating={testimonial.rating} />
+                        <StarRating rating={testimonial.Testimonial_Card_Rating} />
                         <h3 className="font-bold text-xl text-gray-900 dark:text-white">
-                          {testimonial.author}
+                          {testimonial.Testimonial_Card_Author}
                         </h3>
                         <p className="text-gray-500 dark:text-gray-400">
-                          {testimonial.title}
+                          {testimonial.Testimonial_Card_SubText}
                         </p>
                       </div>
                     </div>
 
                     <div className="order-1 lg:order-2 bg-white rounded-lg p-4 flex items-center justify-center">
-                      <Image
-                        src={testimonial.imageSrc}
-                        alt={`Logo for ${testimonial.title}`}
+                      <SanityImage
+                        image={testimonial.Testimonial_Card_Image}
+                        alt={`Logo for ${testimonial.Testimonial_Card_Author}`}
                         width={400}
                         height={400}
                         className="max-w-full max-h-full object-contain"

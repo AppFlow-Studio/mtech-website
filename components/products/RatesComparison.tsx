@@ -1,7 +1,10 @@
-"use client";
-
+'use server'
 import Image from "next/image";
 import { CheckCircle2 } from "lucide-react";
+import { RateCardsQueryResult, RateCardsQueryResultProps } from "@/lib/sanity-types";
+import { client } from "@/sanity/lib/client";
+import { PortableText, PortableTextComponents } from "@portabletext/react";
+
 
 // --- Data for the two rate plans ---
 const ratePlans = [
@@ -31,53 +34,90 @@ const ratePlans = [
   },
 ];
 
+const components: PortableTextComponents = {
+  list: {
+    bullet: ({ children }) => (
+      <ul className="space-y-3 sm:space-y-4 flex-grow">
+        {children}
+      </ul>
+    ),
+    number: ({ children }) => (
+      <ol className="space-y-3 sm:space-y-4 flex-grow">
+        {children}
+      </ol>
+    ),
+  },
+  listItem: {
+    bullet: ({ children }) => (
+      <li className="flex items-start gap-2 sm:gap-3">
+        <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-white fill-[#662CB2] mt-0.5" />
+        <span className="text-xs sm:text-sm leading-relaxed text-purple-100">
+          {children}
+        </span>
+      </li>
+    ),
+    number: ({ children }) => (
+      <li className="flex items-start gap-2 sm:gap-3">
+        <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-white fill-[#662CB2] mt-0.5" />
+        <span className="text-xs sm:text-sm leading-relaxed text-purple-100">
+          {children}
+        </span>
+      </li>
+    ),
+  },
+  block: {
+    normal: ({ children }) => (
+      <p className="text-xs sm:text-sm leading-relaxed text-purple-100 mb-2">
+        {children}
+      </p>
+    ),
+  },
+}
+
+
 // --- Reusable Pricing Card Sub-component ---
-const PricingCard = ({ plan }: { plan: (typeof ratePlans)[0] }) => {
-  const isFeatured = plan.isFeatured;
+const PricingCard = ({ plan }: { plan: RateCardsQueryResult }) => {
+  const isFeatured = plan.RateCards_IsFeatured;
 
   return (
     <div
       className={`
                 p-6 sm:p-8 rounded-2xl shadow-lg flex flex-col h-full w-full
                 transition-transform duration-300 lg:hover:scale-105
-                ${
-                  isFeatured
-                    ? "bg-gradient-to-b from-[#662CB2] to-[#2C134C]"
-                    : "bg-[#231A30] border border-[#632BAD]"
-                }
+                ${isFeatured
+          ? "bg-gradient-to-b from-[#662CB2] to-[#2C134C]"
+          : "bg-[#231A30] border border-[#632BAD]"
+        }
               `}
     >
       <h3
-        className={`font-bold text-xl ${
-          isFeatured ? "text-white" : "text-white"
-        }`}
+        className={`font-bold text-xl ${isFeatured ? "text-white" : "text-white"
+          }`}
       >
-        {plan.name}
+        {plan.RateCards_Header}
       </h3>
 
       <div className="mt-4">
-        <span className="text-5xl font-bold text-white">{plan.rate}</span>
+        <span className="text-5xl font-bold text-white">{plan.RateCards_Rate}</span>
       </div>
 
       <p
-        className={`mt-4 text-sm ${
-          isFeatured ? "text-purple-200" : "text-gray-400"
-        }`}
+        className={`mt-4 text-sm ${isFeatured ? "text-purple-200" : "text-gray-400"
+          }`}
       >
-        {plan.description}
+        {plan.RateCards_Description}
       </p>
 
       <button
         className={`
         w-full py-3 rounded-full font-semibold mt-4 sm:mt-6 transition-colors text-sm sm:text-base
-        ${
-          isFeatured
+        ${isFeatured
             ? "bg-[#EAEEFBCC] text-[#05070D] hover:bg-gray-200"
             : "bg-gradient-to-b from-[#662CB2] to-[#2C134C] dark:from-[#662CB2] dark:to-purple-[#2C134C] hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600 text-white"
-        }
+          }
       `}
       >
-        {plan.ctaText}
+        {plan.RateCards_CTA}
       </button>
 
       <div className="flex items-center justify-between my-6 sm:my-8">
@@ -140,7 +180,7 @@ const PricingCard = ({ plan }: { plan: (typeof ratePlans)[0] }) => {
 
       {/* Features list with flex-grow to push content to fill remaining space */}
       <ul className="space-y-3 sm:space-y-4 flex-grow">
-        {plan.features.map((feature, index) => (
+        {/* {plan.features.map((feature, index) => (
           <li key={index} className="flex items-start gap-2 sm:gap-3">
             <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-white fill-[#662CB2] mt-0.5" />
             <span
@@ -151,13 +191,48 @@ const PricingCard = ({ plan }: { plan: (typeof ratePlans)[0] }) => {
               {feature}
             </span>
           </li>
-        ))}
+        ))} */}
+        <PortableText value={plan.ReturnPolicy_Section_Body} components={components} />
       </ul>
     </div>
   );
 };
 
-const RatesComparison = () => {
+const RateCardsQuery = `*[_type == "RateCards"]`
+
+const RatesComparison = async () => {
+  const rateCards = await client.fetch<RateCardsQueryResultProps>(RateCardsQuery);
+  if(rateCards.length < 0 || rateCards[0].RateCards.length < 0) {
+    return (
+    <section className="py-16 flex flex-col items-center justify-center min-h-[300px]">
+      <div className="flex flex-col items-center">
+        <svg
+          className="animate-spin h-12 w-12 text-purple-600 mb-4"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 48 48"
+        >
+          <circle
+            className="opacity-25"
+            cx="24"
+            cy="24"
+            r="20"
+            stroke="currentColor"
+            strokeWidth="6"
+          />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M44 24c0-11.046-8.954-20-20-20v6c7.732 0 14 6.268 14 14h6z"
+          />
+        </svg>
+        <span className="text-lg font-medium text-gray-700 dark:text-gray-200 animate-pulse">
+          Loading rates...
+        </span>
+      </div>
+    </section>
+    )
+  }
   return (
     <section className="py-8 sm:py-12">
       <div className="container mx-auto px-4">
@@ -172,7 +247,7 @@ const RatesComparison = () => {
         <div className="mt-16 flex flex-col lg:flex-row items-center lg:items-stretch justify-center gap-8 lg:gap-0">
           {/* Card 1 */}
           <div className="w-full lg:w-2/5 flex">
-            <PricingCard plan={ratePlans[0]} />
+            <PricingCard plan={rateCards[0].RateCards[0]} />
           </div>
 
           {/* VS Separator */}
@@ -182,13 +257,14 @@ const RatesComparison = () => {
               alt="Versus separator"
               width={150}
               height={75}
+              draggable={false}
               className="w-40 h-auto lg:w-auto dark:invert dark:brightness-0 dark:contrast-100"
             />
           </div>
 
           {/* Card 2 */}
           <div className="w-full lg:w-2/5 flex">
-            <PricingCard plan={ratePlans[1]} />
+            <PricingCard plan={rateCards[0].RateCards[1]} />
           </div>
         </div>
       </div>

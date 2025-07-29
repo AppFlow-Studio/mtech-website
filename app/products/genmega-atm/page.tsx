@@ -137,8 +137,8 @@ function page() {
       </section>
       <ProductGridLayout
         title="Genmega ATM"
-        totalProducts={genmegaAtmProducts.length}
-        products={genmegaAtmProducts}
+        totalInitialProducts={genmegaAtmProducts.length}
+        initialProducts={genmegaAtmProducts}
       />
     </>
   );

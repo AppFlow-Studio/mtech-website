@@ -92,11 +92,11 @@ function page() {
       <section className="py-16 sm:py-24 overflow-hidden">
         <div className="container mx-auto px-4">
           {/* Section Header */}
-          <div className="text-center max-w-3xl mx-auto">
+          <div className="text-center max-w-7xl w-full mx-auto">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
               Gas Stations
             </h2>
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
+            <p className="mt-4 max-w-3xl mx-auto text-lg text-gray-600 dark:text-gray-300">
               Gas Stations are essential service locations that provide fuel,
               automotive products, and convenience items for drivers on the go.
               In addition to dispensing gasoline and diesel, many gas stations

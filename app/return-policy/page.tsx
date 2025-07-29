@@ -1,9 +1,74 @@
-"use client";
 
 import Contact from "@/components/Contact";
-import React from "react";
+import { draftMode } from "next/headers";
+import { sanityFetch } from "@/utils/sanity/lib/live";
+import { defineQuery } from "next-sanity";
+import { PortableText, PortableTextComponents } from '@portabletext/react'
 
-const ReturnPolicy = () => {
+const ReturnPolicy_QUERY = defineQuery(`*[_type == 'ReturnPolicy']`)
+const options = {
+  next: {
+    revalidate: 60,
+  },
+}
+
+const components: PortableTextComponents = {
+  list: {
+    bullet: ({ children }) => (
+      <ul className="list-disc list-inside space-y-2 mb-4">
+        {children}
+      </ul>
+    ),
+    number: ({ children }) => (
+      <ol className="list-decimal list-inside space-y-2 mb-4">
+        {children}
+      </ol>
+    ),
+  },
+  listItem: {
+    bullet: ({ children }) => (
+      <li className="text-gray-700 dark:text-gray-200">
+        {children}
+      </li>
+    ),
+    number: ({ children }) => (
+      <li className="text-gray-700 dark:text-gray-200">
+        {children}
+      </li>
+    ),
+  },
+  block: {
+    normal: ({ children }) => (
+      <p className="mb-4 text-gray-700 dark:text-gray-200">
+        {children}
+      </p>
+    ),
+    h1: ({ children }) => (
+      <h1 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">
+        {children}
+      </h1>
+    ),
+    h2: ({ children }) => (
+      <h2 className="text-2xl font-semibold mb-3 text-gray-900 dark:text-white">
+        {children}
+      </h2>
+    ),
+    h3: ({ children }) => (
+      <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
+        {children}
+      </h3>
+    ),
+  },
+}
+
+
+const ReturnPolicy = async () => {
+  const { isEnabled } = await draftMode();
+  const ReturnPolicyData: any = await sanityFetch({
+    query: ReturnPolicy_QUERY,
+    ...options,
+  });
+  //console.log(ReturnPolicyData.data[0].ReturnPolicy_Section[1]);
   return (
     <>
       <section className="py-16 sm:py-24">
@@ -13,7 +78,7 @@ const ReturnPolicy = () => {
               Return & Refund Policy
             </h1>
             <div className="space-y-8 text-gray-700 dark:text-gray-200 text-lg">
-              <section>
+              {/* <section>
                 <h2 className="text-2xl font-semibold mb-2 ">
                   Eligibility for Returns
                 </h2>
@@ -21,7 +86,7 @@ const ReturnPolicy = () => {
                   Your item must be in its original unused condition to be
                   returned, unless there is a manufacturer defect. You must
                   return the item within{" "}
-                  <span className="font-semibold">7 days</span> of your
+                  <span className="font-semibold">30 days</span> of your
                   purchase.
                 </p>
               </section>
@@ -97,7 +162,16 @@ const ReturnPolicy = () => {
                   ). In these cases, you will not be subject to a restocking fee
                   and will not have to pay return shipping.
                 </p>
-              </section>
+              </section> */}
+
+              {
+                ReturnPolicyData.data[0].ReturnPolicy_Section.map((item: any) => (
+                  <section key={item._key}>
+                    <h2 className="text-2xl font-semibold mb-2 ">{item.ReturnPolicy_Section_Header}</h2>
+                    <PortableText value={item.ReturnPolicy_Section_Body} components={components} />
+                  </section>
+                ))
+              }
             </div>
           </div>
         </div>

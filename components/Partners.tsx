@@ -14,6 +14,24 @@ const partners = [
   { name: "On The Fly", logo: "/logos/on-the-fly.png", width: 130, height: 50 },
   { name: "Clover", logo: "/logos/clover.png", width: 120, height: 40 },
   {
+    name: "nmi",
+    logo: "/logos/nmi.png",
+    width: 120,
+    height: 40,
+  },
+  {
+    name: "Converge",
+    logo: "/logos/converge.png",
+    width: 120,
+    height: 40,
+  },
+  {
+    name : 'Pax',
+    logo : '/logos/pax_inc.png',
+    width : 120,
+    height : 40,
+  },
+  {
     name: "Valor PayTech",
     logo: "/logos/valor-paytech.webp",
     width: 150,
@@ -32,7 +50,6 @@ const PartnerLogo = ({ partner }: { partner: (typeof partners)[0] }) => {
     <div
       className={cn(
         "flex-shrink-0 px-8 py-4",
-        "transition-transform hover:scale-105"
       )}
     >
       <Image
@@ -55,15 +72,15 @@ const Partners = () => {
         </h2>
 
         <div className="relative">
-          <Marquee pauseOnHover className="[--duration:20s]">
+          <Marquee className="[--duration:20s]">
             {partners.map((partner) => (
               <PartnerLogo key={partner.name} partner={partner} />
             ))}
           </Marquee>
 
           {/* Gradient fade effects */}
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-1/4 bg-gradient-to-r from-background to-transparent"></div>
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-1/4 bg-gradient-to-l from-background to-transparent"></div>
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-1/4 bg-gradient-to-r from-background to-transparent dark:from-[#0B0119]"></div>
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-1/4 bg-gradient-to-l from-background to-transparent dark:from-[#0B0119]"></div>
         </div>
       </div>
     </section>
