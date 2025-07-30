@@ -20,8 +20,7 @@ const ProductGridLayout = ({
   totalInitialProducts,
   initialProducts,
 }: ProductGridLayoutProps) => {
-  const { data: products, isLoading } = useProducts()
-  //console.log(products)
+  const { data: products, isLoading, isError } = useProducts()
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -30,16 +29,26 @@ const ProductGridLayout = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [filteredProducts, setFilteredProducts] =
-    useState<Product[]>(initialProducts ? initialProducts : products || []);
-  const [totalProducts, setTotalProducts] = useState(totalInitialProducts ? totalInitialProducts : products?.length || 0);
+    useState<Product[]>(initialProducts || []);
+  const [totalProducts, setTotalProducts] = useState(totalInitialProducts || 0);
 
   // Filter states
   const [inStockFilter, setInStockFilter] = useState<boolean | null>(null);
   const [sortOption, setSortOption] = useState<string | null>(null);
   const [tagFilters, setTagFilters] = useState<string[]>([]);
 
-  // On mount, parse tags from URL if present
+  // Initialize filtered products when products are first loaded
   useEffect(() => {
+    if (products && products.length > 0) {
+      setFilteredProducts(products);
+      setTotalProducts(products.length);
+    }
+  }, [products]);
+
+  // Parse URL parameters when products are loaded
+  useEffect(() => {
+    if (!products || products.length === 0) return;
+
     const dataParam = searchParams.get("data");
     if (dataParam) {
       try {
@@ -49,11 +58,11 @@ const ProductGridLayout = ({
           setTagFilters(parsed.tags);
         }
       } catch (e) {
-        // ignore parse errors
+        console.error('Error parsing URL data parameter:', e);
       }
     }
     // Optionally, parse other filters from URL here (e.g., stock, sort)
-  }, []); // Only run on mount
+  }, [products, searchParams]); // Run when products are loaded or searchParams change
 
   const productsPerPage = viewMode === "grid" ? 9 : 6;
 
@@ -96,6 +105,9 @@ const ProductGridLayout = ({
 
   // Update URL when filters change
   useEffect(() => {
+    // Don't update URL during initial load
+    if (!products || products.length === 0) return;
+
     const data: any = {};
     if (tagFilters.length > 0) data.tags = tagFilters;
     // Optionally, add inStockFilter and sortOption to URL as well
@@ -111,7 +123,7 @@ const ProductGridLayout = ({
     if (searchParams.get("data") !== params.get("data")) {
       router.replace(`?${params.toString()}`);
     }
-  }, [tagFilters]);
+  }, [tagFilters, products, searchParams, router]);
 
   // Calculate total pages
   const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
@@ -216,7 +228,7 @@ const ProductGridLayout = ({
       </div>
     )
   }
-  if(filteredProducts.length === 0) {
+  if (filteredProducts.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-96 bg-gradient-to-b from-[#f5f3ff] to-[#ede9fe] dark:from-[#2C134C] dark:to-[#1a102b] rounded-xl shadow-lg border border-purple-200 dark:border-purple-900">
         <span className="text-xl font-semibold text-purple-700 dark:text-purple-200 mb-1">

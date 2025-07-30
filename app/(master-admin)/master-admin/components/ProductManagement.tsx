@@ -25,6 +25,7 @@ import { deleteProduct } from "../product-actions/delete-product"
 import { toast } from "sonner"
 import { updateProduct } from "../product-actions/update-product"
 import { useTags } from "./TagContext"
+import { BrochureUploadField } from "./BrochureUploadField"
 
 export default function ProductManagement({ searchTerm, setSearchTerm }: {
     searchTerm: string,
@@ -192,13 +193,18 @@ export default function ProductManagement({ searchTerm, setSearchTerm }: {
                                     alt={product.name}
                                     className="w-full h-full object-cover"
                                 />
-                                <div className="absolute top-2 right-2">
+                                <div className="absolute top-2 right-2 flex flex-col gap-1">
                                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${product.inStock
                                         ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                                         : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                                         }`}>
                                         {product.inStock ? 'In Stock' : 'Out of Stock'}
                                     </span>
+                                    {product.brochureUrl && (
+                                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                            📄 Brochure
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                             <div className="p-4">
@@ -352,7 +358,17 @@ const editProductSchema = z.object({
     inStock: z.boolean(),
     tags: z.array(z.string()).min(1, "At least one tag is required"),
     default_price: z.coerce.number().min(0.01, "Price is required"),
-    imageSrc: z.instanceof(File).or(z.string()).optional()
+    imageSrc: z.instanceof(File).or(z.string()).optional(),
+    isSubscription: z.boolean(),
+    subscriptionInterval: z.string().optional(),
+    subscriptionPrice: z.coerce.number().min(0).optional(),
+    modifiers: z.array(z.object({
+        name: z.string().min(1, "Modifier name is required"),
+        description: z.string().min(1, "Modifier description is required"),
+        additional_cost: z.coerce.number().min(0, "Additional cost must be 0 or greater")
+    })),
+    brochure: z.instanceof(File).optional(),
+    brochureUrl: z.string().optional()
 })
 
 type EditProductFormType = z.infer<typeof editProductSchema>
@@ -370,6 +386,12 @@ function ProductEditForm({ product }: { product: any }) {
             tags: product.tags || [],
             default_price: product.default_price || 0,
             imageSrc: product.imageSrc || '',
+            isSubscription: product.is_subscription || product.subscription || false,
+            subscriptionInterval: product.subscription_interval || '',
+            subscriptionPrice: product.subscription_price || 0,
+            modifiers: product.modifiers || [],
+            brochure: undefined,
+            brochureUrl: product.brochureUrl || '',
         },
         mode: "onTouched"
     })
@@ -386,13 +408,18 @@ function ProductEditForm({ product }: { product: any }) {
             tags: values.tags,
             default_price: values.default_price,
             imageSrc: values.imageSrc || product.imageSrc,
+            isSubscription: values.isSubscription,
+            subscriptionInterval: values.subscriptionInterval,
+            subscriptionPrice: values.subscriptionPrice,
+            modifiers: values.modifiers,
+            brochure: values.brochure,
+            brochureUrl: values.brochureUrl,
         }, product.imageSrc)
         if (result instanceof Error) {
             console.error(result)
             toast.error("Error updating product")
         }
         else {
-            toast.success("Product updated successfully")
             toast.success("Product updated successfully")
             await refetch()
         }
@@ -408,7 +435,7 @@ function ProductEditForm({ product }: { product: any }) {
                             <FormLabel>Product Image</FormLabel>
                             <FormControl>
                                 <ImageDropField
-                                    value={field.value || null}
+                                    value={field.value instanceof File ? field.value : null}
                                     onChange={file => {
                                         field.onChange(file)
                                         setPreviewUrl(file ? URL.createObjectURL(file) : product.imageSrc || "")
@@ -421,6 +448,30 @@ function ProductEditForm({ product }: { product: any }) {
                         </FormItem>
                     )}
                 />
+
+                {/* Brochure Upload */}
+                <FormField
+                    control={form.control}
+                    name="brochure"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Product Brochure (PDF)</FormLabel>
+                            <FormControl>
+                                <BrochureUploadField
+                                    value={field.value || null}
+                                    onChange={field.onChange}
+                                    existingBrochureUrl={form.watch("brochureUrl")}
+                                    onRemoveExisting={() => {
+                                        form.setValue("brochureUrl", "")
+                                        field.onChange(null)
+                                    }}
+                                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                         control={form.control}
@@ -553,6 +604,170 @@ function ProductEditForm({ product }: { product: any }) {
                         </FormItem>
                     )}
                 />
+
+                {/* Subscription Settings */}
+                <div className="space-y-4">
+                    <FormField
+                        control={form.control}
+                        name="isSubscription"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Subscription Product</FormLabel>
+                                <FormControl>
+                                    <div className="flex items-center space-x-2">
+                                        <input
+                                            type="checkbox"
+                                            id="isSubscription"
+                                            checked={field.value}
+                                            onChange={e => field.onChange(e.target.checked)}
+                                            className="rounded border-gray-300"
+                                        />
+                                        <label htmlFor="isSubscription" className="text-sm text-foreground">
+                                            This is a subscription-based product
+                                        </label>
+                                    </div>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    {form.watch("isSubscription") && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="subscriptionInterval"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Subscription Interval</FormLabel>
+                                        <FormControl>
+                                            <Select
+                                                value={field.value}
+                                                onChange={e => field.onChange(e.target.value)}
+                                            >
+                                                <option value="">Select interval</option>
+                                                <option value="monthly">Monthly</option>
+                                                <option value="quarterly">Quarterly</option>
+                                                <option value="yearly">Yearly</option>
+                                            </Select>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="subscriptionPrice"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Subscription Price ($)</FormLabel>
+                                        <FormControl>
+                                            <Input type="number" min="0" step="0.01" {...field} placeholder="0.00" />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                    )}
+                </div>
+
+                {/* Product Modifiers */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <FormLabel>Product Modifiers</FormLabel>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                                const currentModifiers = form.getValues("modifiers")
+                                form.setValue("modifiers", [
+                                    ...currentModifiers,
+                                    { name: "", description: "", additional_cost: 0 }
+                                ])
+                            }}
+                        >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add Modifier
+                        </Button>
+                    </div>
+
+                    {form.watch("modifiers").map((modifier, index) => (
+                        <div key={index} className="border border-border rounded-lg p-4 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h4 className="font-medium">Modifier {index + 1}</h4>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        const currentModifiers = form.getValues("modifiers")
+                                        form.setValue("modifiers", currentModifiers.filter((_, i) => i !== index))
+                                    }}
+                                    className="text-destructive hover:text-destructive"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-sm font-medium text-foreground">Name</label>
+                                    <Input
+                                        value={modifier.name}
+                                        onChange={e => {
+                                            const currentModifiers = form.getValues("modifiers")
+                                            const updatedModifiers = [...currentModifiers]
+                                            updatedModifiers[index] = { ...updatedModifiers[index], name: e.target.value }
+                                            form.setValue("modifiers", updatedModifiers)
+                                        }}
+                                        placeholder="e.g., 3 Year Warranty"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-foreground">Additional Cost ($)</label>
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={modifier.additional_cost}
+                                        onChange={e => {
+                                            const currentModifiers = form.getValues("modifiers")
+                                            const updatedModifiers = [...currentModifiers]
+                                            updatedModifiers[index] = { ...updatedModifiers[index], additional_cost: parseFloat(e.target.value) || 0 }
+                                            form.setValue("modifiers", updatedModifiers)
+                                        }}
+                                        placeholder="0.00"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="text-sm font-medium text-foreground">Description</label>
+                                <Textarea
+                                    value={modifier.description}
+                                    onChange={e => {
+                                        const currentModifiers = form.getValues("modifiers")
+                                        const updatedModifiers = [...currentModifiers]
+                                        updatedModifiers[index] = { ...updatedModifiers[index], description: e.target.value }
+                                        form.setValue("modifiers", updatedModifiers)
+                                    }}
+                                    placeholder="Describe what this modifier does..."
+                                    rows={2}
+                                />
+                            </div>
+                        </div>
+                    ))}
+
+                    {form.watch("modifiers").length === 0 && (
+                        <div className="text-center py-8 text-muted-foreground">
+                            <p>No modifiers added yet.</p>
+                            <p className="text-sm">Click "Add Modifier" to create custom options for this product.</p>
+                        </div>
+                    )}
+                </div>
+
                 {/* Product Preview */}
                 <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground">Preview</label>
@@ -613,7 +828,16 @@ const productSchema = z.object({
     inStock: z.boolean(),
     tags: z.array(z.string()).min(1, "At least one tag is required"),
     default_price: z.coerce.number().min(0.01, "Price is required"),
-    imageSrc: z.instanceof(File, { message: "Product image is required" })
+    imageSrc: z.instanceof(File, { message: "Product image is required" }),
+    isSubscription: z.boolean(),
+    subscriptionInterval: z.string().optional(),
+    subscriptionPrice: z.coerce.number().min(0).optional(),
+    modifiers: z.array(z.object({
+        name: z.string().min(1, "Modifier name is required"),
+        description: z.string().min(1, "Modifier description is required"),
+        additional_cost: z.coerce.number().min(0, "Additional cost must be 0 or greater")
+    })),
+    brochure: z.instanceof(File).optional()
 })
 
 type ProductFormType = z.infer<typeof productSchema>
@@ -630,16 +854,26 @@ function ProductAddForm() {
             tags: [],
             default_price: 0,
             imageSrc: undefined as any,
+            isSubscription: false,
+            subscriptionInterval: '',
+            subscriptionPrice: 0,
+            modifiers: [],
+            brochure: undefined
         },
         mode: "onTouched"
     })
+    const [isLoading, setIsLoading] = useState(false)
     const [previewUrl, setPreviewUrl] = useState<string>("")
     const { refetch } = useProducts()
     const onSubmit = async (values: ProductFormType) => {
+        setIsLoading(true)
         const result = await addProduct(values)
         if (result instanceof Error) {
+            setIsLoading(false)
             console.error(result)
-            toast.error("Error adding product")
+            toast.error("Error adding product", {
+                description: result.message
+            })
         }
         else {
             //console.log(result)
@@ -647,6 +881,7 @@ function ProductAddForm() {
             setPreviewUrl("")
             await refetch()
             toast.success("Product added successfully")
+            setIsLoading(false)
         }
         // Optionally reset form or close dialog
     }
@@ -675,6 +910,25 @@ function ProductAddForm() {
                         </FormItem>
                     )}
                 />
+
+                {/* Brochure Upload */}
+                <FormField
+                    control={form.control}
+                    name="brochure"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Product Brochure (PDF)</FormLabel>
+                            <FormControl>
+                                <BrochureUploadField
+                                    value={field.value || null}
+                                    onChange={field.onChange}
+                                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                         control={form.control}
@@ -759,6 +1013,73 @@ function ProductAddForm() {
                         )}
                     />
                 </div>
+
+                {/* Subscription Settings */}
+                <div className="space-y-4">
+                    <FormField
+                        control={form.control}
+                        name="isSubscription"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Subscription Product</FormLabel>
+                                <FormControl>
+                                    <div className="flex items-center space-x-2">
+                                        <input
+                                            type="checkbox"
+                                            id="isSubscription"
+                                            checked={field.value}
+                                            onChange={e => field.onChange(e.target.checked)}
+                                            className="rounded border-gray-300"
+                                        />
+                                        <label htmlFor="isSubscription" className="text-sm text-foreground">
+                                            This is a subscription-based product
+                                        </label>
+                                    </div>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    {form.watch("isSubscription") && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="subscriptionInterval"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Subscription Interval</FormLabel>
+                                        <FormControl>
+                                            <Select
+                                                value={field.value}
+                                                onChange={e => field.onChange(e.target.value)}
+                                            >
+                                                <option value="">Select interval</option>
+                                                <option value="monthly">Monthly</option>
+                                                <option value="quarterly">Quarterly</option>
+                                                <option value="yearly">Yearly</option>
+                                            </Select>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="subscriptionPrice"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Subscription Price ($)</FormLabel>
+                                        <FormControl>
+                                            <Input type="number" min="0" step="0.01" {...field} placeholder="0.00" />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                    )}
+                </div>
                 <FormField
                     control={form.control}
                     name="tags"
@@ -807,6 +1128,102 @@ function ProductAddForm() {
                         </FormItem>
                     )}
                 />
+
+                {/* Product Modifiers */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <FormLabel>Product Modifiers</FormLabel>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                                const currentModifiers = form.getValues("modifiers")
+                                form.setValue("modifiers", [
+                                    ...currentModifiers,
+                                    { name: "", description: "", additional_cost: 0 }
+                                ])
+                            }}
+                        >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add Modifier
+                        </Button>
+                    </div>
+
+                    {form.watch("modifiers").map((modifier, index) => (
+                        <div key={index} className="border border-border rounded-lg p-4 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h4 className="font-medium">Modifier {index + 1}</h4>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        const currentModifiers = form.getValues("modifiers")
+                                        form.setValue("modifiers", currentModifiers.filter((_, i) => i !== index))
+                                    }}
+                                    className="text-destructive hover:text-destructive"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-sm font-medium text-foreground">Name</label>
+                                    <Input
+                                        value={modifier.name}
+                                        onChange={e => {
+                                            const currentModifiers = form.getValues("modifiers")
+                                            const updatedModifiers = [...currentModifiers]
+                                            updatedModifiers[index] = { ...updatedModifiers[index], name: e.target.value }
+                                            form.setValue("modifiers", updatedModifiers)
+                                        }}
+                                        placeholder="e.g., 3 Year Warranty"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-foreground">Additional Cost ($)</label>
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={modifier.additional_cost}
+                                        onChange={e => {
+                                            const currentModifiers = form.getValues("modifiers")
+                                            const updatedModifiers = [...currentModifiers]
+                                            updatedModifiers[index] = { ...updatedModifiers[index], additional_cost: parseFloat(e.target.value) || 0 }
+                                            form.setValue("modifiers", updatedModifiers)
+                                        }}
+                                        placeholder="0.00"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="text-sm font-medium text-foreground">Description</label>
+                                <Textarea
+                                    value={modifier.description}
+                                    onChange={e => {
+                                        const currentModifiers = form.getValues("modifiers")
+                                        const updatedModifiers = [...currentModifiers]
+                                        updatedModifiers[index] = { ...updatedModifiers[index], description: e.target.value }
+                                        form.setValue("modifiers", updatedModifiers)
+                                    }}
+                                    placeholder="Describe what this modifier does..."
+                                    rows={2}
+                                />
+                            </div>
+                        </div>
+                    ))}
+
+                    {form.watch("modifiers").length === 0 && (
+                        <div className="text-center py-8 text-muted-foreground">
+                            <p>No modifiers added yet.</p>
+                            <p className="text-sm">Click "Add Modifier" to create custom options for this product.</p>
+                        </div>
+                    )}
+                </div>
                 {/* Product Preview */}
                 <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground">Preview</label>
@@ -844,8 +1261,8 @@ function ProductAddForm() {
                     <DialogClose asChild>
                         <Button variant="outline">Cancel</Button>
                     </DialogClose>
-                    <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90" disabled={form.formState.isSubmitting}>
-                        {form.formState.isSubmitting ? (
+                    <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90" disabled={isLoading}>
+                        {isLoading ? (
                             <>
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                                 Adding Product...

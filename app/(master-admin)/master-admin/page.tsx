@@ -12,7 +12,8 @@ import {
     LogOut,
     Tag,
     MessageSquare,
-    ListOrdered
+    ListOrdered,
+    FileText
 } from 'lucide-react'
 
 import AgentManagement from './components/AgentManagement'
@@ -22,8 +23,9 @@ import DashboardOverview from './components/DashboardOverview'
 import TagManagement from './components/TagManagement'
 import { TagProvider } from './components/TagContext'
 import OrderManagementPage from './components/OrderManagementPage'
+import { QuoteRequests } from './components/QuoteRequests'
 
-type TabType = 'agents' | 'products' | 'pricing' | 'tags' | 'orders' | null
+type TabType = 'agents' | 'products' | 'pricing' | 'tags' | 'orders' | 'quotes' | null
 
 export default function AdminDashboard() {
     const { profile } = useProfile()
@@ -36,7 +38,7 @@ export default function AdminDashboard() {
     // Sync tab state with URL
     useEffect(() => {
         const tabFromUrl = searchParams.get('tab') as TabType | null
-        if (tabFromUrl && ['agents', 'products', 'pricing', 'tags', 'orders'].includes(tabFromUrl)) {
+        if (tabFromUrl && ['agents', 'products', 'pricing', 'tags', 'orders', 'quotes'].includes(tabFromUrl)) {
             setActiveTab(tabFromUrl)
         } else {
             setActiveTab(null)
@@ -141,6 +143,16 @@ export default function AdminDashboard() {
                             <ListOrdered className="h-4 w-4" />
                             Orders
                         </button>
+                        <button
+                            onClick={() => handleTabChange('quotes')}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'quotes'
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
+                                }`}
+                        >
+                            <FileText className="h-4 w-4" />
+                            Quote Requests
+                        </button>
                     </div>
 
                     {/* Content Sections */}
@@ -149,6 +161,7 @@ export default function AdminDashboard() {
                     {activeTab === 'pricing' && <PricingTiers />}
                     {activeTab === 'tags' && <TagManagement />}
                     {activeTab === 'orders' && <OrderManagementPage />}
+                    {activeTab === 'quotes' && <QuoteRequests />}
                     {/* {activeTab === 'contact-inquiries' && <ContactInquiries />} */}
                     {/* Dashboard Overview - Show when no specific tab is selected */}
                     {!activeTab && <DashboardOverview />}

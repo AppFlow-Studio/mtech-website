@@ -8,6 +8,9 @@ export interface Product {
   inStock: boolean;
   tags?: string[];
   default_price: number;
+  subscription: boolean;
+  subscription_interval?: string;
+  subscription_price?: number;
 }
 
 export interface FullTestimonial {
@@ -89,22 +92,22 @@ export interface AgentTier {
 
 export interface AgentProductWithPrices {
   id: string
-  product_id : string
-  agent_tier_id : string
-  price : number,
-  products : Product
+  product_id: string
+  agent_tier_id: string
+  price: number,
+  products: Product
 }
 
 export interface AgentProductTierAndPrices {
-  agent_tiers : AgentTier
-  agent_product_prices : AgentProductWithPrices[]
+  agent_tiers: AgentTier
+  agent_product_prices: AgentProductWithPrices[]
 }
 
-export interface AgentProductPrices { 
+export interface AgentProductPrices {
   id: string
-  product_id : string
-  agent_tier_id : string
-  price : number
+  product_id: string
+  agent_tier_id: string
+  price: number
 }
 
 export interface AgentInfoAndProductTierAndPrices {
@@ -126,6 +129,19 @@ export interface Product {
   default_price: number
   inStock: boolean
   tags?: string[]
+  is_subscription?: boolean
+  subscription_interval?: string
+  subscription_price?: number
+}
+
+export interface ProductModifier {
+  id: string
+  product_id: string
+  name: string
+  description: string
+  additional_cost: number
+  created_at: string
+  updated_at: string
 }
 
 export interface AgentProduct {
@@ -152,22 +168,22 @@ export interface OrderItems {
   id: string
   order_id: string
   product_id: string
-  products : Product
+  products: Product
   quantity: number
   price_at_order: number
   created_at: string
-  fulfillment_type : "PICKUP" | "SHIPPING"
-  order_status : "PENDING" | "READY_FOR_PICKUP" | "SHIPPED" | "COMPLETED"
-  tracking_number : string | null
-  carrier : string | null
-  pickup_details : string | null
-  updated_at : string
+  fulfillment_type: "PICKUP" | "SHIPPING"
+  order_status: "PENDING" | "READY_FOR_PICKUP" | "SHIPPED" | "COMPLETED"
+  tracking_number: string | null
+  carrier: string | null
+  pickup_details: string | null
+  updated_at: string
 }
 
 
 export interface AdminPrivileges {
-  can_edit_order : boolean
-  
+  can_edit_order: boolean
+
 }
 
 // TypeScript types based on the provided JSON data structure

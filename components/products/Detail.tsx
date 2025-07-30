@@ -2,11 +2,14 @@
 "use client";
 
 import { Product } from "@/lib/types";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Plus } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import React, { useRef, useState } from "react";
 import { useProductInfo } from "../actions/hooks/useProducts";
+import { useQuoteCartStore } from "@/lib/quote-cart-store";
+import { toast } from "sonner";
+import { BrochureSection } from "./BrochureSection";
 
 // --- Reusable Form Input Component ---
 const FormInput = ({
@@ -48,6 +51,7 @@ function Detail({ slug }: { slug: string }) {
   const [isHovered, setIsHovered] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const imageRef = useRef<HTMLDivElement>(null);
+  const { addItem } = useQuoteCartStore();
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!imageRef.current) return;
@@ -67,6 +71,13 @@ function Detail({ slug }: { slug: string }) {
     console.log("Form submitted:", data);
     alert("Thank you for your inquiry! We will get back to you shortly.");
     e.currentTarget.reset();
+  };
+
+  const handleAddToQuoteCart = () => {
+    if (!product) return;
+
+    addItem(product, 1);
+    toast.success(`${product.name} added to quote cart!`);
   };
 
   if (isLoading) {
@@ -143,6 +154,12 @@ function Detail({ slug }: { slug: string }) {
             {product.description}
           </p>
 
+          {/* Brochure Section */}
+          <BrochureSection
+            brochureUrl={product.brochureUrl}
+            productName={product.name}
+          />
+
           <div className="mt-8">
             <Link href="tel:888-411-7063" className="mt-4">
               <button
@@ -155,6 +172,17 @@ function Detail({ slug }: { slug: string }) {
                 <ChevronRight className="h-4 w-4" />
               </button>
             </Link>
+            <button
+              onClick={handleAddToQuoteCart}
+              disabled={!product.inStock}
+              className={`w-full mt-4 inline-flex items-center justify-center gap-2 px-4 py-3 font-semibold text-sm text-white rounded-full transition-colors duration-300 cursor-pointer ${product.inStock
+                ? "bg-gradient-to-b from-[#662CB2] to-[#2C134C] hover:from-[#7a3ac5] hover:to-[#3c1961]"
+                : "bg-[#382F44] cursor-not-allowed"
+                }`}
+            >
+              Add to Quote Cart
+              <Plus className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </div>

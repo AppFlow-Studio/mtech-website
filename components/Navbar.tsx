@@ -15,6 +15,8 @@ import { useTheme } from "./ThemeProvider";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
 import { useProfile } from "@/lib/hooks/useProfile";
+import { useQuoteCartStore } from "@/lib/quote-cart-store";
+import { QuoteCart } from "./QuoteCart";
 
 const Navbar = () => {
   const { theme, toggleTheme } = useTheme();
@@ -24,6 +26,13 @@ const Navbar = () => {
   const pathname = usePathname();
   const { user } = useAuthStore()
   const { profile, fetchProfile } = useProfile()
+  const { openCart, getTotalItems } = useQuoteCartStore()
+
+  // Close mobile menu when cart is opened
+  const handleCartClick = () => {
+    setMobileMenuOpen(false)
+    openCart()
+  }
   useEffect(() => {
     if (user) {
       fetchProfile()
@@ -166,7 +175,7 @@ const Navbar = () => {
               {menuItems.map((item, index) => (
                 <div key={index} className="relative xl:mr-4">
                   <div
-                    className={`flex items-center transition-colors duration-200 hover:text-purple-400 text-sm rounded-full ${isActive(item.href)  ? "bg-[#672AB21A] dark:bg-[#FFFFFF1A] px-2 py-1" : ""}`}
+                    className={`flex items-center transition-colors duration-200 hover:text-purple-400 text-sm rounded-full ${isActive(item.href) ? "bg-[#672AB21A] dark:bg-[#FFFFFF1A] px-2 py-1" : ""}`}
                     onMouseEnter={() => setHoveredItem(index)}
                     onMouseLeave={() => setHoveredItem(null)}
                   >
@@ -188,11 +197,10 @@ const Navbar = () => {
                   {/* Dropdown Menu */}
                   {item.hasDropdown && (
                     <div
-                      className={`absolute left-0 mt-3 w-56 bg-[#f0e9f7] dark:bg-[#241b30] rounded-md shadow-lg transition-all duration-200 z-50 border border-gray-200 dark:border-gray-700 ${
-                        hoveredItem === index
-                          ? "opacity-100 visible"
-                          : "opacity-0 invisible"
-                      }`}
+                      className={`absolute left-0 mt-3 w-56 bg-[#f0e9f7] dark:bg-[#241b30] rounded-md shadow-lg transition-all duration-200 z-50 border border-gray-200 dark:border-gray-700 ${hoveredItem === index
+                        ? "opacity-100 visible"
+                        : "opacity-0 invisible"
+                        }`}
                       onMouseEnter={() => setHoveredItem(index)}
                       onMouseLeave={() => setHoveredItem(null)}
                     >
@@ -202,11 +210,10 @@ const Navbar = () => {
                             <Link
                               key={dropdownIndex}
                               href={dropdownItem.href}
-                              className={`block px-4 py-2 text-sm ${
-                                isActive(dropdownItem.href)
-                                  ? "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/50"
-                                  : "text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900 hover:text-purple-600 dark:hover:text-purple-400"
-                              } transition-colors duration-200`}
+                              className={`block px-4 py-2 text-sm ${isActive(dropdownItem.href)
+                                ? "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/50"
+                                : "text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900 hover:text-purple-600 dark:hover:text-purple-400"
+                                } transition-colors duration-200`}
                             >
                               {dropdownItem.name}
                             </Link>
@@ -230,9 +237,17 @@ const Navbar = () => {
 
             {/* Right side buttons - Desktop only */}
             <div className="hidden xl:flex items-center space-x-4">
-              {/* Shopping Cart */}
-              <button className="p-2 rounded-full text-gray-700 dark:text-gray-300 bg-[#672AB21A] dark:bg-[#FFFFFF1A] hover:text-purple-600 dark:hover:text-purple-400 transition-colors duration-200">
+              {/* Quote Cart */}
+              <button
+                onClick={handleCartClick}
+                className="relative p-2 rounded-full text-gray-700 hover:cursor-pointer dark:text-gray-300 bg-[#672AB21A] dark:bg-[#FFFFFF1A] hover:text-purple-600 dark:hover:text-purple-400 transition-colors duration-200"
+              >
                 <ShoppingCart size={20} />
+                {getTotalItems() > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {getTotalItems()}
+                  </span>
+                )}
               </button>
 
               {/* Dark Mode Toggle */}
@@ -271,11 +286,10 @@ const Navbar = () => {
                   <div className="flex items-center justify-between">
                     <Link
                       href={item.href}
-                      className={`flex-1 px-3 py-2 text-left rounded-md transition-colors duration-200 ${
-                        isActive(item.href)
-                          ? "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/50"
-                          : "text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900 hover:text-purple-600 dark:hover:text-purple-400"
-                      }`}
+                      className={`flex-1 px-3 py-2 text-left rounded-md transition-colors duration-200 ${isActive(item.href)
+                        ? "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/50"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900 hover:text-purple-600 dark:hover:text-purple-400"
+                        }`}
                     >
                       {item.name}
                     </Link>
@@ -286,9 +300,8 @@ const Navbar = () => {
                       >
                         <ChevronDown
                           size={16}
-                          className={`transform transition-transform duration-200 ${
-                            activeDropdown === index ? "rotate-180" : ""
-                          }`}
+                          className={`transform transition-transform duration-200 ${activeDropdown === index ? "rotate-180" : ""
+                            }`}
                         />
                       </button>
                     )}
@@ -302,11 +315,10 @@ const Navbar = () => {
                           <Link
                             key={dropdownIndex}
                             href={dropdownItem.href}
-                            className={`block px-3 py-2 text-sm rounded-md transition-colors duration-200 ${
-                              isActive(dropdownItem.href)
-                                ? "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/50"
-                                : "text-gray-600 dark:text-gray-400 hover:bg-purple-50 dark:hover:bg-purple-900 hover:text-purple-600 dark:hover:text-purple-400"
-                            }`}
+                            className={`block px-3 py-2 text-sm rounded-md transition-colors duration-200 ${isActive(dropdownItem.href)
+                              ? "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/50"
+                              : "text-gray-600 dark:text-gray-400 hover:bg-purple-50 dark:hover:bg-purple-900 hover:text-purple-600 dark:hover:text-purple-400"
+                              }`}
                           >
                             {dropdownItem.name}
                           </Link>
@@ -319,10 +331,18 @@ const Navbar = () => {
 
               {/* Mobile Bottom Buttons */}
               <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4 space-y-2">
-                {/* Shopping Cart */}
-                <button className="flex items-center w-full px-3 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900 hover:text-purple-600 dark:hover:text-purple-400 rounded-md transition-colors duration-200">
+                {/* Quote Cart */}
+                <button
+                  onClick={handleCartClick}
+                  className="flex items-center w-full px-3 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900 hover:text-purple-600 dark:hover:text-purple-400 rounded-md transition-colors duration-200"
+                >
                   <ShoppingCart size={20} className="mr-3" />
-                  <span>Cart</span>
+                  <span>Quote Cart</span>
+                  {getTotalItems() > 0 && (
+                    <span className="ml-auto bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {getTotalItems()}
+                    </span>
+                  )}
                 </button>
 
                 {/* Dark Mode Toggle */}
@@ -338,15 +358,24 @@ const Navbar = () => {
                   <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
                 </button>
 
-                {/* Register Button */}
-                <button className="flex justify-center w-full px-3 py-2 bg-gradient-to-b from-[#662CB2] to-[#2C134C] hover:from-[#7a35d1] hover:to-[#3c1963] text-white rounded-md transition-colors duration-200">
-                  Register
-                </button>
+                {/* Login/Register Button */}
+                {!user ? (
+                  <Link href="/login" className="flex justify-center w-full px-3 py-2 bg-gradient-to-b from-[#662CB2] to-[#2C134C] hover:from-[#7a35d1] hover:to-[#3c1963] text-white rounded-md transition-colors duration-200">
+                    Login
+                  </Link>
+                ) : (
+                  <Link href={profile?.role === "MASTER_ADMIN" ? "/master-admin" : profile?.role === "ADMIN" ? "/admin" : profile?.role === "AGENT" ? "/agent" : "/"} className="flex justify-center w-full px-3 py-2 bg-gradient-to-b from-[#662CB2] to-[#2C134C] hover:from-[#7a35d1] hover:to-[#3c1963] text-white rounded-md transition-colors duration-200">
+                    Dashboard
+                  </Link>
+                )}
               </div>
             </div>
           </div>
         )}
       </nav>
+
+      {/* Quote Cart */}
+      <QuoteCart />
     </div>
   );
 };
