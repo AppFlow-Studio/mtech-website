@@ -16,30 +16,40 @@ import {
     Calendar,
     DollarSign,
     Package,
-    MessageSquare,
-    Trash2,
-    Send,
-    Smile,
-    AtSign,
-    Hash,
-    Paperclip,
     User,
-    Edit3,
-    Copy,
-    MapPin,
-    Tag,
     Search,
+    Tag,
     Filter,
     Loader2,
-    Zap
+    Zap,
+    Trash2,
+    MessageSquare,
+    AtSign,
+    Smile,
+    Hash,
+    Paperclip,
+    Send,
+    MapPin,
+    Edit3,
+    CheckCircle,
+    LockOpen
 } from 'lucide-react'
+
 import { toast } from 'sonner'
 import { GetQuoteInfo } from '../../actions/get-quote-info'
 import { useQueryClient, useSuspenseQuery, useQuery } from '@tanstack/react-query'
 import { GetAdminProfiles } from '../../actions/order-actions/get-admin-profiles'
 import { AssignAdmin } from './actions/assign-admin'
 import { updateQuoteOrderItemsPrice } from './actions/update-quote-order-items-price'
-
+import { saveShippingAddress } from './actions/save-shipping-address'
+import { saveBillingAddress } from './actions/save-billing-address'
+import { approveQuote, updateQuoteOrder } from './actions/approve-quote'
+import AddressDisplay from '@/components/AddressDisplay'
+import AddressEditModal from '@/components/AddressEditModal'
+import ApproveOrderModal from '@/components/ApproveOrderModal'
+import QuoteNotes from './components/QuoteNotes'
+import { sendQuoteApprovalEmail } from '@/utils/emails/actions/send-email'
+import { useProfile } from '@/lib/hooks/useProfile'
 interface QuoteRequestItem {
     id: string
     product_id: string
@@ -71,12 +81,13 @@ interface Address {
 interface QuoteRequest {
     id: string
     customer_name: string
+    customer_last_name: string
     customer_email: string
     customer_phone: string
     customer_company?: string
     customer_message?: string
     total_items: number
-    status: 'pending' | 'reviewed' | 'quoted' | 'closed'
+    status: 'pending' | 'approved' | 'closed' | 'rejected'
     created_at: string
     quote_request_items: QuoteRequestItem[]
     shipping_address?: Address
@@ -175,30 +186,21 @@ const fakeAuditLog: AuditLogEntry[] = [
 
 export default function QuoteRequestDetailPage({ params }: { params: { id: string } }) {
     const queryClient = useQueryClient()
-    const { data: quoteRequest, isLoading, isError, refetch } = useSuspenseQuery({
+    const { data: quoteRequest, isLoading, isError, refetch, isFetching } = useSuspenseQuery({
         queryKey: ['quote-request', params.id],
         queryFn: () => GetQuoteInfo(params.id),
     })
-    const { data: adminProfiles, isLoading: adminProfilesLoading } = useQuery({
+    const { data: adminProfiles, isLoading: adminProfilesLoading, refetch: refetchAdminProfiles } = useQuery({
         queryKey: ['admin-profiles'],
         queryFn: GetAdminProfiles,
     });
+    const { profile } = useProfile()
     const router = useRouter()
     const [comment, setComment] = useState('')
     const [auditLog, setAuditLog] = useState<AuditLogEntry[]>(fakeAuditLog)
     const [selectedAgentId, setSelectedAgentId] = useState<string>('')
     const [isAssigning, setIsAssigning] = useState(false)
-    const [editingAddress, setEditingAddress] = useState<'shipping' | 'billing' | null>(null)
-    const [addressForm, setAddressForm] = useState<Address>({
-        name: '',
-        address_line_1: '',
-        address_line_2: '',
-        city: '',
-        state: '',
-        zip_code: '',
-        country: '',
-        phone: ''
-    })
+
 
     // Pricing states
     const [pricingSearchTerm, setPricingSearchTerm] = useState('')
@@ -212,10 +214,20 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
     const [selectedItemForMarkup, setSelectedItemForMarkup] = useState<any>(null)
     const [markupPercentage, setMarkupPercentage] = useState('20')
     const [markupMultiplier, setMarkupMultiplier] = useState('1.2')
+    const [markupMode, setMarkupMode] = useState<'cost' | 'current'>('cost')
     const [isSavingPricing, setIsSavingPricing] = useState(false)
     const [itemPricing, setItemPricing] = useState<any>(null)
     const [originalPrices, setOriginalPrices] = useState<Record<string, number>>({})
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+    const [showApprovedOrderDialog, setShowApprovedOrderDialog] = useState(false)
+
+    // Address editing states
+    const [addressModalOpen, setAddressModalOpen] = useState(false)
+    const [editingAddressType, setEditingAddressType] = useState<'shipping' | 'billing'>('shipping')
+    const [isSavingAddress, setIsSavingAddress] = useState(false)
+
+    // Approve order states
+    const [approveModalOpen, setApproveModalOpen] = useState(false)
 
     // Track original prices and detect changes
     useEffect(() => {
@@ -226,11 +238,10 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
                 return acc
             }, {} as Record<string, number>)
             setOriginalPrices(original)
-            console.log('Setting original prices:', original)
+            // console.log('Setting original prices:', original)
         }
-    }, [quoteRequest?.quote_request_items, originalPrices])
+    }, [quoteRequest?.quote_request_items, originalPrices, isFetching])
 
-    console.log('originalPrices', originalPrices)
     // Check for unsaved changes
     useEffect(() => {
         if (quoteRequest?.quote_request_items && Object.keys(originalPrices).length > 0) {
@@ -240,11 +251,11 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
                 return Math.abs(currentPrice - originalPrice) > 0.01 // Account for floating point precision
             })
             setHasUnsavedChanges(hasChanges)
-            console.log('hasUnsavedChanges', hasChanges, 'originalPrices', originalPrices)
+            // console.log('hasUnsavedChanges', hasChanges, 'originalPrices', originalPrices)
         } else {
             setHasUnsavedChanges(false)
         }
-    }, [quoteRequest?.quote_request_items, originalPrices])
+    }, [quoteRequest?.quote_request_items, originalPrices, isFetching])
 
     const updateStatus = async (status: QuoteRequest['status']) => {
         if (!quoteRequest) return
@@ -283,6 +294,7 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
             toast.error('Failed to update status')
         }
     }
+
     const handleRefresh = async () => {
         await queryClient.invalidateQueries({ queryKey: ['quote-request', params.id] })
     }
@@ -303,11 +315,12 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
     }
 
     const getStatusBadge = (status: QuoteRequest['status']) => {
+
         const statusConfig = {
             pending: { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', label: 'Pending' },
-            reviewed: { color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200', label: 'Reviewed' },
-            quoted: { color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', label: 'Quoted' },
+            approved: { color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', label: 'Quoted' },
             closed: { color: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200', label: 'Closed' },
+            rejected: { color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', label: 'Rejected' },
         }
 
         const config = statusConfig[status]
@@ -336,9 +349,9 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
     }
 
     const getTotalValue = () => {
-        if (!quoteRequest) return 0
+        if (!quoteRequest || !quoteRequest.quote_request_items) return 0
         return quoteRequest.quote_request_items.reduce((total: number, item: QuoteRequestItem) => {
-            const price = item.product?.default_price || 0
+            const price = item?.quoted_price || item.product?.default_price || 0
             return total + (price * item.quantity)
         }, 0)
     }
@@ -354,6 +367,8 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
             toast.success('Admin assigned successfully', {
                 description: 'The admin will be notified via email.'
             })
+            refetch()
+            refetchAdminProfiles()
         }
         setIsAssigning(false)
     }
@@ -373,111 +388,82 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
         await handleRefresh()
     }
 
-    const copyToClipboard = async (text: string) => {
-        try {
-            await navigator.clipboard.writeText(text)
-            toast.success('Address copied to clipboard')
-        } catch (error) {
-            toast.error('Failed to copy address')
-        }
-    }
-
     const startEditingAddress = (type: 'shipping' | 'billing') => {
-        const currentAddress = type === 'shipping' ? quoteRequest.shipping_address : quoteRequest.billing_address
-        if (currentAddress) {
-            setAddressForm(currentAddress)
+        setEditingAddressType(type)
+        setAddressModalOpen(true)
+    }
+
+    const saveAddress = async (address: any) => {
+        setIsSavingAddress(true)
+        let result
+        if (editingAddressType === 'shipping') {
+            result = await saveShippingAddress(quoteRequest.id, address)
         } else {
-            setAddressForm({
-                name: quoteRequest.customer_name,
-                address_line_1: '',
-                address_line_2: '',
-                city: '',
-                state: '',
-                zip_code: '',
-                country: 'United States',
-                phone: quoteRequest.customer_phone
-            })
+            result = await saveBillingAddress(quoteRequest.id, address)
         }
-        setEditingAddress(type)
+
+        if (result instanceof Error) {
+            toast.error('Failed to save address', {
+                description: result.message
+            })
+        } else {
+            toast.success('Address saved successfully')
+            await refetch()
+            setAddressModalOpen(false)
+        }
+        setIsSavingAddress(false)
     }
 
-    const saveAddress = async () => {
-        if (!editingAddress) return
-
-        try {
-            const response = await fetch(`/api/quote-requests/${quoteRequest.id}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    [`${editingAddress}_address`]: addressForm
-                }),
-            })
-
-            if (response.ok) {
-                // Update the query cache
-                queryClient.setQueryData(['quote-request', params.id], {
-                    ...quoteRequest,
-                    [`${editingAddress}_address`]: addressForm
-                })
-                toast.success(`${editingAddress === 'shipping' ? 'Shipping' : 'Billing'} address updated successfully`)
-
-                // Add to audit log
-                const newEntry: AuditLogEntry = {
-                    id: Date.now().toString(),
-                    timestamp: new Date().toISOString(),
-                    user: 'mtech-distributors',
-                    action: `updated ${editingAddress} address.`,
-                    type: 'status_change'
-                }
-                setAuditLog([newEntry, ...auditLog])
-
-                setEditingAddress(null)
-                setAddressForm({
-                    name: '',
-                    address_line_1: '',
-                    address_line_2: '',
-                    city: '',
-                    state: '',
-                    zip_code: '',
-                    country: '',
-                    phone: ''
-                })
-            } else {
-                throw new Error('Failed to update address')
-            }
-        } catch (error) {
-            console.error('Error updating address:', error)
-            toast.error('Failed to update address')
+    const handleApproveOrder = async () => {
+        const approved_info = {
+            approved_date: new Date().toISOString(),
+            approved_by: quoteRequest.profiles?.first_name + ' ' + quoteRequest.profiles?.last_name,
+            approved_profile_id: profile?.id
         }
-    }
-
-    const cancelEditing = () => {
-        setEditingAddress(null)
-        setAddressForm({
-            name: '',
-            address_line_1: '',
-            address_line_2: '',
-            city: '',
-            state: '',
-            zip_code: '',
-            country: '',
-            phone: ''
+        const approveResult = await approveQuote({
+            quote_order_id: quoteRequest.id,
+            approved_info: approved_info,
+            updated_at: new Date().toISOString()
         })
+        if (approveResult instanceof Error) {
+            toast.error('Failed to approve order', {
+                description: approveResult.message
+            })
+            return
+        }
+        const result = await sendQuoteApprovalEmail({
+            customerEmail: quoteRequest.customer_email,
+            customerName: `${quoteRequest.customer_name} ${quoteRequest.customer_last_name}`,
+            quoteId: quoteRequest.id,
+            orderId: quoteRequest.order_confirmation_number,
+            checkoutLink: `https://mtechdistributors.com/quote-requests/${quoteRequest.id}`,
+            items: quoteRequest.quote_request_items.map((item: QuoteRequestItem) => ({
+                product: item.product,
+                quantity: item.quantity,
+                notes: item.notes,
+                price: item.quoted_price
+            }))
+        })
+        if (result instanceof Error) {
+            toast.error('Failed to approve order', {
+                description: result.message
+            })
+            await updateQuoteOrder({
+                quote_order_id: quoteRequest.id,
+                status: 'pending'
+            })
+            await refetch()
+            return
+        }
+        else {
+            toast.success('Order approved successfully', {
+                description: 'The customer will be notified via email.'
+            })
+            await refetch()
+            setApproveModalOpen(false)
+        }
     }
 
-    const formatAddress = (address: Address) => {
-        const lines = [
-            address.name,
-            address.address_line_1,
-            address.address_line_2,
-            `${address.city}, ${address.state} ${address.zip_code}`,
-            address.country,
-            address.phone
-        ].filter(Boolean)
-        return lines.join('\n')
-    }
 
     // Pricing functions
     const pricingTags = [
@@ -516,7 +502,7 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
 
     const hasPricingFilters = selectedPricingTags.length > 0 || pricingPriceRange.min || pricingPriceRange.max
 
-    const filteredQuoteItems = quoteRequest.quote_request_items.filter((item: QuoteRequestItem) => {
+    const filteredQuoteItems = quoteRequest?.quote_request_items?.filter((item: QuoteRequestItem) => {
         const matchesSearch = item.product_name?.toLowerCase().includes(pricingSearchTerm.toLowerCase()) ||
             item.product?.description?.toLowerCase().includes(pricingSearchTerm.toLowerCase())
 
@@ -532,7 +518,7 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
             (!pricingPriceRange.max || currentPrice <= parseFloat(pricingPriceRange.max))
 
         return matchesSearch && matchesTags && matchesPriceRange
-    })
+    }) || []
 
     const openMarkupCalculator = (item: QuoteRequestItem) => {
         setSelectedItemForMarkup(item)
@@ -542,7 +528,10 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
     const applyMarkupPrice = () => {
         if (!selectedItemForMarkup) return
 
-        const basePrice = selectedItemForMarkup.product?.default_price || 0
+        const basePrice = markupMode === 'cost'
+            ? (selectedItemForMarkup.product?.default_price || 0)
+            : (selectedItemForMarkup.quoted_price || selectedItemForMarkup.product?.default_price || 0)
+
         let newPrice = 0
 
         if (markupPercentage) {
@@ -565,7 +554,6 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
 
         setOpenMarkupDialog(false)
         setSelectedItemForMarkup(null)
-        toast.success('Price updated successfully')
     }
 
     const handleBulkPricingSet = async () => {
@@ -589,11 +577,11 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
             if (bulkPricingMode === 'fixed') {
                 updatedItems = updatedItems.map((item: QuoteRequestItem) => ({
                     ...item,
-                    quoted_price: filteredQuoteItems.some((fp: QuoteRequestItem) => fp.id === item.id) ? value : item.quoted_price
+                    quoted_price: filteredQuoteItems((fp: QuoteRequestItem) => fp.id === item.id) ? value : item.quoted_price
                 }))
             } else if (bulkPricingMode === 'markup') {
                 updatedItems = updatedItems.map((item: QuoteRequestItem) => {
-                    if (filteredQuoteItems.some((fp: QuoteRequestItem) => fp.id === item.id)) {
+                    if (filteredQuoteItems?.some((fp: QuoteRequestItem) => fp.id === item.id)) {
                         const basePrice = item.product?.default_price || 0
                         const newPrice = calculateMarkupPrice(basePrice, value)
                         return { ...item, quoted_price: newPrice }
@@ -602,7 +590,7 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
                 })
             } else if (bulkPricingMode === 'markup-current') {
                 updatedItems = updatedItems.map((item: QuoteRequestItem) => {
-                    if (filteredQuoteItems.some((fp: QuoteRequestItem) => fp.id === item.id)) {
+                    if (filteredQuoteItems?.some((fp: QuoteRequestItem) => fp.id === item.id)) {
                         const currentPrice = item.quoted_price || item.product?.default_price || 0
                         const newPrice = calculateMarkupPrice(currentPrice, value)
                         return { ...item, quoted_price: newPrice }
@@ -617,7 +605,7 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
                 quote_request_items: updatedItems
             })
 
-            toast.success(`Updated ${filteredQuoteItems.length} items`)
+            toast.success(`Updated ${filteredQuoteItems?.length} items`)
             setOpenBulkPricingDialog(false)
             setBulkPricingValue('')
         } catch (error) {
@@ -628,16 +616,18 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
         }
     }
 
-    const saveAllPricing = async () => {
+    const performSavePricing = async () => {
         setIsSavingPricing(true)
-       const response = await updateQuoteOrderItemsPrice({
-        QuoteRequestItems: quoteRequest.quote_request_items.map((item: QuoteRequestItem) => ({
+        const NewQuoteRequestItems = quoteRequest.quote_request_items.map((item: QuoteRequestItem) => ({
             id: item.id,
             quote_request_id: quoteRequest.id,
             product_id: item.product_id,
             quoted_price: item.quoted_price
         }))
-       })
+
+        const response = await updateQuoteOrderItemsPrice({
+            QuoteRequestItems: NewQuoteRequestItems
+        })
 
         if (response instanceof Error) {
             toast.error('Failed to update prices', {
@@ -645,8 +635,26 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
             })
         } else {
             toast.success('Prices updated successfully')
+            setHasUnsavedChanges(false)
+            setOriginalPrices({})
+            setOriginalPrices(quoteRequest.quote_request_items.map((item: QuoteRequestItem) => ({
+                id: item.id,
+                price: item.quoted_price
+            })))
+            await refetch()
         }
         setIsSavingPricing(false)
+        setShowApprovedOrderDialog(false)
+    }
+
+    const saveAllPricing = async () => {
+        // Check if order is approved and show confirmation dialog
+        if (quoteRequest.status === 'approved') {
+            setShowApprovedOrderDialog(true)
+            return
+        }
+
+        await performSavePricing()
     }
 
     const updateItemPrice = (itemId: string, newPrice: number) => {
@@ -691,6 +699,12 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
         })))
     }
 
+
+    const closeAddressModal = () => {
+        setAddressModalOpen(false)
+    }
+
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -706,6 +720,9 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
             </div>
         )
     }
+
+
+
 
     return (
         <div className="max-w8xl mx-auto p-6 space-y-6">
@@ -727,37 +744,129 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
                     </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                    {/* {getStatusBadge(quoteRequest.status)} */}
+                    {getStatusBadge(quoteRequest.status)}
+                    <Button
+                        onClick={() => {
+                            if (!quoteRequest.admin_assigned) {
+                                toast.error('Please assign an admin to the quote request before approving')
+                                return
+                            }
+                            else {
+                                setApproveModalOpen(true)
+                            }
+                        }}
+                        disabled={quoteRequest.status === 'approved'}
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        {quoteRequest.status === 'approved' ? 'Already Approved' : 'Approve Order'}
+                    </Button>
                     <Button
                         variant="destructive"
                         size="sm"
-                        onClick={async () => {
-                            if (confirm('Are you sure you want to delete this quote request?')) {
-                                try {
-                                    const response = await fetch(`/api/quote-requests/${quoteRequest.id}`, {
-                                        method: 'DELETE',
-                                    })
-                                    if (response.ok) {
-                                        toast.success('Quote request deleted')
-                                        router.back()
-                                    } else {
-                                        toast.error('Failed to delete quote request')
-                                    }
-                                } catch (error) {
-                                    console.error('Error deleting quote request:', error)
-                                    toast.error('Failed to delete quote request')
-                                }
-                            }
-                        }}
+
                     >
                         <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
+                        Reject Order
+                    </Button>
+
+                </div>
+                {/* Void/Close Order Section */}
+                <div className="flex items-center space-x-2">
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        className="bg-gray-200 hover:bg-gray-300 text-gray-800"
+                        onClick={() => {
+                            // You can implement a modal or confirmation dialog here
+                            if (window.confirm('Are you sure you want to void/close this order? This action cannot be undone.')) {
+                                // Call your void/close order function here
+                                // Example: handleVoidOrder()
+                                toast.info('Order has been voided/closed (demo action).')
+                            }
+                        }}
+                        disabled={quoteRequest.status === 'voided' || quoteRequest.status === 'closed'}
+                    >
+                        <LockOpen className="h-4 w-4 mr-2" />
+                        {quoteRequest.status === 'voided' || quoteRequest.status === 'closed'
+                            ? 'Order Closed'
+                            : 'Void/Close Order'}
                     </Button>
                 </div>
             </div>
 
+            <section className='flex items-center space-x-2 mt-2'>
+                {/* Order Confirmation Number */}
+                {quoteRequest.order_confirmation_number && (
+                    <div className="flex items-center space-x-2 mt-2">
+                        <Badge variant="outline" className="text-xs px-2 py-1">
+                            Order Confirmation #: {quoteRequest.order_confirmation_number}
+                        </Badge>
+                    </div>
+                )}
+
+                {quoteRequest.status === 'approved' && (
+                    <div className="flex items-center space-x-2 mt-2">
+                        <Badge variant="outline" className="text-xs px-2 py-1 bg-green-600 text-white">
+                            Date of Quote: {quoteRequest?.approved_info?.approved_date ? formatDate(quoteRequest.approved_info.approved_date) : 'N/A'}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs px-2 py-1 bg-green-600 text-white">
+                            Quoted by: {quoteRequest?.approved_info?.approved_by || 'N/A'}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs px-2 py-1 bg-yellow-500 text-white">
+                            Status: Waiting for Payment
+                        </Badge>
+                    </div>
+                )}
+            </section>
+
+            {/* Quick Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card>
+                    <CardContent className="pt-6">
+                        <div className="flex items-center space-x-2">
+                            <Package className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">Total Items</span>
+                        </div>
+                        <div className="text-2xl font-bold mt-2">{quoteRequest.quote_request_items.length}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="pt-6">
+                        <div className="flex items-center space-x-2">
+                            <DollarSign className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">Total Value</span>
+                        </div>
+                        <div className="text-2xl font-bold mt-2">${getTotalValue().toFixed(2)}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="pt-6">
+                        <div className="flex items-center space-x-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">Days Since Created</span>
+                        </div>
+                        <div className="text-2xl font-bold mt-2">
+                            {Math.floor((Date.now() - new Date(quoteRequest.created_at).getTime()) / (1000 * 60 * 60 * 24))}
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="pt-6">
+                        <div className="flex items-center space-x-2">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">Assigned Admin</span>
+                        </div>
+                        <div className="text-2xl font-bold mt-2">
+                            {quoteRequest.profiles ? 'Yes' : 'No'}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
             <div className="grid grid-cols-1 gap-6">
                 {/* Main Content */}
+
                 <div className="space-y-6">
                     {/* Customer Information */}
                     <div className=' grid grid-cols-1 md:grid-cols-3 gap-4'>
@@ -772,7 +881,7 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="flex items-center space-x-2">
                                         <User className="h-4 w-4 text-muted-foreground" />
-                                        <span className="text-sm">{quoteRequest.customer_name}</span>
+                                        <span className="text-sm">{quoteRequest.customer_name} {quoteRequest.customer_last_name}</span>
                                     </div>
                                     <div className="flex items-center space-x-2">
                                         <Mail className="h-4 w-4 text-muted-foreground" />
@@ -794,307 +903,114 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
                                     </div>
                                 </div>
                                 <div className='mt-4'>
-                                    <div className='text-sm font-medium'>Notes:</div>
+                                    <div className='text-sm font-medium'>Customer Notes:</div>
                                     {quoteRequest.customer_message && (
                                         <div className="p-3 bg-muted rounded-lg">
-                                            <p className="text-sm">{quoteRequest.customer_message}</p>
+                                            <p className="text-sm">{quoteRequest?.customer_message && quoteRequest?.customer_message !== '' ? quoteRequest.customer_message : 'No notes provided'}</p>
                                         </div>
                                     )}
                                 </div>
                             </CardContent>
                         </Card>
-                        {/* Addresses */}
                         {/* Address Information */}
                         <Card className='col-span-1'>
                             <CardHeader>
                                 <CardTitle className="flex items-center space-x-2">
-                                    <MapPin className="h-5 w-5" />
                                     <span>Address Information</span>
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div className="space-y-6">
                                     {/* Shipping Address */}
-                                    <div className="space-y-3">
-                                        <div className="flex items-center justify-between">
-                                            <h4 className="font-semibold text-foreground">Shipping address</h4>
-                                            <button
-                                                onClick={() => startEditingAddress('shipping')}
-                                                className="p-1 hover:bg-muted rounded transition-colors"
-                                            >
-                                                <Edit3 className="h-4 w-4 text-muted-foreground" />
-                                            </button>
-                                        </div>
-
-                                        {editingAddress === 'shipping' ? (
-                                            <div className="space-y-3 p-4 border rounded-lg bg-muted/20">
-                                                <Input
-                                                    placeholder="Full Name"
-                                                    value={addressForm.name}
-                                                    onChange={(e) => setAddressForm({ ...addressForm, name: e.target.value })}
-                                                />
-                                                <Input
-                                                    placeholder="Address Line 1"
-                                                    value={addressForm.address_line_1}
-                                                    onChange={(e) => setAddressForm({ ...addressForm, address_line_1: e.target.value })}
-                                                />
-                                                <Input
-                                                    placeholder="Address Line 2 (Optional)"
-                                                    value={addressForm.address_line_2}
-                                                    onChange={(e) => setAddressForm({ ...addressForm, address_line_2: e.target.value })}
-                                                />
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    <Input
-                                                        placeholder="City"
-                                                        value={addressForm.city}
-                                                        onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
-                                                    />
-                                                    <Input
-                                                        placeholder="State"
-                                                        value={addressForm.state}
-                                                        onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })}
-                                                    />
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    <Input
-                                                        placeholder="ZIP Code"
-                                                        value={addressForm.zip_code}
-                                                        onChange={(e) => setAddressForm({ ...addressForm, zip_code: e.target.value })}
-                                                    />
-                                                    <Input
-                                                        placeholder="Country"
-                                                        value={addressForm.country}
-                                                        onChange={(e) => setAddressForm({ ...addressForm, country: e.target.value })}
-                                                    />
-                                                </div>
-                                                <Input
-                                                    placeholder="Phone Number"
-                                                    value={addressForm.phone}
-                                                    onChange={(e) => setAddressForm({ ...addressForm, phone: e.target.value })}
-                                                />
-                                                <div className="flex space-x-2">
-                                                    <Button onClick={saveAddress} size="sm">
-                                                        Save
-                                                    </Button>
-                                                    <Button onClick={cancelEditing} variant="outline" size="sm">
-                                                        Cancel
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="space-y-2">
-                                                {quoteRequest.shipping_address ? (
-                                                    <>
-                                                        <div className="text-sm space-y-1">
-                                                            <div className="font-medium">{quoteRequest.shipping_address.name}</div>
-                                                            <div>{quoteRequest.shipping_address.address_line_1}</div>
-                                                            {quoteRequest.shipping_address.address_line_2 && (
-                                                                <div>{quoteRequest.shipping_address.address_line_2}</div>
-                                                            )}
-                                                            <div>{quoteRequest.shipping_address.city}, {quoteRequest.shipping_address.state} {quoteRequest.shipping_address.zip_code}</div>
-                                                            <div>{quoteRequest.shipping_address.country}</div>
-                                                            <div>{quoteRequest.shipping_address.phone}</div>
-                                                        </div>
-                                                        <div className="flex space-x-2">
-                                                            <button
-                                                                onClick={() => copyToClipboard(formatAddress(quoteRequest.shipping_address!))}
-                                                                className="text-blue-600 hover:text-blue-700 text-sm flex items-center space-x-1"
-                                                            >
-                                                                <Copy className="h-3 w-3" />
-                                                                <span>Copy address</span>
-                                                            </button>
-                                                            <button className="text-blue-600 hover:text-blue-700 text-sm flex items-center space-x-1">
-                                                                <MapPin className="h-3 w-3" />
-                                                                <span>View map</span>
-                                                            </button>
-                                                        </div>
-                                                    </>
-                                                ) : (
-                                                    <div className="text-sm text-muted-foreground italic">
-                                                        No shipping address provided
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
+                                    <AddressDisplay
+                                        address={quoteRequest.shipping_address || {}}
+                                        type="shipping"
+                                        onEdit={() => startEditingAddress('shipping')}
+                                    />
 
                                     {/* Billing Address */}
-                                    <div className="space-y-3">
-                                        <div className="flex items-center justify-between">
-                                            <h4 className="font-semibold text-foreground">Billing address</h4>
-                                            <button
-                                                onClick={() => startEditingAddress('billing')}
-                                                className="p-1 hover:bg-muted rounded transition-colors"
-                                            >
-                                                <Edit3 className="h-4 w-4 text-muted-foreground" />
-                                            </button>
-                                        </div>
-
-                                        {editingAddress === 'billing' ? (
-                                            <div className="space-y-3 p-4 border rounded-lg bg-muted/20">
-                                                <Input
-                                                    placeholder="Full Name"
-                                                    value={addressForm.name}
-                                                    onChange={(e) => setAddressForm({ ...addressForm, name: e.target.value })}
-                                                />
-                                                <Input
-                                                    placeholder="Address Line 1"
-                                                    value={addressForm.address_line_1}
-                                                    onChange={(e) => setAddressForm({ ...addressForm, address_line_1: e.target.value })}
-                                                />
-                                                <Input
-                                                    placeholder="Address Line 2 (Optional)"
-                                                    value={addressForm.address_line_2}
-                                                    onChange={(e) => setAddressForm({ ...addressForm, address_line_2: e.target.value })}
-                                                />
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    <Input
-                                                        placeholder="City"
-                                                        value={addressForm.city}
-                                                        onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
-                                                    />
-                                                    <Input
-                                                        placeholder="State"
-                                                        value={addressForm.state}
-                                                        onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })}
-                                                    />
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    <Input
-                                                        placeholder="ZIP Code"
-                                                        value={addressForm.zip_code}
-                                                        onChange={(e) => setAddressForm({ ...addressForm, zip_code: e.target.value })}
-                                                    />
-                                                    <Input
-                                                        placeholder="Country"
-                                                        value={addressForm.country}
-                                                        onChange={(e) => setAddressForm({ ...addressForm, country: e.target.value })}
-                                                    />
-                                                </div>
-                                                <Input
-                                                    placeholder="Phone Number"
-                                                    value={addressForm.phone}
-                                                    onChange={(e) => setAddressForm({ ...addressForm, phone: e.target.value })}
-                                                />
-                                                <div className="flex space-x-2">
-                                                    <Button onClick={saveAddress} size="sm">
-                                                        Save
-                                                    </Button>
-                                                    <Button onClick={cancelEditing} variant="outline" size="sm">
-                                                        Cancel
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="space-y-2">
-                                                {quoteRequest.billing_address ? (
-                                                    <>
-                                                        <div className="text-sm space-y-1">
-                                                            <div className="font-medium">{quoteRequest.billing_address.name}</div>
-                                                            <div>{quoteRequest.billing_address.address_line_1}</div>
-                                                            {quoteRequest.billing_address.address_line_2 && (
-                                                                <div>{quoteRequest.billing_address.address_line_2}</div>
-                                                            )}
-                                                            <div>{quoteRequest.billing_address.city}, {quoteRequest.billing_address.state} {quoteRequest.billing_address.zip_code}</div>
-                                                            <div>{quoteRequest.billing_address.country}</div>
-                                                            <div>{quoteRequest.billing_address.phone}</div>
-                                                        </div>
-                                                        <div className="flex space-x-2">
-                                                            <button
-                                                                onClick={() => copyToClipboard(formatAddress(quoteRequest.billing_address!))}
-                                                                className="text-blue-600 hover:text-blue-700 text-sm flex items-center space-x-1"
-                                                            >
-                                                                <Copy className="h-3 w-3" />
-                                                                <span>Copy address</span>
-                                                            </button>
-                                                            <button className="text-blue-600 hover:text-blue-700 text-sm flex items-center space-x-1">
-                                                                <MapPin className="h-3 w-3" />
-                                                                <span>View map</span>
-                                                            </button>
-                                                        </div>
-                                                    </>
-                                                ) : (
-                                                    <div className="text-sm text-muted-foreground italic">
-                                                        No billing address provided
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
+                                    <AddressDisplay
+                                        address={quoteRequest.billing_address || {}}
+                                        type="billing"
+                                        onEdit={() => startEditingAddress('billing')}
+                                    />
                                 </div>
                             </CardContent>
                         </Card>
                     </div>
 
                     {/* Agent Assignment */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center space-x-2">
-                                <User className="h-5 w-5" />
-                                <span>Admin Assignment</span>
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {quoteRequest.profiles ? (
-                                <div className="bg-muted/40 rounded-lg p-4">
-                                    <h4 className="font-semibold text-foreground mb-3">Currently Assigned Admin</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="flex items-center space-x-2">
-                                            <User className="h-4 w-4 text-muted-foreground" />
-                                            <span className="text-sm font-medium">
-                                                {quoteRequest.profiles.first_name} {quoteRequest.profiles.last_name}
-                                            </span>
+                    <section className='grid grid-cols-1 lg:grid-cols-3 gap-4'>
+                        <Card className='col-span-2'>
+                            <CardHeader>
+                                <CardTitle className="flex items-center space-x-2">
+                                    <User className="h-5 w-5" />
+                                    <span>Admin Assignment</span>
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {quoteRequest.profiles ? (
+                                    <div className="bg-muted/40 rounded-lg p-4">
+                                        <h4 className="font-semibold text-foreground mb-3">Currently Assigned Admin</h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="flex items-center space-x-2">
+                                                <User className="h-4 w-4 text-muted-foreground" />
+                                                <span className="text-sm font-medium">
+                                                    {quoteRequest.profiles.first_name} {quoteRequest.profiles.last_name}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <Mail className="h-4 w-4 text-muted-foreground" />
+                                                <span className="text-sm">{quoteRequest.profiles.email}</span>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <Phone className="h-4 w-4 text-muted-foreground" />
+                                                <span className="text-sm">{quoteRequest.profiles.phone_number || 'N/A'}</span>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center space-x-2">
-                                            <Mail className="h-4 w-4 text-muted-foreground" />
-                                            <span className="text-sm">{quoteRequest.profiles.email}</span>
+                                        <div className="mt-4">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={handleRemoveAssignment}
+                                                className="text-red-600 hover:text-red-700"
+                                            >
+                                                Remove Assignment
+                                            </Button>
                                         </div>
-                                        <div className="flex items-center space-x-2">
-                                            <Phone className="h-4 w-4 text-muted-foreground" />
-                                            <span className="text-sm">{quoteRequest.profiles.phone_number || 'N/A'}</span>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div className="text-sm text-muted-foreground">
+                                            No agent is currently assigned to this quote request.
+                                        </div>
+                                        <div className="flex items-center space-x-4">
+                                            <select
+                                                value={selectedAgentId}
+                                                onChange={(e) => setSelectedAgentId(e.target.value)}
+                                                className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                            >
+                                                <option value="">Select an agent...</option>
+                                                {adminProfiles?.map((agent) => (
+                                                    <option key={agent.id} value={agent.id}>
+                                                        {agent.first_name} {agent.last_name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <Button
+                                                onClick={handleAssignAdmin}
+                                                disabled={!selectedAgentId || isAssigning}
+                                                className="bg-purple-600 hover:bg-purple-700 text-white"
+                                            >
+                                                {isAssigning ? 'Assigning...' : 'Assign Admin'}
+                                            </Button>
                                         </div>
                                     </div>
-                                    <div className="mt-4">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={handleRemoveAssignment}
-                                            className="text-red-600 hover:text-red-700"
-                                        >
-                                            Remove Assignment
-                                        </Button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    <div className="text-sm text-muted-foreground">
-                                        No agent is currently assigned to this quote request.
-                                    </div>
-                                    <div className="flex items-center space-x-4">
-                                        <select
-                                            value={selectedAgentId}
-                                            onChange={(e) => setSelectedAgentId(e.target.value)}
-                                            className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                        >
-                                            <option value="">Select an agent...</option>
-                                            {adminProfiles?.map((agent) => (
-                                                <option key={agent.id} value={agent.id}>
-                                                    {agent.first_name} {agent.last_name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        <Button
-                                            onClick={handleAssignAdmin}
-                                            disabled={!selectedAgentId || isAssigning}
-                                            className="bg-purple-600 hover:bg-purple-700 text-white"
-                                        >
-                                            {isAssigning ? 'Assigning...' : 'Assign Admin'}
-                                        </Button>
-                                    </div>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
+                                )}
+                            </CardContent>
+                        </Card>
+                        <QuoteNotes quoteRequestId={quoteRequest.id} profile_id={profile?.id || ''}  />
+                    </section>
 
                     {/* Requested Items */}
                     <Card>
@@ -1106,7 +1022,7 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
                                 </div>
                                 {hasUnsavedChanges && (
                                     <div className="flex items-center space-x-2">
-                                        <Badge variant="outline" className="text-orange-600 border-orange-600">
+                                        <Badge variant="outline" className="text-purple-600 border-purple-600">
                                             <Zap className="h-3 w-3 mr-1" />
                                             Draft Mode
                                         </Badge>
@@ -1130,9 +1046,9 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
                                 <Button
                                     variant="outline"
                                     onClick={() => setOpenBulkPricingDialog(true)}
-                                    disabled={filteredQuoteItems.length === 0}
+                                    disabled={filteredQuoteItems?.length === 0 || isFetching}
                                 >
-                                    Bulk Set Pricing ({filteredQuoteItems.length} items)
+                                    Bulk Set Pricing ({filteredQuoteItems?.length} items)
                                 </Button>
                             </div>
 
@@ -1187,7 +1103,7 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
                                 <div className="flex items-center gap-2">
                                     <Filter className="h-4 w-4 text-muted-foreground" />
                                     <span className="text-sm text-muted-foreground">
-                                        {filteredQuoteItems.length} of {quoteRequest.quote_request_items.length} items
+                                        {filteredQuoteItems?.length} of {quoteRequest?.quote_request_items?.length} items
                                     </span>
                                     {hasPricingFilters && (
                                         <Badge variant="secondary" className="text-xs">
@@ -1208,106 +1124,110 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
                             </div>
 
                             <div className="space-y-4">
-                                {filteredQuoteItems.map((item: QuoteRequestItem) => {
-                                    const currentPrice = item.quoted_price || item.product?.default_price || 0
-                                    const purchaseCost = item.product?.default_price || 0
-                                    const markup = purchaseCost > 0 ? ((currentPrice - purchaseCost) / purchaseCost * 100) : 0
-                                    const originalPrice = originalPrices[item.id] || 0
-                                    const hasPriceChanged = Math.abs(currentPrice - originalPrice) > 0.01
+                                {
+                                    filteredQuoteItems?.map((item: QuoteRequestItem) => {
+                                        const currentPrice = item.quoted_price || item.product?.default_price || 0
+                                        const purchaseCost = item.product?.default_price || 0
+                                        const markup = purchaseCost > 0 ? ((currentPrice - purchaseCost) / purchaseCost * 100) : 0
+                                        const originalPrice = originalPrices[item.id] || 0
+                                        // console.log('currentPrice', currentPrice)
+                                        // console.log('originalPrice in loop', originalPrice)
+                                        const hasPriceChanged = Math.abs(currentPrice - originalPrice) > 0.01
 
-                                    return (
-                                        <div key={item.id} className="border rounded-lg p-4">
-                                            <div className="flex items-start space-x-4">
-                                                {item.product?.imageSrc && (
-                                                    <img
-                                                        src={item.product.imageSrc}
-                                                        alt={item.product.name}
-                                                        className="w-16 h-16 object-cover rounded-md"
-                                                    />
-                                                )}
-                                                <div className="flex-1">
-                                                    <h3 className="font-medium">{item.product?.name || item.product_name}</h3>
-                                                    {item.product?.description && (
-                                                        <p className="text-sm text-muted-foreground mt-1">
-                                                            {item.product.description.slice(0, 100)}...
-                                                        </p>
-                                                    )}
-                                                    <div className="flex items-center space-x-4 mt-2">
-                                                        <span className="text-sm text-muted-foreground">
-                                                            Quantity: {item.quantity}
-                                                        </span>
-                                                        {item.product?.default_price && (
-                                                            <span className="text-sm text-muted-foreground">
-                                                                Purchase Price: ${item.product.default_price.toFixed(2)}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    {item.notes && (
-                                                        <p className="text-sm text-muted-foreground mt-2">
-                                                            <strong>Notes:</strong> {item.notes}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                                <div className="flex flex-col items-end space-y-2">
-                                                    <div className="flex items-center space-x-2">
-                                                        <span className="text-sm text-muted-foreground">$</span>
-                                                        <Input
-                                                            type="number"
-                                                            min="0"
-                                                            step="0.01"
-                                                            value={currentPrice}
-                                                            onChange={(e) => {
-                                                                const newPrice = parseFloat(e.target.value) || 0
-                                                                updateItemPrice(item.id, newPrice)
-                                                            }}
-                                                            className={`w-24 ${hasPriceChanged ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20' : ''}`}
-                                                            placeholder="0.00"
+                                        return (
+                                            <div key={item.id} className="border rounded-lg p-4">
+                                                <div className="flex items-start space-x-4">
+                                                    {item.product?.imageSrc && (
+                                                        <img
+                                                            src={item.product.imageSrc}
+                                                            alt={item.product.name}
+                                                            className="w-16 h-16 object-cover rounded-md"
                                                         />
-                                                        {hasPriceChanged && (
-                                                            <div className="flex flex-col items-center text-xs">
-                                                                <span className="text-orange-600 font-medium">
-                                                                    {currentPrice > originalPrice ? '+' : ''}${(currentPrice - originalPrice).toFixed(2)}
+                                                    )}
+                                                    <div className="flex-1">
+                                                        <h3 className="font-medium">{item.product?.name || item.product_name}</h3>
+                                                        {item.product?.description && (
+                                                            <p className="text-sm text-muted-foreground mt-1">
+                                                                {item.product.description.slice(0, 100)}...
+                                                            </p>
+                                                        )}
+                                                        <div className="flex items-center space-x-4 mt-2">
+                                                            <span className="text-sm text-muted-foreground">
+                                                                Quantity: {item.quantity}
+                                                            </span>
+                                                            {item.product?.default_price && (
+                                                                <span className="text-sm text-muted-foreground">
+                                                                    Purchase Price: ${item.product.default_price.toFixed(2)}
                                                                 </span>
-                                                                <span className="text-muted-foreground">
-                                                                    {originalPrice.toFixed(2)}
-                                                                </span>
-                                                            </div>
+                                                            )}
+                                                        </div>
+                                                        {item.notes && (
+                                                            <p className="text-sm text-muted-foreground mt-2">
+                                                                <strong>Customer Notes:</strong> {item.notes}
+                                                            </p>
                                                         )}
                                                     </div>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => openMarkupCalculator(item)}
-                                                        className="flex items-center gap-2"
-                                                    >
-                                                        <Tag className="h-4 w-4" />
-                                                        Markup
-                                                    </Button>
+                                                    <div className="flex flex-col items-end space-y-2">
+                                                        <div className="flex items-center space-x-2">
+                                                            <span className="text-sm text-muted-foreground">$</span>
+                                                            <Input
+                                                                type="number"
+                                                                min="0"
+                                                                step="0.01"
+                                                                value={currentPrice}
+                                                                onChange={(e) => {
+                                                                    const newPrice = parseFloat(e.target.value) || 0
+                                                                    updateItemPrice(item.id, newPrice)
+                                                                }}
+                                                                className={`w-24 ${hasPriceChanged ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/20' : ''}`}
+                                                                placeholder="0.00"
+                                                            />
+                                                            {hasPriceChanged && (
+                                                                <div className="flex flex-col items-center text-xs">
+                                                                    <span className="text-purple-600 font-medium">
+                                                                        {currentPrice > originalPrice ? '+' : ''}${(currentPrice - originalPrice).toFixed(2)}
+                                                                    </span>
+                                                                    <span className="text-muted-foreground">
+                                                                        {originalPrice.toFixed(2)}
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => openMarkupCalculator(item)}
+                                                            className="flex items-center gap-2"
+                                                        >
+                                                            <Tag className="h-4 w-4" />
+                                                            Markup
+                                                        </Button>
+                                                    </div>
                                                 </div>
-                                            </div>
 
-                                            {/* Purchase Cost and Markup Section */}
-                                            <div className="flex items-center justify-between bg-muted/50 rounded-lg p-3 mt-3">
-                                                <div className="flex items-center space-x-4">
-                                                    <div className="text-sm">
-                                                        <span className="text-muted-foreground">Purchase Cost:</span>
-                                                        <span className="ml-2 font-medium text-foreground">${purchaseCost.toFixed(2)}</span>
-                                                    </div>
-                                                    <div className="text-sm">
-                                                        <span className="text-muted-foreground">Current Markup:</span>
-                                                        <span className={`ml-2 font-medium ${markup > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                            {markup.toFixed(1)}%
-                                                        </span>
-                                                    </div>
-                                                    <div className="text-sm">
-                                                        <span className="text-muted-foreground">Total Value:</span>
-                                                        <span className="ml-2 font-medium text-foreground">${(currentPrice * item.quantity).toFixed(2)}</span>
+                                                {/* Purchase Cost and Markup Section */}
+                                                <div className="flex items-center justify-between bg-muted/50 rounded-lg p-3 mt-3">
+                                                    <div className="flex items-center space-x-4">
+                                                        <div className="text-sm">
+                                                            <span className="text-muted-foreground">Purchase Cost:</span>
+                                                            <span className="ml-2 font-medium text-foreground">${purchaseCost.toFixed(2)}</span>
+                                                        </div>
+                                                        <div className="text-sm">
+                                                            <span className="text-muted-foreground">Current Markup:</span>
+                                                            <span className={`ml-2 font-medium ${markup > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                                {markup.toFixed(1)}%
+                                                            </span>
+                                                        </div>
+                                                        <div className="text-sm">
+                                                            <span className="text-muted-foreground">Total Value:</span>
+                                                            <span className="ml-2 font-medium text-foreground">${(currentPrice * item.quantity).toFixed(2)}</span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    )
-                                })}
+                                        )
+                                    })
+                                }
                             </div>
 
                             <div>
@@ -1322,10 +1242,10 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
                             <div className="mt-6 pt-4 border-t">
                                 <div className="flex justify-between items-center">
                                     <div className="text-sm text-muted-foreground">
-                                        {filteredQuoteItems.length} of {quoteRequest.quote_request_items.length} items priced
+                                        {filteredQuoteItems?.length} of {quoteRequest?.quote_request_items?.length} items priced
                                         {hasUnsavedChanges && (
-                                            <span className="ml-2 text-orange-600 font-medium">
-                                                • {quoteRequest.quote_request_items.filter((item: QuoteRequestItem) => {
+                                            <span className="ml-2 text-purple-600 font-medium">
+                                                • {quoteRequest?.quote_request_items?.filter((item: QuoteRequestItem) => {
                                                     const currentPrice = item.quoted_price || item.product?.default_price || 0
                                                     const originalPrice = originalPrices[item.id] || 0
                                                     return Math.abs(currentPrice - originalPrice) > 0.01
@@ -1360,7 +1280,7 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
                                                 size="sm"
                                                 onClick={saveAllPricing}
                                                 disabled={isSavingPricing}
-                                                className="bg-orange-600 hover:bg-orange-700"
+                                                className="bg-purple-600 hover:bg-purple-700"
                                             >
                                                 {isSavingPricing ? (
                                                     <>
@@ -1377,9 +1297,18 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
                                         )}
                                     </div>
                                 </div>
+                                <Button
+                                    onClick={() => setApproveModalOpen(true)}
+                                    disabled={quoteRequest.status === 'approved'}
+                                    className="bg-green-600 hover:bg-green-700 text-white mt-4"
+                                >
+                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                    {quoteRequest.status === 'approved' ? 'Already Approved' : 'Approve Order'}
+                                </Button>
                             </div>
                         </CardContent>
                     </Card>
+
                 </div>
 
                 {/* Timeline/Audit Log */}
@@ -1484,6 +1413,7 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
                         </CardContent>
                     </Card>
                 </div>
+
             </div>
             {/* Bulk Pricing Dialog */}
             <Dialog open={openBulkPricingDialog} onOpenChange={setOpenBulkPricingDialog}>
@@ -1494,7 +1424,7 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
                             Bulk Set Pricing
                         </DialogTitle>
                         <DialogDescription>
-                            Set pricing for all {filteredQuoteItems.length} visible items
+                            Set pricing for all {filteredQuoteItems?.length} visible items
                         </DialogDescription>
                     </DialogHeader>
 
@@ -1628,7 +1558,7 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
                                     Applying...
                                 </>
                             ) : (
-                                `Apply to ${filteredQuoteItems.length} Items`
+                                `Apply to ${filteredQuoteItems?.length} Items`
                             )}
                         </Button>
                     </div>
@@ -1644,7 +1574,7 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
                             Markup Calculator
                         </DialogTitle>
                         <DialogDescription>
-                            Calculate sale price based on purchase cost for {selectedItemForMarkup?.product_name}
+                            Calculate sale price for {selectedItemForMarkup?.product_name}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -1662,13 +1592,46 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
                                     )}
                                     <div>
                                         <h4 className="font-medium text-foreground">{selectedItemForMarkup.product_name}</h4>
-                                        <p className="text-sm text-muted-foreground">
-                                            Purchase Cost: <span className="font-medium">${selectedItemForMarkup.product?.default_price?.toFixed(2) || '0.00'}</span>
-                                        </p>
+                                        <div className="text-sm text-muted-foreground space-y-1">
+                                            <p>Purchase Cost: <span className="font-medium">${selectedItemForMarkup.product?.default_price?.toFixed(2) || '0.00'}</span></p>
+                                            {selectedItemForMarkup.quoted_price && (
+                                                <p>Current Price: <span className="font-medium">${selectedItemForMarkup.quoted_price.toFixed(2)}</span></p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         )}
+
+                        {/* Markup Mode Tabs */}
+                        <div>
+                            <label className="block text-sm font-medium text-foreground mb-3">
+                                Markup Base
+                            </label>
+                            <div className="flex space-x-2">
+                                <Button
+                                    variant={markupMode === 'cost' ? 'default' : 'outline'}
+                                    size="sm"
+                                    onClick={() => setMarkupMode('cost')}
+                                >
+                                    From Purchase Cost
+                                </Button>
+                                <Button
+                                    variant={markupMode === 'current' ? 'default' : 'outline'}
+                                    size="sm"
+                                    onClick={() => setMarkupMode('current')}
+                                    disabled={!selectedItemForMarkup?.quoted_price}
+                                >
+                                    From Current Price
+                                </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-2">
+                                {markupMode === 'cost'
+                                    ? 'Markup will be calculated from the purchase cost'
+                                    : 'Markup will be calculated from the current quoted price'
+                                }
+                            </p>
+                        </div>
 
                         {/* Markup Percentage */}
                         <div>
@@ -1685,8 +1648,11 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
                                         setMarkupPercentage(e.target.value)
                                         if (e.target.value && selectedItemForMarkup) {
                                             const percentage = parseFloat(e.target.value)
-                                            const newPrice = calculateMarkupPrice(selectedItemForMarkup.product?.default_price || 0, percentage)
-                                            setMarkupMultiplier((newPrice / (selectedItemForMarkup.product?.default_price || 1)).toFixed(2))
+                                            const basePrice = markupMode === 'cost'
+                                                ? (selectedItemForMarkup.product?.default_price || 0)
+                                                : (selectedItemForMarkup.quoted_price || selectedItemForMarkup.product?.default_price || 0)
+                                            const newPrice = calculateMarkupPrice(basePrice, percentage)
+                                            setMarkupMultiplier((newPrice / basePrice).toFixed(2))
                                         }
                                     }}
                                     placeholder="20"
@@ -1697,7 +1663,12 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
                             {markupPercentage && selectedItemForMarkup && (
                                 <p className="text-sm text-muted-foreground mt-1">
                                     Sale Price: <span className="font-medium text-green-600">
-                                        ${calculateMarkupPrice(selectedItemForMarkup.product?.default_price || 0, parseFloat(markupPercentage)).toFixed(2)}
+                                        ${(() => {
+                                            const basePrice = markupMode === 'cost'
+                                                ? (selectedItemForMarkup.product?.default_price || 0)
+                                                : (selectedItemForMarkup.quoted_price || selectedItemForMarkup.product?.default_price || 0)
+                                            return calculateMarkupPrice(basePrice, parseFloat(markupPercentage)).toFixed(2)
+                                        })()}
                                     </span>
                                 </p>
                             )}
@@ -1718,8 +1689,11 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
                                         setMarkupMultiplier(e.target.value)
                                         if (e.target.value && selectedItemForMarkup) {
                                             const multiplier = parseFloat(e.target.value)
-                                            const newPrice = calculateMultiplierPrice(selectedItemForMarkup.product?.default_price || 0, multiplier)
-                                            setMarkupPercentage(((newPrice - (selectedItemForMarkup.product?.default_price || 0)) / (selectedItemForMarkup.product?.default_price || 1) * 100).toFixed(1))
+                                            const basePrice = markupMode === 'cost'
+                                                ? (selectedItemForMarkup.product?.default_price || 0)
+                                                : (selectedItemForMarkup.quoted_price || selectedItemForMarkup.product?.default_price || 0)
+                                            const newPrice = calculateMultiplierPrice(basePrice, multiplier)
+                                            setMarkupPercentage(((newPrice - basePrice) / basePrice * 100).toFixed(1))
                                         }
                                     }}
                                     placeholder="1.2"
@@ -1730,7 +1704,12 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
                             {markupMultiplier && selectedItemForMarkup && (
                                 <p className="text-sm text-muted-foreground mt-1">
                                     Sale Price: <span className="font-medium text-green-600">
-                                        ${calculateMultiplierPrice(selectedItemForMarkup.product?.default_price || 0, parseFloat(markupMultiplier)).toFixed(2)}
+                                        ${(() => {
+                                            const basePrice = markupMode === 'cost'
+                                                ? (selectedItemForMarkup.product?.default_price || 0)
+                                                : (selectedItemForMarkup.quoted_price || selectedItemForMarkup.product?.default_price || 0)
+                                            return calculateMultiplierPrice(basePrice, parseFloat(markupMultiplier)).toFixed(2)
+                                        })()}
                                     </span>
                                 </p>
                             )}
@@ -1792,6 +1771,103 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
                         </Button>
                         <Button onClick={applyMarkupPrice}>
                             Apply Markup
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Address Edit Modal */}
+            <AddressEditModal
+                open={addressModalOpen}
+                onOpenChange={setAddressModalOpen}
+                address={editingAddressType === 'shipping' ? (quoteRequest.shipping_address || {}) : (quoteRequest.billing_address || {})}
+                type={editingAddressType}
+                onSave={saveAddress}
+                isSaving={isSavingAddress}
+            />
+
+            {/* Approve Order Modal */}
+            <ApproveOrderModal
+                open={approveModalOpen}
+                onOpenChange={setApproveModalOpen}
+                quoteRequest={quoteRequest}
+                onApprove={handleApproveOrder}
+            />
+
+            {/* Approved Order Price Update Confirmation Dialog */}
+            <Dialog open={showApprovedOrderDialog} onOpenChange={setShowApprovedOrderDialog}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <DollarSign className="h-5 w-5 text-yellow-500" />
+                            Update Approved Order Prices
+                        </DialogTitle>
+                        <DialogDescription>
+                            You are updating prices for an approved order. The customer will be notified of these changes.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                        <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                            <div className="flex items-start space-x-3">
+                                <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <span className="text-white text-xs font-bold">!</span>
+                                </div>
+                                <div>
+                                    <h4 className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">
+                                        Important Notice
+                                    </h4>
+                                    <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
+                                        <li>• This order has already been approved and sent to the customer</li>
+                                        <li>• Price changes will trigger an email notification to the customer</li>
+                                        <li>• The customer will receive updated pricing information</li>
+                                        <li>• This action cannot be undone</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-muted/50 rounded-lg p-4">
+                            <h4 className="font-medium text-foreground mb-2">Order Details</h4>
+                            <div className="text-sm text-muted-foreground space-y-1">
+                                <p>Order #: <span className="font-medium text-foreground">{quoteRequest.order_confirmation_number}</span></p>
+                                <p>Customer: <span className="font-medium text-foreground">{quoteRequest.customer_name} {quoteRequest.customer_last_name}</span></p>
+                                <p>Email: <span className="font-medium text-foreground">{quoteRequest.customer_email}</span></p>
+                                <p>Items Modified: <span className="font-medium text-foreground">
+                                    {quoteRequest?.quote_request_items?.filter((item: QuoteRequestItem) => {
+                                        const currentPrice = item.quoted_price || item.product?.default_price || 0
+                                        const originalPrice = originalPrices[item.id] || 0
+                                        return Math.abs(currentPrice - originalPrice) > 0.01
+                                    }).length}
+                                </span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 mt-6">
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowApprovedOrderDialog(false)}
+                            disabled={isSavingPricing}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={performSavePricing}
+                            disabled={isSavingPricing}
+                            className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                        >
+                            {isSavingPricing ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    Updating...
+                                </>
+                            ) : (
+                                <>
+                                    <DollarSign className="h-4 w-4 mr-2" />
+                                    Confirm & Update Prices
+                                </>
+                            )}
                         </Button>
                     </div>
                 </DialogContent>

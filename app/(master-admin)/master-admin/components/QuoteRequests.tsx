@@ -26,7 +26,7 @@ interface QuoteRequest {
     customer_company?: string
     customer_message?: string
     total_items: number
-    status: 'pending' | 'reviewed' | 'quoted' | 'closed'
+    status: 'pending' | 'approved' | 'closed' | 'rejected'
     created_at: string
     quote_request_items: QuoteRequestItem[]
 }
@@ -60,9 +60,9 @@ export function QuoteRequests() {
     const getStatusBadge = (status: QuoteRequest['status']) => {
         const statusConfig = {
             pending: { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', label: 'Pending' },
-            reviewed: { color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200', label: 'Reviewed' },
-            quoted: { color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', label: 'Quoted' },
+            approved: { color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', label: 'Quoted' },
             closed: { color: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200', label: 'Closed' },
+            rejected: { color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', label: 'Rejected' },
         }
 
         const config = statusConfig[status]
@@ -161,7 +161,7 @@ export function QuoteRequests() {
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                className="flex items-center space-x-2"
+                                                className="flex items-center hover:cursor-pointer space-x-2"
                                             >
                                                 <ExternalLink className="h-4 w-4" />
                                                 <span>View Details</span>
@@ -173,6 +173,7 @@ export function QuoteRequests() {
                                                     variant="outline"
                                                     size="sm"
                                                     onClick={() => setSelectedRequest(request)}
+                                                    className='hover:cursor-pointer'
                                                 >
                                                     Quick View
                                                 </Button>
@@ -234,38 +235,6 @@ export function QuoteRequests() {
                                                                         </div>
                                                                     </div>
                                                                 ))}
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="flex justify-between items-center pt-4 border-t">
-                                                            <div>
-                                                                {/* <p className="text-lg font-bold">Total: ${selectedRequest.total_value.toFixed(2)}</p> */}
-                                                            </div>
-                                                            <div className="flex space-x-2">
-                                                                <Button
-                                                                    variant="outline"
-                                                                    size="sm"
-                                                                    onClick={() => updateStatus(selectedRequest.id, 'reviewed')}
-                                                                    disabled={selectedRequest.status !== 'pending'}
-                                                                >
-                                                                    Mark Reviewed
-                                                                </Button>
-                                                                <Button
-                                                                    variant="outline"
-                                                                    size="sm"
-                                                                    onClick={() => updateStatus(selectedRequest.id, 'quoted')}
-                                                                    disabled={selectedRequest.status === 'closed'}
-                                                                >
-                                                                    Mark Quoted
-                                                                </Button>
-                                                                <Button
-                                                                    variant="outline"
-                                                                    size="sm"
-                                                                    onClick={() => updateStatus(selectedRequest.id, 'closed')}
-                                                                    disabled={selectedRequest.status === 'closed'}
-                                                                >
-                                                                    Close
-                                                                </Button>
                                                             </div>
                                                         </div>
                                                     </div>

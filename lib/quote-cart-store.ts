@@ -6,6 +6,7 @@ export interface QuoteCartItem {
     product: Product
     quantity: number
     notes?: string
+    price?: number
 }
 
 interface QuoteCartState {

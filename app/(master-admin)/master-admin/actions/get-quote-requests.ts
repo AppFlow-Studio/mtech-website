@@ -8,6 +8,6 @@ export async function GetQuoteRequests() {
         quote_request_items(
             *
         )
-    `)
+    `).order('created_at', { ascending: false })
     return data
 }

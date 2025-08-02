@@ -8,9 +8,11 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
 import { submitQuoteRequest } from './actions/submit-quote-request'
+import { sendQuoteSubmissionEmail } from '@/utils/emails/actions/send-email'
 
 interface QuoteRequestForm {
-    name: string
+    customer_name: string
+    customer_last_name: string
     email: string
     phone: string
     company?: string
@@ -33,7 +35,8 @@ export function QuoteCart() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isVisible, setIsVisible] = useState(false)
     const [formData, setFormData] = useState<QuoteRequestForm>({
-        name: '',
+        customer_name: '',
+        customer_last_name: '',
         email: '',
         phone: '',
         company: '',
@@ -79,7 +82,7 @@ export function QuoteCart() {
             return
         }
 
-        if (!formData.name || !formData.email || !formData.phone) {
+        if (!formData.customer_name || !formData.customer_last_name || !formData.email || !formData.phone) {
             toast.error('Please fill in all required fields')
             return
         }
@@ -94,6 +97,7 @@ export function QuoteCart() {
                 toast.error('Failed to submit quote request', { description: response.message })
             } else {
                 toast.success('Quote request submitted successfully! We will contact you soon.')
+                await sendQuoteSubmissionEmail(formData.email, `${formData.customer_name} ${formData.customer_last_name}`, items)
                 clearCart()
                 closeCart()
             }
@@ -212,6 +216,7 @@ export function QuoteCart() {
                         )}
                     </div>
 
+
                     {/* Footer */}
                     {items.length > 0 && (
                         <div className="border-t border-gray-200 dark:border-gray-700 p-4 space-y-4">
@@ -221,12 +226,21 @@ export function QuoteCart() {
                                     Request Quote
                                 </h3>
 
-                                <Input
-                                    placeholder="Full Name *"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    required
-                                />
+                                <div className='grid grid-cols-2 gap-4'>
+                                    <Input
+                                        placeholder="First Name *"
+                                        value={formData.customer_name}
+                                        onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
+                                        required
+                                    />
+
+                                    <Input
+                                        placeholder="Last Name *"
+                                        value={formData.customer_last_name}
+                                        onChange={(e) => setFormData({ ...formData, customer_last_name: e.target.value })}
+                                        required
+                                    />
+                                </div>
 
                                 <Input
                                     type="email"
