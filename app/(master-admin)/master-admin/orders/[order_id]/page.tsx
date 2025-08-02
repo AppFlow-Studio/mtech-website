@@ -166,13 +166,13 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
                             </div>
                         </div>
                         <div className="flex gap-2 mt-4 md:mt-0">
-                            <Button
+                            {OrderInfo.status === 'approved' && <Button
                                 variant="outline"
                                 onClick={() => setShowReturnDialog(true)}
                                 className="bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100"
                             >
                                 <Package className="h-4 w-4 mr-1" /> Create Return
-                            </Button>
+                            </Button>}
                             <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
                                 <Trash2 className="h-4 w-4 mr-1" /> Delete Order
                             </Button>

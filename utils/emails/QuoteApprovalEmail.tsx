@@ -11,7 +11,6 @@ import {
     Section,
     Text,
 } from '@react-email/components';
-import { ProductCardInfo } from './components/ProductCardInfo';
 import { ProductCardWithPrice } from './components/ProductCardWithPrice';
 
 const baseUrl = process.env.VERCEL_URL
@@ -31,7 +30,7 @@ export const QuoteApprovalEmail = ({
     customerEmail = 'N/A',
     order_confirmation_number = 'N/A',
     items = [],
-    checkoutLink = 'https://mtechdistributor.com/quote-order/order'
+    checkoutLink = 'https://mtechdistributor.com/review-quote'
 }: QuoteApprovalEmailProps) => {
     const totalAmount = items.reduce((sum, item) => {
         const price = item.price || item.product.default_price;
@@ -41,7 +40,7 @@ export const QuoteApprovalEmail = ({
     return (
         <Html>
             <Head />
-            <Preview>Your quote has been approved! - Order #{order_confirmation_number}</Preview>
+            <Preview>Your quote has been approved! - Order : {order_confirmation_number}</Preview>
             <Body style={main}>
                 <Container style={container}>
                     <Section style={box}>

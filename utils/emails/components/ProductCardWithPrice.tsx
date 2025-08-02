@@ -9,7 +9,7 @@ export const ProductCardWithPrice = ({ product, notes, quantity, price }: { prod
                     <td className="box-border w-1/2 pr-[32px]">
                         <Img
                             alt={product?.name}
-                            className="w-full rounded-[8px] object-cover"
+                            className="w-full aspect-square rounded-[8px] object-cover"
                             height={220}
                             src={product?.imageSrc && product.imageSrc[0] == '/' ? `https://mtechdistributor.com${product.imageSrc}` : product.imageSrc}
                         />

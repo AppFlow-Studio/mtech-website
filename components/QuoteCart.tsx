@@ -90,14 +90,13 @@ export function QuoteCart() {
         setIsSubmitting(true)
 
         try {
-            // TODO: Replace with actual API endpoint
             const response = await submitQuoteRequest(formData, items)
 
             if (response instanceof Error) {
                 toast.error('Failed to submit quote request', { description: response.message })
             } else {
                 toast.success('Quote request submitted successfully! We will contact you soon.')
-                await sendQuoteSubmissionEmail(formData.email, `${formData.customer_name} ${formData.customer_last_name}`, items)
+                await sendQuoteSubmissionEmail(formData.email, `${formData.customer_name} ${formData.customer_last_name}`, formData.message || '', items, response.id)
                 clearCart()
                 closeCart()
             }

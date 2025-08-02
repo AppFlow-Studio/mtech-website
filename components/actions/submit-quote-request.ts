@@ -30,7 +30,7 @@ export async function submitQuoteRequest(formData: {
         customer_phone: phone,
         customer_company: company,
         customer_message: message,
-    }).select('id').single()
+    }).select('id, order_confirmation_number').single()
 
 
     // Insert Quote Request Items
@@ -40,8 +40,38 @@ export async function submitQuoteRequest(formData: {
         product_name: item.product.name,
         quantity: item.quantity,
         notes: item.notes,
-        quote_price: item.product.default_price,
+        quoted_price: item.product.default_price,
     })))
+
+    // Trigger Audit Log -- SYSTEM_ACTION -- 
+    // Insert Submission to Audit Log Date, Quote Request ID, User Name,
+
+    const { data: AuditLogQuoteRequest, error: AuditLogQuoteRequestError } = await supabase.from('quote_audit_log').insert({
+        quote_request_id: QuoteRequestID?.id,
+        event_type: 'SYSTEM_ACTION',
+        user_name: 'MTech Distributors',
+        message: `${name} ${last_name} Placed a Quote Request ( Quote Request ID: ${QuoteRequestID?.id} )`,
+        details: {
+            SYSTEM_ACTION: {
+                action_type: 'SUBMISSION',
+                action_details: 'Quote Request Submitted'
+            }
+        }
+    })
+
+    // Insert Submission Order Confirmation Number,
+    const { data: AuditLogOrderConfirmation, error: AuditLogOrderConfirmationError } = await supabase.from('quote_audit_log').insert({
+        quote_request_id: QuoteRequestID?.id,
+        event_type: 'SYSTEM_ACTION',
+        user_name: 'MTech Distributors',
+        message: 'Order Confirmation Number: ' + QuoteRequestID?.order_confirmation_number,
+        details: {
+            SYSTEM_ACTION: {
+                action_type: 'ORDER_CONFIRMATION',
+                action_details: 'Order Confirmation Number: ' + QuoteRequestID?.order_confirmation_number
+            }
+        }
+    })
 
 
     // Send Email to Customer
@@ -51,8 +81,10 @@ export async function submitQuoteRequest(formData: {
     }
 
     if (QuoteRequestItemsError) {
+        // Delete Quote Request
+        await supabase.from('quote_requests').delete().eq('id', QuoteRequestID?.id)
         return new Error(QuoteRequestItemsError.message)
     }
 
-    return { success: true }
+    return QuoteRequestID
 }
