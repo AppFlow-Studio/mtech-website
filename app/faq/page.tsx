@@ -12,7 +12,7 @@ const faqs = [
   {
     question: "How do I get support if I have an issue with my POS or ATM?",
     answer:
-      "You can contact our support team at support@mtechdistributors.com or call our customer service number. We offer remote and on-site support depending on your needs.",
+      "You can contact our support team at support@mtechdistributor.com or call our customer service number. We offer remote and on-site support depending on your needs.",
   },
   {
     question: "Can I return or exchange a product?",
@@ -76,9 +76,8 @@ const FAQ = () => {
                     {faq.question}
                   </span>
                   <svg
-                    className={`w-6 h-6 transition-transform duration-300 ${
-                      openIndex === idx ? "rotate-180" : "rotate-0"
-                    }`}
+                    className={`w-6 h-6 transition-transform duration-300 ${openIndex === idx ? "rotate-180" : "rotate-0"
+                      }`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -94,11 +93,10 @@ const FAQ = () => {
                 </button>
                 <div
                   id={`faq-panel-${idx}`}
-                  className={`overflow-hidden transition-all duration-300 px-6 ${
-                    openIndex === idx
+                  className={`overflow-hidden transition-all duration-300 px-6 ${openIndex === idx
                       ? "max-h-96 opacity-100 py-2"
                       : "max-h-0 opacity-0 py-0"
-                  }`}
+                    }`}
                   aria-hidden={openIndex !== idx}
                 >
                   <p className="text-gray-700 dark:text-gray-200 text-base pb-4">
@@ -112,7 +110,7 @@ const FAQ = () => {
             <p className="text-lg text-gray-700 dark:text-gray-200">
               Still have questions?{" "}
               <a
-                href="mailto:support@mtechdistributors.com"
+                href="mailto:support@mtechdistributor.com"
                 className="underline"
               >
                 Contact us

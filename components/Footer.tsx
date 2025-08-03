@@ -60,9 +60,9 @@ const Footer_Query = defineQuery(`*[_type == 'Footer']`)
 
 const options = { next: { revalidate: 30 } };
 
-const  Footer = async () => {
+const Footer = async () => {
   const { isEnabled } = await draftMode();
-  const FooterData : FooterQueryResultProps = await sanityFetch({
+  const FooterData: FooterQueryResultProps = await sanityFetch({
     query: Footer_Query,
     ...options,
   });
@@ -148,10 +148,10 @@ const  Footer = async () => {
               {/* <li className="flex items-center gap-2">
                 <Mail className="h-5 w-5 flex-shrink-0" />
                 <Link
-                  href="mailto:support@mtechdistributors.com"
+                  href="mailto:support@mtechdistributor.com"
                   className="hover:text-white transition-colors break-all"
                 >
-                  support@mtechdistributors.com
+                  support@mtechdistributor.com
                 </Link>
               </li> */}
             </ul>

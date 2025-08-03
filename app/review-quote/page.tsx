@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -230,10 +231,14 @@ export default function ReviewQuotePage() {
         }
     }
 
-    const handleCheckout = () => {
-        if (!quoteRequest) return
-        // TODO: Implement checkout functionality
-        toast.info('Checkout functionality coming soon!')
+    const getCheckoutUrl = () => {
+        if (!quoteRequest) return '#'
+
+        const orderNumber = quoteRequest.order_confirmation_number || ''
+        const email = quoteRequest.customer_email
+        const fulfillmentTypeParam = fulfillmentType
+
+        return `/review-quote/checkout/${orderNumber}?email=${encodeURIComponent(email)}&fulfillmentType=${fulfillmentTypeParam}`
     }
 
     const [fulfillmentTypeModalOpen, setFulfillmentTypeModalOpen] = useState(false)
@@ -375,14 +380,16 @@ export default function ReviewQuotePage() {
                                 <CheckCircle className="h-3 w-3 mr-1" />
                                 Approved
                             </Badge>
-                            <Button
-                                onClick={handleCheckout}
-                                className="bg-purple-600 hover:bg-purple-700 text-white"
-                                size="lg"
-                            >
-                                <ShoppingCart className="h-4 w-4 mr-2" />
-                                Proceed to Checkout
-                            </Button>
+                            <Link href={getCheckoutUrl()}>
+                                <Button
+                                    className="bg-purple-600 hover:bg-purple-700 text-white"
+                                    size="lg"
+                                    disabled={!quoteRequest}
+                                >
+                                    <ShoppingCart className="h-4 w-4 mr-2" />
+                                    Proceed to Checkout
+                                </Button>
+                            </Link>
                         </div>
                     </div>
                 </div>

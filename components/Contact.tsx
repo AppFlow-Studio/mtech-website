@@ -141,10 +141,10 @@ const Contact = () => {
               <li className="flex items-center gap-3">
                 <Mail className="h-6 w-6" />
                 <a
-                  href="mailto:support@mtechdistributors.com"
+                  href="mailto:support@mtechdistributor.com"
                   className="text-gray-700 dark:text-gray-300 hover:underline"
                 >
-                  support@mtechdistributors.com
+                  support@mtechdistributor.com
                 </a>
               </li>
             </ul>

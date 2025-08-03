@@ -98,10 +98,10 @@ const ReturnPolicy = async () => {
                   <li>
                     Email{" "}
                     <a
-                      href="mailto:support@mtechdistributors.com"
+                      href="mailto:support@mtechdistributor.com"
                       className="text-purple-700 underline"
                     >
-                      support@mtechdistributors.com
+                      support@mtechdistributor.com
                     </a>{" "}
                     to request a refund. We will assign you a tracking #.
                   </li>
@@ -154,10 +154,10 @@ const ReturnPolicy = async () => {
                   in error by MTECH Distributors, or faulty (must provide
                   details to{" "}
                   <a
-                    href="mailto:support@mtechdistributors.com"
+                    href="mailto:support@mtechdistributor.com"
                     className="text-purple-700 underline"
                   >
-                    support@mtechdistributors.com
+                    support@mtechdistributor.com
                   </a>
                   ). In these cases, you will not be subject to a restocking fee
                   and will not have to pay return shipping.

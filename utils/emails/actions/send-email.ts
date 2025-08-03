@@ -6,6 +6,8 @@ import { QuoteApprovalEmail } from '../QuoteApprovalEmail'
 import { QuoteCartItem } from '@/lib/quote-cart-store'
 import { createClient } from '@/utils/supabase/server'
 import { PriceUpdateEmail } from '../PriceUpdateEmail'
+import OrderSubmissionEmail, { OrderItem } from '../OrderSubmissionEmail'
+import { OrderItems } from '@/lib/types'
 
 const resend = new Resend(process.env.RESEND_KEY)
 
@@ -97,6 +99,7 @@ export async function sendQuoteApprovalEmail({ customerEmail, customerName, orde
         throw new Error('Failed to send email')
     }
 }
+
 // changedItems: changedItems.map(item => ({
 //     id: item.id,
 //     product_name: item.product_name,
@@ -130,11 +133,12 @@ export async function sendPriceUpdateEmail(emailData: {
             from: 'MTech Distributors <noreply@mtechdistributor.com>',
             to: emailData.customerEmail,
             subject,
-            react: PriceUpdateEmail({ 
-                 customerName: emailData.customerName,
-                 order_confirmation_number: emailData.order_confirmation_number, 
-                 changedItems: emailData.changedItems, 
-                 totalAmount : emailData.totalAmount }),
+            react: PriceUpdateEmail({
+                customerName: emailData.customerName,
+                order_confirmation_number: emailData.order_confirmation_number,
+                changedItems: emailData.changedItems,
+                totalAmount: emailData.totalAmount
+            }),
         })
         // Trigger Audit Log -- SYSTEM_ACTION -- 
         // Insert Email Sent to Customer
@@ -151,7 +155,7 @@ export async function sendPriceUpdateEmail(emailData: {
                 }
             }
         })
-        
+
         if (error) {
             console.error('Error sending price update email:', error)
             throw new Error(error.message)
@@ -160,5 +164,49 @@ export async function sendPriceUpdateEmail(emailData: {
     } catch (error) {
         console.error('Error sending price update email:', error)
         throw new Error('Failed to send email')
+    }
+}
+
+// customerName,
+// customerEmail,
+// orderConfirmationNumber,
+// orderItems,
+// orderNotes,
+// agentName,
+// agentEmail,
+// totalAmount,
+// submittedAt,
+
+export async function sendOrderSubmissionEmail({ customerEmail,
+    customerName,
+    orderId,
+    orderName,
+    notes,
+    items,
+    agentName,
+    agentEmail,
+    totalAmount }: { 
+        customerEmail: string, 
+        customerName: string,
+         orderId: string, 
+         orderName: string, 
+         notes: string, 
+         items: OrderItem[], 
+         agentName: string, 
+         agentEmail: string, 
+         totalAmount: number }) {
+    const subject = 'Your order has been submitted! - Order:' + orderId
+
+    try {
+        const { data, error } = await resend.emails.send({
+            from: 'MTech Distributors <noreply@mtechdistributor.com>',
+            to: customerEmail,
+            subject,
+            react: OrderSubmissionEmail({ customerName, customerEmail, orderConfirmationNumber: orderId, orderItems: items, orderNotes: notes, agentName: agentName, agentEmail: agentEmail, totalAmount: totalAmount, submittedAt: new Date().toISOString() }),
+        })
+        return data
+    } catch (error) {
+        console.error('Error sending order submission email:', error)
+        return new Error('Failed to send email')
     }
 }

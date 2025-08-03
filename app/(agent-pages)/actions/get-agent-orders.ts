@@ -12,7 +12,7 @@ export default async function getAgentOrders(agentId: string) {
                 *
             )
         )
-    `).eq("agent_id", agentId);
+    `).eq("agent_id", agentId).order("created_at", { ascending: false });
 
     if (error) {
         return Error(error.message);

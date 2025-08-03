@@ -234,10 +234,10 @@ const PrivacyPolicy = () => {
                   If you have any questions regarding this privacy policy, you
                   may contact us at{" "}
                   <a
-                    href="mailto:support@mtechdistributors.com"
+                    href="mailto:support@mtechdistributor.com"
                     className="underline"
                   >
-                    support@mtechdistributors.com
+                    support@mtechdistributor.com
                   </a>
                   .
                 </p>

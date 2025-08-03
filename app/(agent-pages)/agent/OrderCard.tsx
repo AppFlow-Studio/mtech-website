@@ -11,6 +11,7 @@ import { Product } from "@/lib/types";
 import { deleteOrder } from "../actions/delete-order";
 import { editOrderInfo } from "../actions/edit-order-info";
 import { submitOrder } from "../actions/submit-order";
+import { useProfile } from "@/lib/hooks/useProfile";
 
 function statusBadge(status: string) {
     const config: Record<string, { color: string; label: string }> = {
@@ -45,6 +46,7 @@ export interface Order {
         price_at_order: number;
         products: Product;
     }>;
+    order_confirmation_number: string;
 }
 
 interface OrderCardProps {
@@ -76,6 +78,7 @@ export default function OrderCard({ order, refetchOrders, setSelectedInquiryForC
         order_name: order.order_name,
         notes: order.notes,
     });
+    const { profile } = useProfile()
     const [isSaving, setIsSaving] = useState(false);
     const onEdit = () => {
         setOpenEditDialog(true);
@@ -110,7 +113,7 @@ export default function OrderCard({ order, refetchOrders, setSelectedInquiryForC
     }
     const hasItems = order.order_items && order.order_items.length > 0;
     const onSubmitOrder = async () => {
-        const result = await submitOrder(order.id)
+        const result = await submitOrder(order.id, profile, order.order_name, order.notes, order.order_items || [], order.order_confirmation_number)
         if (result instanceof Error) {
             toast.error(result.message)
         }

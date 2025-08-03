@@ -4,10 +4,13 @@ import { useTiers } from "../actions/TeirsStores"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Package, Users, DollarSign, Settings, Plus, Mail, AlertCircle, UserCheck, CheckCircle, Clock, ListOrdered } from "lucide-react"
+import { Package, Users, DollarSign, Settings, Plus, Mail, AlertCircle, UserCheck, CheckCircle, Clock, ListOrdered, TrendingUp, BarChart3, PieChart, Activity } from "lucide-react"
 import { useSubmittedOrders } from "../actions/OrderStore"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ChartContainer, ChartTooltipContent, ChartLegendContent } from "@/components/ui/chart"
+import { LineChart, Line, BarChart, Bar, PieChart as RechartsPieChart, Area, AreaChart, Pie, Cell, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Legend } from "recharts"
 
 // Mock contact form data for dashboard
 const mockContactForms = [
@@ -62,6 +65,157 @@ export default function DashboardOverview() {
     const outOfStockProducts = totalProducts - inStockProducts
     const { data: submittedOrders, isLoading: isSubmittedOrdersLoading } = useSubmittedOrders()
 
+    // Chart configuration
+    const chartConfig = {
+        orders: {
+            label: "Orders",
+            color: "hsl(var(--chart-1))",
+
+        },
+        submitted: {
+            label: "Submitted",
+            color: "hsl(var(--chart-2))",
+        },
+        approved: {
+            label: "Approved",
+            color: "hsl(var(--chart-3))",
+        },
+        fulfilled: {
+            label: "Fulfilled",
+            color: "hsl(var(--chart-4))",
+        },
+        revenue: {
+            label: "Revenue",
+            color: "hsl(var(--chart-5))",
+        },
+    }
+
+    // State for selected month
+    const [selectedMonth, setSelectedMonth] = useState(() => {
+        const now = new Date()
+        return { month: now.getMonth(), year: now.getFullYear() }
+    })
+
+    // Process order data for charts
+    const chartData = useMemo(() => {
+        if (!submittedOrders || submittedOrders instanceof Error) return []
+
+        const { month, year } = selectedMonth
+
+        // Get orders from selected month
+        const monthOrders = submittedOrders.filter((order: any) => {
+            const orderDate = new Date(order.created_at)
+            return orderDate.getMonth() === month && orderDate.getFullYear() === year
+        })
+
+        // Group by day for the selected month
+        const daysInMonth = new Date(year, month + 1, 0).getDate()
+        const dailyData = []
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(year, month, day)
+            const dayOrders = monthOrders.filter((order: any) => {
+                const orderDate = new Date(order.created_at)
+                return orderDate.getDate() === day
+            })
+
+            const submitted = dayOrders.filter((order: any) => order.status === 'submitted').length
+            const approved = dayOrders.filter((order: any) => order.status === 'approved').length
+            const fulfilled = dayOrders.filter((order: any) => order.status === 'fulfilled').length
+            const total = dayOrders.length
+
+            // Calculate revenue
+            const revenue = dayOrders.reduce((sum: number, order: any) => {
+                if (order.order_items && order.order_items.length > 0) {
+                    return sum + order.order_items.reduce((itemSum: number, item: any) =>
+                        itemSum + (item.price_at_order * item.quantity), 0)
+                }
+                return sum
+            }, 0)
+
+            dailyData.push({
+                date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                orders: total,
+                submitted,
+                approved,
+                fulfilled,
+                revenue: Math.round(revenue)
+            })
+        }
+
+        return dailyData
+    }, [submittedOrders, selectedMonth])
+
+    // Monthly summary data
+    const monthlySummary = useMemo(() => {
+        if (!submittedOrders || submittedOrders instanceof Error) return []
+
+        const { month, year } = selectedMonth
+
+        const monthOrders = submittedOrders.filter((order: any) => {
+            const orderDate = new Date(order.created_at)
+            return orderDate.getMonth() === month && orderDate.getFullYear() === year
+        })
+
+        const submitted = monthOrders.filter((order: any) => order.status === 'submitted').length
+        const approved = monthOrders.filter((order: any) => order.status === 'approved').length
+        const fulfilled = monthOrders.filter((order: any) => order.status === 'fulfilled').length
+        const total = monthOrders.length
+
+        return [
+            { name: 'Submitted', value: submitted, color: '#3b82f6' },
+            { name: 'Approved', value: approved, color: '#10b981' },
+            { name: 'Fulfilled', value: fulfilled, color: '#8b5cf6' },
+            { name: 'Total', value: total, color: '#f59e0b' }
+        ]
+    }, [submittedOrders, selectedMonth])
+
+    // Status distribution for pie chart
+    const statusDistribution = useMemo(() => {
+        if (!submittedOrders || submittedOrders instanceof Error) return []
+
+        const statusCounts = submittedOrders.reduce((acc: any, order: any) => {
+            acc[order.status] = (acc[order.status] || 0) + 1
+            return acc
+        }, {})
+
+        return Object.entries(statusCounts).map(([status, count]) => ({
+            name: status.charAt(0).toUpperCase() + status.slice(1),
+            value: count,
+            color: status === 'submitted' ? '#3b82f6' :
+                status === 'approved' ? '#10b981' :
+                    status === 'fulfilled' ? '#8b5cf6' :
+                        status === 'pending' ? '#f59e0b' :
+                            status === 'rejected' ? '#ef4444' : '#6b7280'
+        }))
+    }, [submittedOrders])
+
+    // Helper functions for month navigation
+    const getMonthName = (month: number, year: number) => {
+        return new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    }
+
+    const goToPreviousMonth = () => {
+        setSelectedMonth(prev => {
+            const newMonth = prev.month === 0 ? 11 : prev.month - 1
+            const newYear = prev.month === 0 ? prev.year - 1 : prev.year
+            return { month: newMonth, year: newYear }
+        })
+    }
+
+    const goToNextMonth = () => {
+        setSelectedMonth(prev => {
+            const newMonth = prev.month === 11 ? 0 : prev.month + 1
+            const newYear = prev.month === 11 ? prev.year + 1 : prev.year
+            return { month: newMonth, year: newYear }
+        })
+    }
+
+    const goToCurrentMonth = () => {
+        const now = new Date()
+        setSelectedMonth({ month: now.getMonth(), year: now.getFullYear() })
+    }
+
     // Contact form statistics
     const totalInquiries = mockContactForms.length
     const newInquiries = mockContactForms.filter(i => i.status === "new").length
@@ -97,6 +251,7 @@ export default function DashboardOverview() {
         <div className="space-y-6">
             <div>
                 <h2 className="text-xl font-semibold text-foreground mb-4">Dashboard Overview</h2>
+                {/* Statistics Cards -- Products, In Stock, Out of Stock, Active Agents, Total Orders, Submitted Orders, Approved Orders, Fulfilled Orders */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -225,7 +380,262 @@ export default function DashboardOverview() {
                 </div>
             </div>
 
+            {/* Charts Section */}
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle>Business Analytics</CardTitle>
+                            <CardDescription>Track your business performance with interactive charts</CardDescription>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={goToPreviousMonth}
+                                className="h-8 w-8 p-0"
+                            >
+                                ←
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={goToCurrentMonth}
+                                className="text-xs"
+                            >
+                                {getMonthName(selectedMonth.month, selectedMonth.year)}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={goToNextMonth}
+                                className="h-8 w-8 p-0"
+                            >
+                                →
+                            </Button>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="h-fit">
+                    <Tabs defaultValue="orders" className="w-full">
+                        <TabsList className="grid w-full grid-cols-3">
+                            <TabsTrigger value="orders" className="flex items-center gap-2">
+                                <TrendingUp className="h-4 w-4" />
+                                Orders
+                            </TabsTrigger>
+                            <TabsTrigger value="revenue" className="flex items-center gap-2">
+                                <DollarSign className="h-4 w-4" />
+                                Revenue
+                            </TabsTrigger>
+                            {/* <TabsTrigger value="status" className="flex items-center gap-2">
+                                <BarChart3 className="h-4 w-4" />
+                                Status
+                            </TabsTrigger> */}
+                            <TabsTrigger value="distribution" className="flex items-center gap-2">
+                                <PieChart className="h-4 w-4" />
+                                Distribution
+                            </TabsTrigger>
+                        </TabsList>
 
+                        <TabsContent value="orders" className="space-y-4">
+                            <div className="h-[350px] w-full" style={{ display: 'flex', alignItems: 'stretch' }}>
+                                <ChartContainer config={chartConfig} style={{ flex: 1 }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart
+                                            accessibilityLayer
+                                            data={chartData}
+                                            margin={{
+                                                left: 12,
+                                                right: 12,
+                                            }}
+                                        >
+                                            <CartesianGrid vertical={false} />
+                                            <XAxis
+                                                dataKey="date"
+                                                tickLine={false}
+                                                axisLine={false}
+                                                tickMargin={8}
+                                                tick={{ fontSize: 12 }}
+                                            />
+                                            <YAxis
+                                                tick={{ fontSize: 12 }}
+                                                tickLine={false}
+                                                axisLine={false}
+                                                domain={[0, (dataMax: number) => Math.max(dataMax + 1, 2)]}
+                                            />
+                                            <Tooltip cursor={false} content={<ChartTooltipContent />} />
+                                            <Legend content={<ChartLegendContent />} />
+                                            <defs>
+                                                <linearGradient id="fillSubmitted" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop
+                                                        offset="5%"
+                                                        stopColor="#10b981"
+                                                        stopOpacity={0.8}
+                                                    />
+                                                    <stop
+                                                        offset="95%"
+                                                        stopColor="#10b981"
+                                                        stopOpacity={0.1}
+                                                    />
+                                                </linearGradient>
+                                                <linearGradient id="fillApproved" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop
+                                                        offset="5%"
+                                                        stopColor="#8b5cf6"
+                                                        stopOpacity={0.8}
+                                                    />
+                                                    <stop
+                                                        offset="95%"
+                                                        stopColor="#8b5cf6"
+                                                        stopOpacity={0.1}
+                                                    />
+                                                </linearGradient>
+                                                <linearGradient id="fillFulfilled" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop
+                                                        offset="5%"
+                                                        stopColor="#f59e0b"
+                                                        stopOpacity={0.8}
+                                                    />
+                                                    <stop
+                                                        offset="95%"
+                                                        stopColor="#f59e0b"
+                                                        stopOpacity={0.1}
+                                                    />
+                                                </linearGradient>
+                                            </defs>
+                                            <Area
+                                                dataKey="submitted"
+                                                type="monotone"
+                                                fill="url(#fillSubmitted)"
+                                                fillOpacity={0.4}
+                                                stroke="#10b981"
+                                                strokeWidth={2}
+                                                baseValue={0}
+                                            />
+                                            <Area
+                                                dataKey="approved"
+                                                type="monotone"
+                                                fill="url(#fillApproved)"
+                                                fillOpacity={0.4}
+                                                stroke="#8b5cf6"
+                                                strokeWidth={2}
+                                                baseValue={0}
+                                            />
+                                            <Area
+                                                dataKey="fulfilled"
+                                                type="monotone"
+                                                fill="url(#fillFulfilled)"
+                                                fillOpacity={0.4}
+                                                stroke="#f59e0b"
+                                                strokeWidth={2}
+                                                baseValue={0}
+                                            />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </ChartContainer>
+                            </div>
+                        </TabsContent>
+
+                        <TabsContent value="revenue" className="space-y-4">
+                            <div className="h-[350px] w-full" style={{ display: 'flex', alignItems: 'stretch' }}>
+                                <ChartContainer config={chartConfig} style={{ flex: 1 }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={chartData}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                                            <XAxis
+                                                dataKey="date"
+                                                tick={{ fontSize: 12 }}
+                                                interval="preserveStartEnd"
+                                                stroke="#888888"
+                                                tickLine={false}
+                                                axisLine={false}
+                                            />
+                                            <YAxis
+                                                tick={{ fontSize: 12 }}
+                                                stroke="#888888"
+                                                tickLine={false}
+                                                axisLine={false}
+                                            />
+                                            <Tooltip content={<ChartTooltipContent />} />
+                                            <Legend content={<ChartLegendContent />} />
+                                            <Bar
+                                                dataKey="revenue"
+                                                fill="#10b981"
+                                                stroke="#059669"
+                                                strokeWidth={1}
+                                                radius={[4, 4, 0, 0]}
+                                            />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </ChartContainer>
+                            </div>
+                        </TabsContent>
+
+                        <TabsContent value="status" className="space-y-4">
+                            <div className="h-[350px] w-full" style={{ display: 'flex', alignItems: 'stretch' }}>
+                                <ChartContainer config={chartConfig} style={{ flex: 1 }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={monthlySummary} layout="horizontal">
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                                            <XAxis
+                                                type="number"
+                                                tick={{ fontSize: 12 }}
+                                                stroke="#888888"
+                                                tickLine={false}
+                                                axisLine={false}
+                                            />
+                                            <YAxis
+                                                type="category"
+                                                dataKey="name"
+                                                tick={{ fontSize: 12 }}
+                                                width={80}
+                                                stroke="#888888"
+                                                tickLine={false}
+                                                axisLine={false}
+                                            />
+                                            <Tooltip content={<ChartTooltipContent />} />
+                                            <Bar
+                                                dataKey="value"
+                                                fill="#3b82f6"
+                                                stroke="#2563eb"
+                                                strokeWidth={1}
+                                                radius={[0, 4, 4, 0]}
+                                            />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </ChartContainer>
+                            </div>
+                        </TabsContent>
+
+                        <TabsContent value="distribution" className="space-y-4">
+                            <div className="h-[350px] w-full" style={{ display: 'flex', alignItems: 'stretch' }}>
+                                <ChartContainer config={chartConfig} style={{ flex: 1 }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <RechartsPieChart>
+                                            <Pie
+                                                data={statusDistribution}
+                                                cx="50%"
+                                                cy="50%"
+                                                outerRadius={80}
+                                                dataKey="value"
+                                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                                stroke="#ffffff"
+                                                strokeWidth={2}
+                                            >
+                                                {statusDistribution.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip content={<ChartTooltipContent />} />
+                                            <Legend content={<ChartLegendContent />} />
+                                        </RechartsPieChart>
+                                    </ResponsiveContainer>
+                                </ChartContainer>
+                            </div>
+                        </TabsContent>
+                    </Tabs>
+                </CardContent>
+            </Card>
 
             {/* Contact Forms Section */}
             {/* <div>
@@ -553,7 +963,7 @@ function OrderDashboardCard({ order }: { order: any }) {
                             <div className="flex-1">
                                 <span className="block text-xs font-medium text-muted-foreground mb-1">Cart Items</span>
                                 {hasItems ? (
-                                    <ul className="space-y-3 max-h-[300px] overflow-y-auto">
+                                    <ul className="space-y-3 max- overflow-y-auto">
                                         {order.order_items.map((item: any) => (
                                             <li key={item.product_id} className="flex items-center gap-4 border-b border-border pb-2 last:border-b-0">
                                                 {item.products?.imageSrc && (

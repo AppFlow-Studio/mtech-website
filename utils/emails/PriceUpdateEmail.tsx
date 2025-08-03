@@ -132,7 +132,7 @@ export const PriceUpdateEmail = ({
                         </Text>
 
                         <div style={buttonContainer}>
-                            <Button style={button} href={'https://mtechdistributors.com/review-quote'}>
+                            <Button style={button} href={'https://mtechdistributor.com/review-quote'}>
                                 View Your Updated Order
                             </Button>
                         </div>

@@ -21,11 +21,18 @@ export const addOrderNote = async (orderId: string, userId: string, note: string
     }
 
     // Add to audit log
-    await addToOrderAuditLog({
-        orderId,
-        action: "Note added",
-        details: `Added note: ${note.substring(0, 100)}${note.length > 100 ? '...' : ''} by ${userName}`
-    });
+   const OrderAuditLogResponse = await supabase.from('order_audit_log').insert({
+    order_id: orderId,
+    event_type: 'NOTE_ADDED',
+    user_name: userName,
+    message: `Note added: ${note.substring(0, 100)}${note.length > 100 ? '...' : ''} by ${userName}`,
+    author_id: userId,
+    details: {
+        NOTE_ADDED: {
+            note_text: note
+        }
+    }
+   })
 
     return data;
 }; 

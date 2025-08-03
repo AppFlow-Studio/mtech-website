@@ -48,32 +48,12 @@ export async function verifyQuoteAccess(order_confirmation_number: string, email
             return { success: false, error: 'Invalid credentials or quote not found' }
         }
 
-        // Get notes for this quote request
-        const { data: notes, error: notesError } = await supabase
-            .from('quote_notes')
-            .select(`
-                id,
-                quote_request_id,
-                profile_id,
-                content,
-                created_at,
-                is_customer_note,
-                profiles (
-                    first_name,
-                    last_name
-                )
-            `)
-            .eq('quote_request_id', quoteRequest.id)
-            .order('created_at', { ascending: false })
+      
 
-        if (notesError) {
-            console.error('Error fetching notes:', notesError)
-        }
-
+ 
         return {
             success: true,
             quoteRequest,
-            notes: notes || []
         }
 
     } catch (error) {

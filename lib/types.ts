@@ -162,6 +162,7 @@ export interface Orders {
   agent_id: string
   status: "draft" | "submitted" | "approved" | "completed"
   order_items: OrderItems[]
+  order_confirmation_number: string
 }
 
 export interface OrderItems {

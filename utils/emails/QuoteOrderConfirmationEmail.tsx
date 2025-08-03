@@ -90,7 +90,7 @@ export const QuoteSubmissionEmail = ({ customerName = 'Valued Customer', notes =
                         })}
                     </Text>
 
-                    <Button style={button} href="https://mtechdistributors.com">
+                    <Button style={button} href="https://mtechdistributor.com">
                         Visit Our Website
                     </Button>
 
@@ -102,9 +102,9 @@ export const QuoteSubmissionEmail = ({ customerName = 'Valued Customer', notes =
                     </Text>
 
                     <Text style={contactInfo}>
-                        📧 Email: support@mtechdistributors.com<br />
+                        📧 Email: support@mtechdistributor.com<br />
                         📞 Phone: (888) 411-7583<br />
-                        🌐 Website: www.mtechdistributors.com
+                        🌐 Website: www.mtechdistributor.com
                     </Text>
 
                     <Text style={paragraph}>

@@ -365,7 +365,7 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
             customerName: `${quoteRequest.customer_name} ${quoteRequest.customer_last_name}`,
             quoteId: quoteRequest.id,
             orderId: quoteRequest.order_confirmation_number,
-            checkoutLink: `https://mtechdistributors.com/quote-requests/${quoteRequest.id}`,
+            checkoutLink: `https://mtechdistributor.com/quote-requests/${quoteRequest.id}`,
             items: quoteRequest.quote_request_items.map((item: QuoteRequestItem) => ({
                 product: item.product,
                 quantity: item.quantity,
@@ -726,7 +726,7 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
 
     const confirmFulfillmentTypeChange = async () => {
         setIsUpdatingFulfillmentType(true)
-        const response = await updateFulfillmentType(quoteRequest.id, pendingFulfillmentType)
+        const response = await updateFulfillmentType(quoteRequest.id, pendingFulfillmentType, `${profile?.first_name} ${profile?.last_name}`)
         if (response instanceof Error) {
             toast.error('Failed to update fulfillment type', {
                 description: response.message
@@ -845,7 +845,7 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
                     newPrice: item.quoted_price || item.product?.default_price || 0
                 })),
                 totalAmount: getTotalValue(),
-                reviewLink: 'https://mtechdistributors.com/review-quote'
+                reviewLink: 'https://mtechdistributor.com/review-quote'
             }
             const response = await sendPriceUpdateEmail(emailData)
             if (response instanceof Error) {
@@ -856,7 +856,7 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
             }
 
             // Send the email using React Email component
-           
+
         } catch (error) {
             console.error('Error sending price update email:', error)
             throw error
@@ -1572,6 +1572,13 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
 
                             {/* Timeline Events */}
                             <div className="space-y-4">
+                                {
+                                    isLoading && (
+                                        <div className="flex items-center justify-center py-8">
+                                            <Loader2 className="h-6 w-6 animate-spin" />
+                                        </div>
+                                    )
+                                }
                                 {auditLog?.map((entry, index) => {
                                     const isExpanded = expandedLogEntries.has(entry.id)
                                     const hasDetails = entry.event_type !== 'SYSTEM_ACTION'

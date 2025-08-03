@@ -41,7 +41,7 @@ export default function QuoteNotes({ quoteRequestId, profile_id }: QuoteNotesPro
     });
 
     const addNoteMutation = useMutation({
-        mutationFn: (note: string) => addQuoteNote(quoteRequestId, note, profile_id),
+        mutationFn: (note: string) => addQuoteNote(quoteRequestId, note, profile_id, `${profile?.first_name} ${profile?.last_name}`),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["quote-notes", quoteRequestId] });
             setNewNote("");
