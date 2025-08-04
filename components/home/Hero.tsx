@@ -21,7 +21,7 @@ const Hero = ({ hero_header, hero_subtext }: { hero_header: string, hero_subtext
           playsInline
           className="w-full h-full object-cover"
         >
-          <source src="/0_Payment_Mobile Payment.mp4" type="video/mp4" />
+          <source src="/HeroVideo.mp4" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
         <div className="absolute inset-0 bg-black/20"></div>{" "}
