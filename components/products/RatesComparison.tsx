@@ -201,36 +201,36 @@ const PricingCard = ({ plan }: { plan: RateCardsQueryResult }) => {
 const RateCardsQuery = `*[_type == "RateCards"]`
 
 const RatesComparison = async () => {
-  const rateCards = await client.fetch<RateCardsQueryResultProps>(RateCardsQuery);
-  if(rateCards.length < 0 || rateCards[0].RateCards.length < 0) {
+  const rateCards = await sanityFetch<RateCardsQueryResultProps>(RateCardsQuery);
+  if (rateCards.length < 0 || rateCards[0].RateCards.length < 0) {
     return (
-    <section className="py-16 flex flex-col items-center justify-center min-h-[300px]">
-      <div className="flex flex-col items-center">
-        <svg
-          className="animate-spin h-12 w-12 text-purple-600 mb-4"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 48 48"
-        >
-          <circle
-            className="opacity-25"
-            cx="24"
-            cy="24"
-            r="20"
-            stroke="currentColor"
-            strokeWidth="6"
-          />
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M44 24c0-11.046-8.954-20-20-20v6c7.732 0 14 6.268 14 14h6z"
-          />
-        </svg>
-        <span className="text-lg font-medium text-gray-700 dark:text-gray-200 animate-pulse">
-          Loading rates...
-        </span>
-      </div>
-    </section>
+      <section className="py-16 flex flex-col items-center justify-center min-h-[300px]">
+        <div className="flex flex-col items-center">
+          <svg
+            className="animate-spin h-12 w-12 text-purple-600 mb-4"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 48 48"
+          >
+            <circle
+              className="opacity-25"
+              cx="24"
+              cy="24"
+              r="20"
+              stroke="currentColor"
+              strokeWidth="6"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M44 24c0-11.046-8.954-20-20-20v6c7.732 0 14 6.268 14 14h6z"
+            />
+          </svg>
+          <span className="text-lg font-medium text-gray-700 dark:text-gray-200 animate-pulse">
+            Loading rates...
+          </span>
+        </div>
+      </section>
     )
   }
   return (

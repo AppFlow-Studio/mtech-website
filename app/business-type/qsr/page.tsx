@@ -1,6 +1,8 @@
 import BusinessTypePage from "@/components/business-type/BusinessTypePage";
 import { Slide } from "@/lib/types";
 import { client } from "@/sanity/lib/client";
+import { defineQuery } from "next-sanity";
+import { sanityFetch } from '@/utils/sanity/lib/live'
 
 const sliderData: Slide[] = [
   {
@@ -51,15 +53,18 @@ const sliderData: Slide[] = [
   },
 ];
 
+const options = { next: { revalidate: 30 } };
+
 async function page() {
-  const qsr = await client.fetch(
-    `*[_type == "BUSINESS_TYPES" && business_type_link == "/qsr"]`
-  );
+  const qsr = await sanityFetch({
+    query: defineQuery(`*[_type == "BUSINESS_TYPES" && business_type_link == "/qsr"]`),
+    ...options,
+  });
   if (!qsr) {
     return <div>No data found</div>;
   }
   return (
-    <BusinessTypePage businessType={qsr[0]} />
+    <BusinessTypePage businessType={qsr.data[0]} />
   );
 }
 

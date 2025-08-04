@@ -2,6 +2,8 @@ import DualPricingKit from "@/components/business-type/DualPricingKit";
 import Contact from "@/components/Contact";
 import DualPricingHero from "../components/DualPricingHero";
 import { client } from "@/sanity/lib/client";
+import { defineQuery } from "next-sanity";
+import { sanityFetch } from '@/utils/sanity/lib/live'
 
 // --- Data for the feature list ---
 const feature = [
@@ -25,20 +27,23 @@ const benefits = [
   "Support for all major credit cards.",
 ];
 
+const options = { next: { revalidate: 30 } };
+
 async function communityBankPartners() {
-  const communityBankPartners = await client.fetch(
-    `*[_type == "DualPricing" && DualPricing_Link == "/community-bank-partners"]`
-  );
+  const communityBankPartners = await sanityFetch({
+    query: defineQuery(`*[_type == "DualPricing" && DualPricing_Link == "/community-bank-partners"]`),
+    ...options,
+  });
   return (
     <>
       <DualPricingHero
         title="Partnering with Community Banks"
-        description={communityBankPartners[0]?.DualPricing_Description}
-        image={communityBankPartners[0]?.DualPricing_Image}
+        description={communityBankPartners.data[0]?.DualPricing_Description}
+        image={communityBankPartners.data[0]?.DualPricing_Image}
         useSanityImage={true}
         usePortableText={true}
-        badge={communityBankPartners[0]?.DualPricing_Badge}
-        rightFeatures={communityBankPartners[0]?.DualPricing_Second_Section_Description}
+        badge={communityBankPartners.data[0]?.DualPricing_Badge}
+        rightFeatures={communityBankPartners.data[0]?.DualPricing_Second_Section_Description}
       />
       <DualPricingKit />
       <Contact />

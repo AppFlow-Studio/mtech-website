@@ -4,6 +4,10 @@ import PricingSection from "@/components/products/PricingSection";
 import { Product } from "@/lib/types";
 import { client } from "@/sanity/lib/client";
 import Image from "next/image";
+import { defineQuery } from "next-sanity";
+import { sanityFetch } from '@/utils/sanity/lib/live'
+
+const options = { next: { revalidate: 30 } };
 
 const ingenicoProducts: Partial<Product>[] = [
   {
@@ -15,7 +19,7 @@ const ingenicoProducts: Partial<Product>[] = [
     inStock: true,
     tags: ["credit card terminals", "pos accessories"],
   },
-  {
+  { 
     name: "Ingenico Lane 3000 PIN Pad",
     description:
       "The Ingenico Lane 3000 is a robust and reliable PIN pad designed to enhance the checkout process in even the most demanding retail environments. It features a high-end, durable keypad that provides a comfortable and secure PIN entry experience for customers. Its compact design saves counter space, while its fast processor ensures transactions are completed quickly. The Lane 3000 supports all modern payment methods, making it a versatile and long-lasting addition to any integrated point-of-sale system.",
@@ -27,24 +31,25 @@ const ingenicoProducts: Partial<Product>[] = [
 ];
 
 async function page() {
-  const Ingenico = await client.fetch(
-    `*[_type == "POS_SYSTEM_TYPES" && POS_System_Link == "/ingenico"]`
-  );
+  const Ingenico = await sanityFetch({
+    query: defineQuery(`*[_type == "POS_SYSTEM_TYPES" && POS_System_Link == "/ingenico"]`),
+    ...options,
+  });
   console.log(Ingenico);
   return (
     <>
       <ProductHeroSection
-        title={Ingenico[0].POS_System_Header}
-        description={Ingenico[0].POS_System_Description}
-        image={Ingenico[0].POS_System_Image}
+        title={Ingenico.data[0].POS_System_Header}
+        description={Ingenico.data[0].POS_System_Description}
+        image={Ingenico.data[0].POS_System_Image}
         ctaText="Buy Our Products"
       />
       <ProductGridLayout
         title="Ingenico"
-        totalInitialProducts={Ingenico[0].POS_System_Items?.length || 0}
-        initialProducts={Ingenico[0].POS_System_Items as Product[]}
+            totalInitialProducts={Ingenico.data[0].POS_System_Items?.length || 0}
+        initialProducts={Ingenico.data[0].POS_System_Items as Product[]}
       />
-      <PricingSection pricingPlans={Ingenico[0].POS_System_Pricing_Plans} header={Ingenico[0].POS_System_Pricing_Header} description={Ingenico[0].POS_System_Pricing_Description} />
+      <PricingSection pricingPlans={Ingenico.data[0].POS_System_Pricing_Plans} header={Ingenico.data[0].POS_System_Pricing_Header} description={Ingenico.data[0].POS_System_Pricing_Description} />
     </>
   );
 }

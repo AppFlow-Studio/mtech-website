@@ -4,10 +4,13 @@ import PricingSection from "@/components/products/PricingSection";
 import RatesComparison from "@/components/products/RatesComparison";
 import { Product } from "@/lib/types";
 import Image from "next/image";
-import { client } from "@/sanity/lib/client";
 import SanityImage from "@/components/SanityImage";
 import { PortableText } from "@portabletext/react";
+import { defineQuery } from "next-sanity";
+import { sanityFetch } from '@/utils/sanity/lib/live'
 
+
+const options = { next: { revalidate: 30 } };
 
 
 const supersonicProducts: Partial<Product>[] = [
@@ -18,7 +21,7 @@ const supersonicProducts: Partial<Product>[] = [
     imageSrc: "/products/product-14.png",
     link: "supersonic-pos",
     inStock: true,
-    tags: ["pos system"],
+    tags: ["pos system", "credit card terminals"],
   },
   {
     name: "Supersonic Mach X Kiosk",
@@ -95,9 +98,10 @@ const supersonicProducts: Partial<Product>[] = [
 ];
 
 async function page() {
-  const SuperSonicPOS = await client.fetch(
-    `*[_type == "POS_SYSTEM_TYPES" && POS_System_Link == "/supersonic-pos"]`
-  );
+  const SuperSonicPOS = await sanityFetch({
+    query: defineQuery(`*[_type == "POS_SYSTEM_TYPES" && POS_System_Link == "/supersonic-pos"]`),
+    ...options,
+  });
   console.log(SuperSonicPOS);
   return (
     <>
@@ -112,7 +116,7 @@ async function page() {
                 text-gray-900 dark:text-white
               "
               >
-                {SuperSonicPOS[0].POS_System_Header}
+                {SuperSonicPOS.data[0].POS_System_Header}
               </h1>
               <p
                 className="
@@ -121,7 +125,7 @@ async function page() {
                 max-w-xl mx-auto lg:mx-0
               "
               >
-                <PortableText value={SuperSonicPOS[0].POS_System_Description} />
+                <PortableText value={SuperSonicPOS.data[0].POS_System_Description} />
               </p>
               <div className="mt-8">
                 <button
@@ -144,9 +148,9 @@ async function page() {
                 height={550} // Defines the aspect ratio
                 className="w-full h-auto"
               /> */}
-              <SanityImage 
-                image={SuperSonicPOS[0].POS_System_Image}
-                alt={SuperSonicPOS[0].POS_System_Header}
+              <SanityImage
+                image={SuperSonicPOS.data[0].POS_System_Image}
+                alt={SuperSonicPOS.data[0].POS_System_Header}
                 width={800}
                 height={550}
                 className="w-full h-auto"
@@ -157,10 +161,10 @@ async function page() {
       </section>
       <ProductGridLayout
         title="Supersonic POS"
-        totalInitialProducts={SuperSonicPOS[0].POS_System_Items.length || 0}
-        initialProducts={SuperSonicPOS[0].POS_System_Items as Product[]}
+        totalInitialProducts={SuperSonicPOS.data[0]?.POS_System_Items?.length || 0}
+        initialProducts={SuperSonicPOS.data[0]?.POS_System_Items as Product[]}
       />
-      <PricingSection pricingPlans={SuperSonicPOS[0].POS_System_Pricing_Plans} header={SuperSonicPOS[0].POS_System_Pricing_Header} description={SuperSonicPOS[0].POS_System_Pricing_Description} />
+      <PricingSection pricingPlans={SuperSonicPOS.data[0].POS_System_Pricing_Plans} header={SuperSonicPOS.data[0].POS_System_Pricing_Header} description={SuperSonicPOS.data[0].POS_System_Pricing_Description} />
       <RatesComparison />
       <HardwareSection />
     </>

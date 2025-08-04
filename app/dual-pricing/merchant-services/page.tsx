@@ -2,6 +2,8 @@ import DualPricingKit from "@/components/business-type/DualPricingKit";
 import Contact from "@/components/Contact";
 import DualPricingHero from "../components/DualPricingHero";
 import { client } from "@/sanity/lib/client";
+import { defineQuery } from "next-sanity";
+import { sanityFetch } from '@/utils/sanity/lib/live'
 
 // --- Data for the feature list ---
 const difference = [
@@ -26,20 +28,23 @@ const productAndServices = [
   "Mobile & Wireless",
 ];
 
+const options = { next: { revalidate: 30 } };
+
 async function MerchantServices() {
-  const merchantServices = await client.fetch(
-    `*[_type == "DualPricing" && DualPricing_Link == "/merchant-services"]`
-  );
+  const merchantServices = await sanityFetch({
+    query: defineQuery(`*[_type == "DualPricing" && DualPricing_Link == "/merchant-services"]`),
+    ...options,
+  });
   return (
     <>
       <DualPricingHero
         title="Merchant Services"
-        description={merchantServices[0]?.DualPricing_Description}
-        image={merchantServices[0]?.DualPricing_Image}
+        description={merchantServices.data[0]?.DualPricing_Description}
+        image={merchantServices.data[0]?.DualPricing_Image}
         useSanityImage={true}
         usePortableText={true}
-        badge={merchantServices[0]?.DualPricing_Badge}
-        rightFeatures={merchantServices[0]?.DualPricing_Second_Section_Description}
+        badge={merchantServices.data[0]?.DualPricing_Badge}
+        rightFeatures={merchantServices.data[0]?.DualPricing_Second_Section_Description}
       />
       <DualPricingKit />
       <Contact />

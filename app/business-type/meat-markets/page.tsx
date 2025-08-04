@@ -1,6 +1,8 @@
-import BusinessTypePage from "@/components/business-type/BusinessTypePage";   
+import BusinessTypePage from "@/components/business-type/BusinessTypePage";
 import { client } from "@/sanity/lib/client";
 import { Slide } from "@/lib/types";
+import { defineQuery } from "next-sanity";
+import { sanityFetch } from '@/utils/sanity/lib/live'
 
 const sliderData: Slide[] = [
   {
@@ -50,15 +52,18 @@ const sliderData: Slide[] = [
   },
 ];
 
+const options = { next: { revalidate: 30 } };
+
 async function page() {
-  const meatMarkets = await client.fetch(
-    `*[_type == "BUSINESS_TYPES" && business_type_link == "/meat-markets"]`
-  );
+  const meatMarkets = await sanityFetch({
+    query: defineQuery(`*[_type == "BUSINESS_TYPES" && business_type_link == "/meat-markets"]`),
+    ...options,
+  });
   if (!meatMarkets) {
     return <div>No data found</div>;
   }
   return (
-    <BusinessTypePage businessType={meatMarkets[0]} />
+    <BusinessTypePage businessType={meatMarkets.data[0]} />
   );
 }
 

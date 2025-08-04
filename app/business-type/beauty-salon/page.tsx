@@ -3,6 +3,8 @@ import Contact from "@/components/Contact";
 import { Slide } from "@/lib/types";
 import { client } from "@/sanity/lib/client";
 import BusinessTypePage from "@/components/business-type/BusinessTypePage";
+import { defineQuery } from "next-sanity";
+import { sanityFetch } from '@/utils/sanity/lib/live'
 
 const sliderData: Slide[] = [
   {
@@ -72,10 +74,13 @@ const sliderData: Slide[] = [
   },
 ];
 
+const options = { next: { revalidate: 30 } };
+
 async function page() {
-  const beautySalon = await client.fetch(
-    `*[_type == "BUSINESS_TYPES" && business_type_link == "/beauty-salon"]`
-  );
+  const beautySalon = await sanityFetch({
+    query: defineQuery(`*[_type == "BUSINESS_TYPES" && business_type_link == "/beauty-salon"]`),
+    ...options,
+  });
   if (!beautySalon) {
     return (
       <div className="container mx-auto px-4 py-16">
@@ -86,7 +91,7 @@ async function page() {
     )
   }
   return (
-    <BusinessTypePage businessType={beautySalon[0]} />
+    <BusinessTypePage businessType={beautySalon.data[0]} />
   )
 }
 

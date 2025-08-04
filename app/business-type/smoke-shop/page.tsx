@@ -3,6 +3,8 @@ import FeatureSlider from "@/components/business-type/FeatureSlider";
 import Contact from "@/components/Contact";
 import { Slide } from "@/lib/types";
 import { client } from "@/sanity/lib/client";
+import { defineQuery } from "next-sanity";
+import { sanityFetch } from '@/utils/sanity/lib/live'
 
 const sliderData: Slide[] = [
   {
@@ -63,15 +65,18 @@ const sliderData: Slide[] = [
   },
 ];
 
+const options = { next: { revalidate: 30 } };
+
 async function page() {
-  const smokeShop = await client.fetch(
-    `*[_type == "BUSINESS_TYPES" && business_type_link == "/smoke-shop"]`
-  );
+  const smokeShop = await sanityFetch({
+    query: defineQuery(`*[_type == "BUSINESS_TYPES" && business_type_link == "/smoke-shop"]`),
+    ...options,
+  });
   if (!smokeShop) {
     return <div>No data found</div>;
   }
   return (
-    <BusinessTypePage businessType={smokeShop[0]} />
+    <BusinessTypePage businessType={smokeShop.data[0]} />
   );
 }
 

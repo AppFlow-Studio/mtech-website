@@ -1,11 +1,16 @@
 import BusinessTypePage from "@/components/business-type/BusinessTypePage";
 import { client } from "@/sanity/lib/client";
+import { sanityFetch } from '@/utils/sanity/lib/live'
+import { defineQuery } from "next-sanity";
+
+const options = { next: { revalidate: 30 } };
 
 async function page() {
   // Fetch business type data from Sanity
-  const businessType = await client.fetch(
-    `*[_type == "BUSINESS_TYPES" && business_type_link == "/business-type"]`
-  );
+  const businessType = await sanityFetch({
+    query: defineQuery(`*[_type == "BUSINESS_TYPES" && business_type_link == "/business-type"]`),
+    ...options,
+  });
 
   // If no data found, you might want to handle this case
   if (!businessType) {
@@ -16,9 +21,9 @@ async function page() {
         </h1>
       </div>
     );
-  }
+  }   
 
-  return <BusinessTypePage businessType={businessType[0]} />;
+  return <BusinessTypePage businessType={businessType.data[0]} />;
 }
 
 export default page;

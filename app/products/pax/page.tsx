@@ -1,10 +1,13 @@
 import ProductGridLayout from "@/components/ProductGridLayout";
 import { Product } from "@/lib/types";
 import Image from "next/image";
-import { client } from "@/sanity/lib/client";
 import SanityImage from "@/components/SanityImage";
 import PricingSection from "@/components/products/PricingSection";
 import { PortableText } from "@portabletext/react";
+import { defineQuery } from "next-sanity";
+import { sanityFetch } from '@/utils/sanity/lib/live'
+
+const options = { next: { revalidate: 30 } };
 
 
 const paxProducts: Partial<Product>[] = [
@@ -92,9 +95,10 @@ const paxProducts: Partial<Product>[] = [
 ];
 
 async function page() {
-  const PAX = await client.fetch(
-    `*[_type == "POS_SYSTEM_TYPES" && POS_System_Link == "/pax"]`
-  );
+  const PAX = await sanityFetch({
+    query: defineQuery(`*[_type == "POS_SYSTEM_TYPES" && POS_System_Link == "/pax"]`),
+    ...options,
+  });
   return (
     <>
       <section className="py-8 sm:py-12">
@@ -108,7 +112,7 @@ async function page() {
                 text-gray-900 dark:text-white
               "
               >
-                {PAX[0].POS_System_Header}
+                {PAX.data[0].POS_System_Header}
               </h1>
               <p
                 className="
@@ -117,7 +121,7 @@ async function page() {
                 max-w-xl mx-auto lg:mx-0
               "
               >
-                <PortableText value={PAX[0].POS_System_Description} />
+                <PortableText value={PAX.data[0].POS_System_Description} />
               </p>
               <div className="mt-8">
                 <button
@@ -140,9 +144,9 @@ async function page() {
                 height={550} // Defines the aspect ratio
                 className="w-full h-auto"
               /> */}
-              <SanityImage 
-                image={PAX[0].POS_System_Image}
-                alt={PAX[0].POS_System_Header}
+              <SanityImage
+                image={PAX.data[0].POS_System_Image}
+                alt={PAX.data[0].POS_System_Header}
                 width={800}
                 height={550}
                 className="w-full h-auto"
@@ -153,10 +157,10 @@ async function page() {
       </section>
       <ProductGridLayout
         title="PAX"
-        totalInitialProducts={PAX[0].POS_System_Items?.length || 0}
-        initialProducts={PAX[0].POS_System_Items as Product[]}
+                totalInitialProducts={PAX.data[0].POS_System_Items?.length || 0}
+        initialProducts={PAX.data[0].POS_System_Items as Product[]}
       />
-      <PricingSection pricingPlans={PAX[0].POS_System_Pricing_Plans} header={PAX[0].POS_System_Pricing_Header} description={PAX[0].POS_System_Pricing_Description} />
+      <PricingSection pricingPlans={PAX.data[0].POS_System_Pricing_Plans} header={PAX.data[0].POS_System_Pricing_Header} description={PAX.data[0].POS_System_Pricing_Description} />
     </>
   );
 }
