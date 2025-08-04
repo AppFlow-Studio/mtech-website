@@ -19,5 +19,6 @@ export const schemaTypes = [
     POSSystemTypes,
     ProductsPages,
     ATMSolutions,
-    BusinessTypes
+    DualPricing,
+    BusinessTypes,
 ]

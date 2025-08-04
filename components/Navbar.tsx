@@ -163,7 +163,7 @@ const Navbar = () => {
             {/* Logo */}
             <div className="flex-shrink-0 flex items-center">
               <Link href="/">
-                <img src="/logo.png" alt="Logo" className="h-16 w-auto" />
+                {theme === "dark" ? <img src="/logo.png" alt="Logo" className="h-16 w-auto" /> : <img src="/MtechDistributorsLogo.png" alt="Logo" className="h-16 w-auto" />}
               </Link>
             </div>
 
