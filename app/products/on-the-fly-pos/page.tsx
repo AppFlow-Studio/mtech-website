@@ -1,32 +1,30 @@
 import HardwareSection from "@/components/HardwareSection";
 import ProductGridLayout from "@/components/ProductGridLayout";
+import ProductHeroSection from "@/components/ProductHeroSection";
 import PricingSection from "@/components/products/PricingSection";
 import RatesComparison from "@/components/products/RatesComparison";
 import { Product } from "@/lib/types";
+import { client } from "@/sanity/lib/client";
 
-const onTheFlyPosProducts: Product[] = [
-  {
-    name: "On The Fly POS",
-    description:
-      "On The Fly POS is a dynamic and intuitive point-of-sale system specifically tailored for fast-paced hospitality environments. It is the best choice for businesses such as bars, coffee shops, quick-service restaurants, and pizzerias where speed and accuracy are paramount. The system is designed to handle complex ordering, rapid payments, and efficient kitchen communication, helping to turn tables faster and improve customer service. With its user-friendly interface and industry-specific features, On The Fly POS helps streamline operations from the front of house to the back.",
-    imageSrc: "/products/product-29.png",
-    link: "on-the-fly-pos",
-    inStock: true,
-    tags: ["pos system"],
-  },
-];
-
-function page() {
+async function page() {
+  const OnTheFlyPos = await client.fetch(
+    `*[_type == "POS_SYSTEM_TYPES" && POS_System_Link == "/on-the-fly-pos"]`
+  );
+  console.log(OnTheFlyPos);
   return (
     <>
+      <ProductHeroSection
+        title={OnTheFlyPos[0]?.POS_System_Header}
+        description={OnTheFlyPos[0]?.POS_System_Description}
+        image={OnTheFlyPos[0]?.POS_System_Image}
+        ctaText="Buy Our Products"
+      />
       <ProductGridLayout
         title="On the Fly POS"
-        totalInitialProducts={onTheFlyPosProducts.length}
-        initialProducts={onTheFlyPosProducts}
+        totalInitialProducts={OnTheFlyPos[0]?.POS_System_Items?.length || 0}
+        initialProducts={OnTheFlyPos[0]?.POS_System_Items as Product[] || []}
       />
-      <PricingSection />
-      <RatesComparison />
-      <HardwareSection />
+      <PricingSection pricingPlans={OnTheFlyPos[0]?.POS_System_Pricing_Plans} header={OnTheFlyPos[0]?.POS_System_Pricing_Header} description={OnTheFlyPos[0]?.POS_System_Pricing_Description} />
     </>
   );
 }

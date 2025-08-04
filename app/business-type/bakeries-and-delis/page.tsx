@@ -1,6 +1,8 @@
 import FeatureSlider from "@/components/business-type/FeatureSlider";
 import Contact from "@/components/Contact";
 import { Slide } from "@/lib/types";
+import { client } from "@/sanity/lib/client";
+import BusinessTypePage from "@/components/business-type/BusinessTypePage";
 
 const sliderData: Slide[] = [
   {
@@ -57,30 +59,22 @@ const sliderData: Slide[] = [
   },
 ];
 
-function page() {
-  return (
-    <>
-      <section className="py-16 sm:py-24 overflow-hidden">
-        <div className="container mx-auto px-4">
-          {/* Section Header */}
-          <div className="text-center max-w-3xl mx-auto">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
-              Bakeries and Delis
-            </h2>
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
-              Bakeries and Delis are specialty food service establishments that
-              offer freshly prepared items such as breads, pastries, sandwiches,
-              meats, cheeses, and ready-to-eat meals. Bakeries focus on baked
-              goods like cakes, cookies, and artisan breads, while delis serve
-              sliced meats, cheeses, salads, and made-to-order sandwiches.
-            </p>
-          </div>
-        </div>
-        <FeatureSlider sliderData={sliderData} />
-      </section>
-      <Contact />
-    </>
+async function page() {
+  const bakeriesAndDelis = await client.fetch(
+    `*[_type == "BUSINESS_TYPES" && business_type_link == "/bakeries-and-delis"]`
   );
+  if (!bakeriesAndDelis) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Bakeries and Delis not found
+        </h1>
+      </div>
+    )
+  }
+  return (
+    <BusinessTypePage businessType={bakeriesAndDelis[0]} />
+  )
 }
 
 export default page;

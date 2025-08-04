@@ -5,6 +5,10 @@ import { TestimonialTypes } from './TestimonialTypes'
 import { ReturnPolicyType } from './ReturnPolicy'
 import { RateCardsType } from './RateCards'
 import { POSSystemTypes } from './POSSystemTypes'
+import { ProductsPages } from './ProductsPages'
+import { ATMSolutions } from './ATMSolutions'
+import { DualPricing } from './DualPricing'
+import { BusinessTypes } from './BusinessTypes'
 export const schemaTypes = [
     HomePageType,
     FooterType,
@@ -12,5 +16,8 @@ export const schemaTypes = [
     TestimonialTypes,
     ReturnPolicyType,
     RateCardsType,
-    POSSystemTypes
+    POSSystemTypes,
+    ProductsPages,
+    ATMSolutions,
+    BusinessTypes
 ]

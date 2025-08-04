@@ -12,7 +12,7 @@ interface SanityImageProps {
   // You can add more props like sizes, quality, etc.
 }
 
-export default function SanityImage({ image, alt, className, width = 800, height = 600 }: SanityImageProps) {
+export default function SanityImage({ image, alt, className, width = 800, height = 600, }: SanityImageProps) {
   if (!image) {
     return null; // Or return a placeholder image
   }

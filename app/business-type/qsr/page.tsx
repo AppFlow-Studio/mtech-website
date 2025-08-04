@@ -1,6 +1,6 @@
-import FeatureSlider from "@/components/business-type/FeatureSlider";
-import Contact from "@/components/Contact";
+import BusinessTypePage from "@/components/business-type/BusinessTypePage";
 import { Slide } from "@/lib/types";
+import { client } from "@/sanity/lib/client";
 
 const sliderData: Slide[] = [
   {
@@ -51,30 +51,15 @@ const sliderData: Slide[] = [
   },
 ];
 
-function page() {
+async function page() {
+  const qsr = await client.fetch(
+    `*[_type == "BUSINESS_TYPES" && business_type_link == "/qsr"]`
+  );
+  if (!qsr) {
+    return <div>No data found</div>;
+  }
   return (
-    <>
-      <section className="py-16 sm:py-24 overflow-hidden">
-        <div className="container mx-auto px-4">
-          {/* Section Header */}
-          <div className="text-center max-w-3xl mx-auto">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
-              QSR / Food & Beverage
-            </h2>
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
-              QSR (Quick Service Restaurants) and Food & Beverage businesses
-              focus on delivering fast, convenient, and consistent meals,
-              snacks, and drinks to customers on the go. This category includes
-              fast food chains, cafés, food trucks, juice bars, and casual
-              dining spots where speed, efficiency, and customer satisfaction
-              are key.
-            </p>
-          </div>
-        </div>
-        <FeatureSlider sliderData={sliderData} />
-      </section>
-      <Contact />
-    </>
+    <BusinessTypePage businessType={qsr[0]} />
   );
 }
 

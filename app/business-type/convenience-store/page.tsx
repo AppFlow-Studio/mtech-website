@@ -1,6 +1,8 @@
 import FeatureSlider from "@/components/business-type/FeatureSlider";
 import Contact from "@/components/Contact";
 import { Slide } from "@/lib/types";
+import { client } from "@/sanity/lib/client";
+import BusinessTypePage from "@/components/business-type/BusinessTypePage";
 
 const sliderData: Slide[] = [
   {
@@ -71,31 +73,21 @@ const sliderData: Slide[] = [
   },
 ];
 
-function page() {
-  return (
-    <>
-      <section className="py-16 sm:py-24 overflow-hidden">
-        <div className="container mx-auto px-4">
-          {/* Section Header */}
-          <div className="text-center max-w-3xl mx-auto">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
-              Convenience Store
-            </h2>
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
-              A Convenience Store is a small retail business that offers a wide
-              range of everyday items in a quick and accessible format.
-              Typically open for extended hours or 24/7, these stores provide
-              essential products such as snacks, beverages, tobacco, lottery
-              tickets, household goods, over-the-counter medications, and basic
-              groceries.
-            </p>
-          </div>
-        </div>
-        <FeatureSlider sliderData={sliderData} />
-      </section>
-      <Contact />
-    </>
+async function page() {
+  const convenienceStore = await client.fetch(
+    `*[_type == "BUSINESS_TYPES" && business_type_link == "/convenience-store"]`
   );
+  if (!convenienceStore) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Convenience Store not found
+        </h1>
+      </div>
+    )
+  }
+  return (
+    <BusinessTypePage businessType={convenienceStore[0]} />
+  )
 }
-
 export default page;

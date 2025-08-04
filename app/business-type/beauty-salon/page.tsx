@@ -1,6 +1,8 @@
 import FeatureSlider from "@/components/business-type/FeatureSlider";
 import Contact from "@/components/Contact";
 import { Slide } from "@/lib/types";
+import { client } from "@/sanity/lib/client";
+import BusinessTypePage from "@/components/business-type/BusinessTypePage";
 
 const sliderData: Slide[] = [
   {
@@ -70,30 +72,23 @@ const sliderData: Slide[] = [
   },
 ];
 
-function page() {
-  return (
-    <>
-      <section className="py-16 sm:py-24 overflow-hidden">
-        <div className="container mx-auto px-4">
-          {/* Section Header */}
-          <div className="text-center max-w-3xl mx-auto">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
-              Beauty Salon
-            </h2>
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
-              Beauty Salons are professional service establishments dedicated to
-              enhancing personal appearance and well-being through a range of
-              cosmetic and grooming treatments. Services often include haircuts,
-              styling, coloring, manicures, pedicures, facials, waxing, and
-              skincare treatments
-            </p>
-          </div>
-        </div>
-        <FeatureSlider sliderData={sliderData} />
-      </section>
-      <Contact />
-    </>
+async function page() {
+  const beautySalon = await client.fetch(
+    `*[_type == "BUSINESS_TYPES" && business_type_link == "/beauty-salon"]`
   );
+  if (!beautySalon) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Beauty Salon not found
+        </h1>
+      </div>
+    )
+  }
+  return (
+    <BusinessTypePage businessType={beautySalon[0]} />
+  )
 }
+
 
 export default page;

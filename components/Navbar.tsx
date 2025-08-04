@@ -65,7 +65,6 @@ const Navbar = () => {
         { name: "On The Fly POS", href: "/products/on-the-fly-pos" },
         { name: "Parts", href: "/products/parts" },
         { name: "PAX", href: "/products/pax" },
-        { name: "POS Parts", href: "/products/pos-parts" },
         { name: "Stands", href: "/products/stands" },
         { name: "Supersonic POS", href: "/products/supersonic-pos" },
         { name: "Valor", href: "/products/valor" },
@@ -142,6 +141,9 @@ const Navbar = () => {
     },
   ];
 
+  const handleLinkClick = () => {
+    setMobileMenuOpen(false)
+  }
   return (
     <div>
       <nav className="shadow-lg duration-300">
@@ -283,9 +285,10 @@ const Navbar = () => {
               {/* Navigation Items */}
               {menuItems.map((item, index) => (
                 <div key={index}>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between" >
                     <Link
                       href={item.href}
+                      onClick={handleLinkClick}
                       className={`flex-1 px-3 py-2 text-left rounded-md transition-colors duration-200 ${isActive(item.href)
                         ? "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/50"
                         : "text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900 hover:text-purple-600 dark:hover:text-purple-400"
@@ -315,6 +318,7 @@ const Navbar = () => {
                           <Link
                             key={dropdownIndex}
                             href={dropdownItem.href}
+                            onClick={handleLinkClick}
                             className={`block px-3 py-2 text-sm rounded-md transition-colors duration-200 ${isActive(dropdownItem.href)
                               ? "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/50"
                               : "text-gray-600 dark:text-gray-400 hover:bg-purple-50 dark:hover:bg-purple-900 hover:text-purple-600 dark:hover:text-purple-400"

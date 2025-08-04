@@ -9,6 +9,9 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { Slide } from "@/lib/types";
+import SanityImage from "../SanityImage";
+import { PortableText, PortableTextComponents } from "@portabletext/react";
+import { urlFor } from "@/sanity/lib/image";
 
 interface FeatureSliderProps {
   sliderData: Slide[];
@@ -89,6 +92,17 @@ const FeatureSlider = ({ sliderData }: FeatureSliderProps) => {
     };
   }, [sliderData]);
 
+  const components: PortableTextComponents = {
+    block: {
+      normal: ({ children }) => (
+        <p className="mt-2 text-gray-600 dark:text-gray-400 text-sm">
+          {children}
+        </p>
+      ),
+
+    },
+  };
+
   return (
     <div className="mt-16">
       <style jsx>{`
@@ -98,29 +112,45 @@ const FeatureSlider = ({ sliderData }: FeatureSliderProps) => {
       `}</style>
 
       <Slider {...settings}>
-        {sliderData.map((slide, index) => (
+        {sliderData?.map((slide, index) => (
           <div key={index} className="px-2 md:px-4">
             <div
               ref={(el) => {
                 slideRefs.current[index] = el;
               }}
-              className={`p-8 rounded-2xl flex flex-col bg-[#FAFAFA] dark:bg-[#231A30] shadow-xl ${
-                isHeightCalculated ? "equal-height-slide" : ""
-              }`}
+              className={`p-8 rounded-2xl flex flex-col bg-[#FAFAFA] dark:bg-[#231A30] shadow-xl ${isHeightCalculated ? "equal-height-slide" : ""
+                }`}
             >
               <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden">
-                <Image
+                {slide.imageSrc && typeof slide.imageSrc === 'string' && <Image
                   src={slide.imageSrc}
                   alt={slide.title}
                   layout="fill"
                   objectFit="cover"
-                />
+                />}
+                {
+                  slide.imageSrc && typeof slide.imageSrc === 'object' &&
+                  <Image
+                    src={urlFor(slide.imageSrc).url()} // Generate the image URL
+                    // You can define width and height here if you want fixed dimensions,
+                    // otherwise, let Next.js handle responsiveness via `sizes`
+                    // width={width}
+                    // height={height}
+                    alt={slide.title}
+                    layout="fill"
+                    objectFit="cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 40vw" // Example sizes, adjust for your layout
+                    placeholder="blur" // Enable blur placeholder
+                    blurDataURL={urlFor(slide.imageSrc).width(24).height(24).blur(10).url()} // Low-quality blurred image for placeholder
+
+                  />
+                }
               </div>
               <h3 className="text-3xl font-bold mt-6 text-gray-900 dark:text-white">
                 {slide.title}
               </h3>
               <p className="mt-2 text-gray-600 dark:text-gray-400">
-                {slide.description}
+                {typeof slide.description === 'string' ? slide.description : <PortableText value={slide.description} components={components} />}
               </p>
               <ul className="mt-6 space-y-4">
                 {slide.features.map((feature) => (
