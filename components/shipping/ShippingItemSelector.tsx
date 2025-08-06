@@ -41,13 +41,15 @@ interface ShippingItemSelectorProps {
     onClose: () => void;
     orderItems: OrderItem[];
     onRateSelected?: (rate: any, selectedItems: OrderItem[]) => void;
+    order_shipping_address: any;
 }
 
 export default function ShippingItemSelector({
     isOpen,
     onClose,
     orderItems,
-    onRateSelected
+    onRateSelected,
+    order_shipping_address
 }: ShippingItemSelectorProps) {
     const [selectedItems, setSelectedItems] = useState<OrderItem[]>([]);
     const [showRateCalculator, setShowRateCalculator] = useState(false);
@@ -84,9 +86,9 @@ export default function ShippingItemSelector({
 
     const handleRateSelected = (rate: any) => {
         onRateSelected?.(rate, selectedItems);
-        setShowRateCalculator(false);
-        onClose();
-        toast.success(`Shipping rate selected for ${selectedItems.length} item(s)`);
+        // setShowRateCalculator(false);
+        // onClose();
+        // toast.success(`Shipping rate selected for ${selectedItems.length} item(s)`);
     };
 
     const totalWeight = selectedItems.reduce((sum, item) => {
@@ -244,6 +246,7 @@ export default function ShippingItemSelector({
                 onClose={() => setShowRateCalculator(false)}
                 selectedItems={selectedItems}
                 onRateSelected={handleRateSelected}
+                order_shipping_address={order_shipping_address}
             />
         </>
     );

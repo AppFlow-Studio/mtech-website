@@ -26,7 +26,11 @@ import OrderNotes from '../[order_id]/components/OrderNotes';
 import OrderAuditLog from '../[order_id]/components/OrderAuditLog';
 import CreateReturnDialog from '../[order_id]/components/CreateReturnDialog';
 import ShippingItemSelector from '@/components/shipping/ShippingItemSelector';
-// 
+import { Label } from '@/components/ui/label';
+import Autocomplete from "react-google-autocomplete";
+import { parseAddress } from '@/utils/parse-address';
+import { cn } from '@/lib/utils';
+
 const statusOptions = [
     { value: "submitted", label: "Submitted" },
     { value: "approved", label: "Approved" },
@@ -39,6 +43,7 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
         queryKey: ['order', params.order_id],
         queryFn: () => GetOrderInfo(params.order_id),
     })
+    const [shippingAddress, setShippingAddress] = useState(OrderInfo.shipping_address);
     const [editStatus, setEditStatus] = useState(false);
     const [status, setStatus] = useState(OrderInfo.status);
     const [editNotes, setEditNotes] = useState(false);
@@ -76,6 +81,17 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
         const c = config[status] || config.draft;
         return <Badge className={`${c.color} font-medium`}>{c.label}</Badge>;
     }
+    const handlePlaceSelected = (place: any) => {
+        const parsedAddress = parseAddress(place.address_components);
+        setShippingAddress(prev => ({
+            ...prev,
+            formatted_address: parsedAddress.formatted_address,
+            apartment_suite: parsedAddress.apartment_suite || '',
+            city: parsedAddress.city || '',
+            state: parsedAddress.state || '',
+            zip_code: parsedAddress.zip_code || ''
+        }));
+    };
     function formatDate(date: string) {
         return new Date(date).toLocaleString("en-US", {
             month: "short",
@@ -127,6 +143,14 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
             setIsAssigning(false);
         }
     };
+
+    const handleAddressInputChange = (field: keyof Address, value: string) => {
+        setShippingAddress(prev => ({
+            ...prev,
+            [field]: value
+        }));
+    };
+
 
     if (OrderInfoLoading) {
         return (
@@ -248,7 +272,7 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
                             </div>
                             <div>
                                 <span className="text-sm font-medium">Order Total:</span>
-                                <span className="ml-2 text-lg font-bold text-green-700">${totalWithTax}</span>
+                                <span className="ml-2 text-lg font-bold text-green-700">${totalWithTax.toFixed(2)}</span>
                             </div>
                             {/* Order Assignment Section */}
                             <div className="border-t border-border pt-4 mt-4">
@@ -310,6 +334,7 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
                 </Card>
                 <OrderNotes orderId={params.order_id} />
             </div>
+
             {/* Tabs Section */}
             <Card className="animate-in fade-in-0 slide-in-from-bottom-2">
                 <CardHeader>
@@ -346,7 +371,7 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
                     </div>
                 </CardContent>
             </Card>
-
+            
             <OrderAuditLog orderId={params.order_id} />
 
             {/* Delete Order Dialog */}
@@ -404,6 +429,7 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
                 isOpen={showShippingSelector}
                 onClose={() => setShowShippingSelector(false)}
                 orderItems={OrderInfo.order_items}
+                order_shipping_address={shippingAddress}
                 onRateSelected={(rate, selectedItems) => {
                     console.log('Selected rate:', rate);
                     console.log('Selected items:', selectedItems);

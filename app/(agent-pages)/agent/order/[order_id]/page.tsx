@@ -13,6 +13,7 @@ import AddressEditModal from '@/components/AddressEditModal';
 import { toast } from 'sonner';
 import { UpdateOrderShippingAddress } from '../../../actions/update-order-shipping-address';
 import { submitOrder } from '@/app/(agent-pages)/actions/submit-order';
+import { useProfile } from '@/lib/hooks/useProfile';
 
 function statusBadge(status: string) {
     const config: Record<string, { color: string; label: string }> = {
@@ -40,7 +41,7 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
         queryKey: ['order', params.order_id],
         queryFn: () => GetOrderInfo(params.order_id),
     });
-    console.log('Agent Order Details Page', OrderInfo)
+    const { profile } = useProfile();
     const router = useRouter();
     const [showApprovalDialog, setShowApprovalDialog] = useState(false);
     const [showAddressModal, setShowAddressModal] = useState(false);
@@ -64,7 +65,7 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
     };
     const handleSubmitOrderForApproval = async () => {
         setIsSubmittingOrder(true);
-        const response = await submitOrder(params.order_id, OrderInfo.agent.id, OrderInfo.order_name, OrderInfo.notes, OrderInfo.order_items, OrderInfo.order_confirmation_number);
+        const response = await submitOrder(params.order_id, profile, OrderInfo.order_name, OrderInfo.notes, OrderInfo.order_items, OrderInfo.order_confirmation_number);
         if (response) {
             toast.success('Order submitted for approval successfully!');
             refetchOrderInfo();
