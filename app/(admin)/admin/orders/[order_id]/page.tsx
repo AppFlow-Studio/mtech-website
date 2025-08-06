@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
-import { CheckCircle, Loader2, Pencil, Plus, Trash2, UserCheck, Users, AlertTriangle } from 'lucide-react';
+import { CheckCircle, Loader2, Pencil, Plus, Trash2, UserCheck, Users, AlertTriangle, Truck } from 'lucide-react';
 import OrderItemCard from '@/app/(master-admin)/master-admin/orders/[order_id]/OrderItemCard';
 import { OrderItems } from '@/lib/types';
 import { UpdateOrderItem } from '@/app/(master-admin)/master-admin/actions/order-actions/update-order-item';
@@ -22,6 +22,7 @@ import { DeleteOrder } from '@/app/(master-admin)/master-admin/actions/order-act
 import { useQueryClient } from '@tanstack/react-query';
 import OrderProductShopping from '@/app/(master-admin)/master-admin/components/OrderProductShopping';
 import { ConfirmOrder } from '@/app/(admin)/actions/confirm-order';
+import ShippingItemSelector from '@/components/shipping/ShippingItemSelector';
 const statusOptions = [
     { value: "submitted", label: "Submitted" },
     { value: "approved", label: "Approved" },
@@ -42,6 +43,7 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [showAddItemDialog, setShowAddItemDialog] = useState(false);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+    const [showShippingSelector, setShowShippingSelector] = useState(false);
     const [editAssignment, setEditAssignment] = useState(false);
     const [assignedTo, setAssignedTo] = useState(OrderInfo.admin_assigned || '');
     const [isAssigning, setIsAssigning] = useState(false);
@@ -185,7 +187,6 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
                 </CardHeader>
                 <CardContent className="flex flex-col md:flex-row gap-8">
                     {/* Order Status Notification */}
-       
 
                     {/* Agent Info */}
                     <div className="w-full md:w-1/3 bg-muted/40 rounded-lg p-4 flex flex-col gap-2 animate-in fade-in-0 slide-in-from-left-2">
@@ -355,13 +356,17 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
                                 key={item.id}
                                 item={item}
                                 order_id={params.order_id}
+                                agentTierId={OrderInfo.agent?.agent_tiers?.id}
                                 refetchOrderInfo={async () => {
                                     await queryClient.invalidateQueries({ queryKey: ['order', params.order_id] });
                                 }}
                             />
                         ))}
                     </div>
-                    <div className="flex justify-end mt-6">
+                    <div className="flex justify-end gap-2 mt-6">
+                        <Button variant="outline" onClick={() => setShowShippingSelector(true)}>
+                            <Truck className="h-4 w-4 mr-1" /> Get Shipping Rates
+                        </Button>
                         <Button variant="outline" onClick={() => setShowAddItemDialog(true)}>
                             <Plus className="h-4 w-4 mr-1" /> Add Products
                         </Button>
@@ -497,6 +502,19 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
                     </div>
                 </DialogContent>
             </Dialog>
+
+            {/* Shipping Item Selector */}
+            <ShippingItemSelector
+                isOpen={showShippingSelector}
+                onClose={() => setShowShippingSelector(false)}
+                orderItems={OrderInfo.order_items}
+                onRateSelected={(rate, selectedItems) => {
+                    console.log('Selected rate:', rate);
+                    console.log('Selected items:', selectedItems);
+                    // TODO: Handle the selected rate - could save to database, update order, etc.
+                    toast.success(`Shipping rate selected: ${rate.serviceName} - $${rate.ratedShipmentDetails[0].totalNetCharge.amount}`);
+                }}
+            />
         </div>
     )
 }

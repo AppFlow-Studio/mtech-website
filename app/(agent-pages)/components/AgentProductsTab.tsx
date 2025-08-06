@@ -1,14 +1,19 @@
 'use client'
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Star, Search, Package, DollarSign, Plus, ShoppingCart } from "lucide-react"
+import { Star, Search, Package, DollarSign, Plus, ShoppingCart, X, Save, Trash2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { useProfile } from "@/lib/hooks/useProfile"
 import { useGetAgentById, useGetAgentProducts } from "@/app/(master-admin)/master-admin/actions/AgentStore"
 import { toast } from "sonner"
 import ProductCardWithDialog from "./ProductCardWithDialog"
+import { motion, AnimatePresence } from "framer-motion"
+// Removed global cart store - now using header cart as single source of truth
+import { syncOrderItems } from "../actions/sync-order-items"
+import { createOrderWithItems } from "../actions/create-order-with-items"
+import { useProfile } from "@/lib/hooks/useProfile"
+import CreateOrderWithCartDialog from "./CreateOrderWithCartDialog"
 const tags = [
     "atm parts",
     "pos parts",
@@ -23,16 +28,90 @@ const tags = [
 export default function AgentProductsTab({
     agent_id,
     addToCart,
-    selectedInquiryForCart
+    selectedInquiryForCart,
+    setSelectedInquiryForCart,
+    cartItems,
+    removeFromCart,
+    updateQuantity
 }: {
     agent_id: string
     addToCart?: (product: any) => void
     selectedInquiryForCart?: any
+    setSelectedInquiryForCart?: (inquiry: any) => void
+    cartItems?: any[]
+    removeFromCart?: (productId: string) => void
+    updateQuantity?: (productId: string, quantity: number) => void
 }) {
     const { data: agent, isLoading: isAgentLoading } = useGetAgentProducts(agent_id)
     const [productSearchTerm, setProductSearchTerm] = useState("")
     const [categoryFilter, setCategoryFilter] = useState("all")
     const [selectedTags, setSelectedTags] = useState<string[]>([])
+    // Using header cart as single source of truth instead of global cart store
+    const { profile } = useProfile()
+    const [isStickyCartVisible, setIsStickyCartVisible] = useState(false)
+    const [isSaving, setIsSaving] = useState(false)
+    const [showNewOrderDialog, setShowNewOrderDialog] = useState(false)
+
+    // Handle scroll for sticky cart
+    useEffect(() => {
+        const handleScroll = () => {
+            const scrollY = window.scrollY
+            const headerHeight = 150 // Reduced threshold for better UX
+            setIsStickyCartVisible(scrollY > headerHeight && getTotalCartItems() > 0)
+        }
+
+        window.addEventListener('scroll', handleScroll, { passive: true })
+        return () => window.removeEventListener('scroll', handleScroll)
+    }, [cartItems]) // Re-run when header cart changes
+
+    const onSaveCart = async () => {
+        if (getTotalCartItems() === 0) {
+            toast.error('No items to save')
+            return
+        }
+        setIsSaving(true)
+        try {
+            const headerCartItems = getCartItems()
+
+            // If we have a selectedInquiryForCart, add items to that order
+            if (selectedInquiryForCart) {
+                const orders_items = headerCartItems.map((item: any) => ({
+                    order_id: selectedInquiryForCart.id,
+                    product_id: item.id,
+                    quantity: Number(item.quantity),
+                    price_at_order: item.price
+                }))
+                console.log('Orders Items', orders_items)
+                const result = await syncOrderItems(selectedInquiryForCart.id, orders_items)
+                if (result instanceof Error) {
+                    toast.error('Failed to add cart items to order',
+                        {
+                            description: result.message
+                        }
+                    )
+                    return
+                }
+                toast.success('Cart items added to order successfully!')
+                // Clear the header cart
+                if (removeFromCart) {
+                    headerCartItems.forEach((item: any) => {
+                        removeFromCart(item.id)
+                    })
+                }
+                if (setSelectedInquiryForCart) {
+                    setSelectedInquiryForCart(null)
+                }
+            } else {
+                // No order selected, open the CreateOrderWithCartDialog
+                setShowNewOrderDialog(true)
+            }
+        } catch (error) {
+            console.error('Error saving cart:', error)
+            toast.error('Failed to save cart')
+        } finally {
+            setIsSaving(false)
+        }
+    }
 
     if (isAgentLoading) {
         return (
@@ -75,6 +154,51 @@ export default function AgentProductsTab({
         setSelectedTags([])
     }
 
+    // Cart management functions using header cart (single source of truth)
+    const getTotalCartItems = () => {
+        return cartItems?.reduce((total, item) => total + (item.quantity || 1), 0) || 0
+    }
+
+    const getCartItemCount = (productId: string) => {
+        const item = cartItems?.find((item: any) => item.id === productId)
+        return item ? item.quantity : 0
+    }
+
+    const getCartTotal = () => {
+        return cartItems?.reduce((total, item: any) => {
+            return total + ((item.price || 0) * (item.quantity || 1))
+        }, 0) || 0
+    }
+
+    const getCartItems = () => {
+        // Return cart items directly from header cart
+        return cartItems || []
+    }
+
+    const addToCartLocal = (productId: string, productName: string) => {
+        const agentProduct = agent?.agent_tiers?.agent_product_prices?.find((ap: any) => ap.products.id === productId)
+        if (agentProduct && addToCart) {
+            const productForCart = {
+                id: agentProduct.products.id,
+                name: agentProduct.products.name,
+                description: agentProduct.products.description,
+                price: agentProduct.price,
+                imageSrc: agentProduct.products.imageSrc,
+                regularPrice: agentProduct.products.default_price,
+                tags: agentProduct.products.tags,
+                inStock: agentProduct.products.inStock
+            }
+            addToCart(productForCart)
+            console.log('Added to header cart:', productForCart)
+            console.log('Current header cart:', cartItems)
+            toast.success(`${productName} added to cart`)
+        }
+    }
+
+    // Removed removeFromCartLocal - now using header cart removeFromCart function
+
+
+
     const filteredProducts = agent?.agent_tiers?.agent_product_prices?.filter((agent_product: any) => {
         // Text search filter
         const matchesSearch = agent_product.products.name.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
@@ -91,22 +215,10 @@ export default function AgentProductsTab({
     })
 
     const handleAddToCart = (agent_product: any) => {
-        console.log(agent_product)
-        if (addToCart) {
-            const productForCart = {
-                id: agent_product.id,
-                name: agent_product.name,
-                description: agent_product.description,
-                price: agent_product.price,
-                imageSrc: agent_product.imageSrc,
-                regularPrice: agent_product.default_price,
-                category: agent_product.category,
-                tags: agent_product.tags,
-                inStock: agent_product.inStock
-            }
-            addToCart(productForCart)
-        }
+        // Add to header cart (single source of truth)
+        addToCartLocal(agent_product.products.id, agent_product.products.name)
     }
+
 
     return (
         <div className="space-y-6">
@@ -123,11 +235,187 @@ export default function AgentProductsTab({
                         )}
                     </p>
                 </div>
-                <Badge variant="outline" className="flex items-center gap-2">
-                    <Star className="h-4 w-4" />
-                    {agent.agent_tiers.name}
-                </Badge>
+                <div className="flex items-center gap-4">
+                    {getTotalCartItems() > 0 && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <ShoppingCart className="h-4 w-4" />
+                            <span>{getTotalCartItems()} items</span>
+                            <span className="font-medium text-foreground">
+                                ${getCartTotal().toFixed(2)}
+                            </span>
+                        </div>
+                    )}
+                    <Badge variant="outline" className="flex items-center gap-2">
+                        <Star className="h-4 w-4" />
+                        {agent.agent_tiers.name}
+                    </Badge>
+                </div>
             </div>
+
+            {/* Sticky Cart */}
+            <AnimatePresence>
+                {isStickyCartVisible && (
+                    <motion.div
+                        initial={{ y: -100, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: -100, opacity: 0 }}
+                        transition={{
+                            type: "spring",
+                            stiffness: 300,
+                            damping: 30,
+                            duration: 0.3
+                        }}
+                        className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border shadow-lg"
+                        style={{
+                            background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.98) 100%)',
+                            backdropFilter: 'blur(10px)',
+                            WebkitBackdropFilter: 'blur(10px)'
+                        }}
+                    >
+                        <div className="container mx-auto px-4 py-3">
+                            <motion.div
+                                className="flex items-center justify-between"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.1 }}
+                            >
+                                <div className="flex items-center gap-4">
+                                    <motion.div
+                                        className="flex items-center gap-2"
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                    >
+                                        <div className="relative">
+                                            <ShoppingCart className="h-5 w-5 text-primary" />
+                                            <motion.div
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                            >
+                                                <Badge
+                                                    variant="secondary"
+                                                    className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs bg-primary text-primary-foreground"
+                                                >
+                                                    {getTotalCartItems()}
+                                                </Badge>
+                                            </motion.div>
+                                        </div>
+                                        <span className="font-medium text-foreground">Shopping Cart</span>
+                                    </motion.div>
+                                    <div className="text-sm text-muted-foreground">
+                                        {getCartItems().length} different items to add • ${getCartTotal().toFixed(2)} total
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                                // Clear header cart by removing all items
+                                                if (removeFromCart) {
+                                                    getCartItems().forEach((item: any) => {
+                                                        removeFromCart(item.id)
+                                                    })
+                                                }
+                                            }}
+                                            className="text-destructive hover:text-destructive"
+                                        >
+                                            <Trash2 className="h-4 w-4 mr-1" />
+                                            Clear Cart
+                                        </Button>
+                                    </motion.div>
+                                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                        <Button
+                                            onClick={onSaveCart}
+                                            disabled={isSaving}
+                                            size="sm"
+                                            className="bg-primary text-primary-foreground hover:bg-primary/90"
+                                        >
+                                            {isSaving ? (
+                                                <>
+                                                    <motion.div
+                                                        className="h-4 w-4 mr-2 rounded-full border-2 border-primary-foreground border-t-transparent"
+                                                        animate={{ rotate: 360 }}
+                                                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                                    />
+                                                    Saving...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Save className="h-4 w-4 mr-1" />
+                                                    {selectedInquiryForCart ? 'Add to Order' : 'Create New Order'}
+                                                </>
+                                            )}
+                                        </Button>
+                                    </motion.div>
+                                </div>
+                            </motion.div>
+
+                            {/* Cart Items Preview */}
+                            <motion.div
+                                className="mt-3 pt-3 border-t border-border"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.2 }}
+                            >
+                                <div className="flex gap-2 overflow-x-auto pb-2">
+                                    {getCartItems().slice(0, 5).map((item, index) => (
+                                        <motion.div
+                                            key={item.id}
+                                            className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2 min-w-0 flex-shrink-0 hover:bg-muted/70 transition-colors"
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: index * 0.1 }}
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                        >
+                                            <div className="w-8 h-8 bg-muted rounded overflow-hidden flex-shrink-0">
+                                                <img
+                                                    src={item.imageSrc}
+                                                    alt={item.name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-sm font-medium text-foreground truncate">
+                                                    {item.name}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Qty: {item.quantity} • ${item.price?.toFixed(2)} each
+                                                </p>
+                                            </div>
+                                            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => removeFromCart?.(item.id || '')}
+                                                    className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                                                >
+                                                    <X className="h-3 w-3" />
+                                                </Button>
+                                            </motion.div>
+                                        </motion.div>
+                                    ))}
+                                    {getCartItems().length > 5 && (
+                                        <motion.div
+                                            className="flex items-center justify-center bg-muted/50 rounded-lg px-3 py-2 min-w-0 flex-shrink-0"
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: 0.5 }}
+                                            whileHover={{ scale: 1.02 }}
+                                        >
+                                            <span className="text-sm text-muted-foreground">
+                                                +{getCartItems().length - 5} more
+                                            </span>
+                                        </motion.div>
+                                    )}
+                                </div>
+                            </motion.div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Customer Shopping Banner */}
             {selectedInquiryForCart && (
@@ -147,7 +435,17 @@ export default function AgentProductsTab({
                         <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => window.location.reload()}
+                            onClick={() => {
+                                if (setSelectedInquiryForCart) {
+                                    setSelectedInquiryForCart(null)
+                                }
+                                // Clear header cart by removing all items
+                                if (removeFromCart) {
+                                    getCartItems().forEach((item: any) => {
+                                        removeFromCart(item.id)
+                                    })
+                                }
+                            }}
                             className="text-green-700 border-green-300 hover:bg-green-100"
                         >
                             Clear Selection
@@ -231,9 +529,94 @@ export default function AgentProductsTab({
                     </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredProducts?.map((agent_product: any) => (
-                        <ProductCardWithDialog key={agent_product.products.id} product={agent_product.products} agent_product_price={agent_product.price} onAddToCart={handleAddToCart} />
-                    ))}
+                    {filteredProducts?.map((agent_product: any) => {
+                        const cartQuantity = getCartItemCount(agent_product.products.id)
+                        return (
+                            <div key={agent_product.products.id} className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                                <div className="aspect-square bg-muted relative">
+                                    <img
+                                        src={agent_product.products.imageSrc}
+                                        alt={agent_product.products.name}
+                                        className="w-full h-full object-cover"
+                                    />
+                                    <div className="absolute top-2 right-2">
+                                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${agent_product.products.inStock
+                                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                            : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                            }`}>
+                                            {agent_product.products.inStock ? 'In Stock' : 'Out of Stock'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="p-4">
+                                    <h3 className="font-medium text-foreground mb-2 line-clamp-2">{agent_product.products.name}</h3>
+                                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{agent_product.products.description}</p>
+                                    <div className="flex flex-wrap gap-1 mb-3">
+                                        {agent_product.products.tags.map((tag: string) => (
+                                            <Badge key={tag} variant="outline" className="text-xs">
+                                                {tag}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <span className="text-lg font-bold text-foreground">
+                                            ${agent_product.price?.toFixed(2)}
+                                        </span>
+                                        {cartQuantity > 0 && (
+                                            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                                                {cartQuantity} in cart
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => {
+                                                // Open product detail dialog
+                                                const productForDialog = {
+                                                    ...agent_product.products,
+                                                    price: agent_product.price
+                                                }
+                                                // You might want to implement a dialog here
+                                            }}
+                                            className="flex-1"
+                                        >
+                                            <Package className="h-3 w-3 mr-1" />
+                                            View Details
+                                        </Button>
+                                        {cartQuantity > 0 ? (
+                                            <>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => removeFromCart(agent_product.products.id)}
+                                                >
+                                                    <X className="h-3 w-3" />
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => addToCartLocal(agent_product.products.id, agent_product.products.name)}
+                                                    disabled={!agent_product.products.inStock}
+                                                >
+                                                    <Plus className="h-3 w-3" />
+                                                </Button>
+                                            </>
+                                        ) : (
+                                            <Button
+                                                size="sm"
+                                                onClick={() => addToCartLocal(agent_product.products.id, agent_product.products.name)}
+                                                disabled={!agent_product.products.inStock}
+                                            >
+                                                <ShoppingCart className="h-3 w-3" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    })}
                 </div>
 
                 {/* Empty State */}
@@ -245,6 +628,25 @@ export default function AgentProductsTab({
                     </div>
                 )}
             </div>
+
+            {/* Create Order with Cart Dialog */}
+            <CreateOrderWithCartDialog
+                open={showNewOrderDialog}
+                onOpenChange={setShowNewOrderDialog}
+                cartItems={getCartItems()}
+                clearCart={() => {
+                    // Clear header cart by removing all items
+                    if (removeFromCart) {
+                        getCartItems().forEach((item: any) => {
+                            removeFromCart(item.id)
+                        })
+                    }
+                }}
+                onOrderCreated={(orderId) => {
+                    // Optional callback when order is created
+                    console.log('Order created with ID:', orderId)
+                }}
+            />
         </div>
     )
 }

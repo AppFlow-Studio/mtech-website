@@ -64,12 +64,14 @@ export default function AddressEditModal({
     }
 
     const handleSave = async () => {
-        await onSave(formData)
+        if (formData) {
+            await onSave(formData)
+        }
     }
 
-    const isFormValid = formData?.first_name && 
-        formData?.last_name && 
-        formData?.formatted_address && 
+    const isFormValid = formData?.first_name &&
+        formData?.last_name &&
+        formData?.formatted_address &&
         formData?.phone
 
     return (
@@ -217,8 +219,8 @@ export default function AddressEditModal({
                 </div>
 
                 <div className="flex justify-end space-x-2 pt-4">
-                    <Button 
-                        variant="outline" 
+                    <Button
+                        variant="outline"
                         onClick={() => onOpenChange(false)}
                         disabled={isSaving}
                     >

@@ -222,7 +222,7 @@ export default function AgentOrdersScreen() {
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
                                 <div>
                                     <CardTitle className="text-lg font-semibold text-foreground truncate group-hover:text-primary transition-colors">{order.order_name}</CardTitle>
-                                    <CardDescription className="text-xs text-muted-foreground">Updated {formatDate(order.updated_at)}</CardDescription>
+                                    <CardDescription className="text-xs text-muted-foreground">Created {formatDate(order.created_at)}</CardDescription>
                                 </div>
                                 <div className="flex gap-2 items-center">{statusBadge(order.status)}</div>
                             </CardHeader>

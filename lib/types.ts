@@ -11,6 +11,7 @@ export interface Product {
   subscription: boolean;
   subscription_interval?: string;
   subscription_price?: number;
+  weight?: number;
 }
 
 export interface FullTestimonial {

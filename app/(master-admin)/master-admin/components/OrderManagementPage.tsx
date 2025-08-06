@@ -121,7 +121,7 @@ export default function OrderManagementPage() {
                 ) : filteredOrders.length === 0 ? (
                     <div className="text-muted-foreground py-8">No orders found.</div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 items-stretch gap-6">
                         {filteredOrders.map((order: any) => (
                             <OrderManagementCard key={order.id} order={order} />
                         ))}

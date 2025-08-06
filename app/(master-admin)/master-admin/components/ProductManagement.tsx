@@ -1,7 +1,7 @@
 import { useProducts } from "../actions/ProductsServerState"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Plus, Edit, Trash2, Search, Upload, AlertTriangle, Loader2 } from "lucide-react"
+import { Plus, Edit, Trash2, Search, Upload, AlertTriangle, Loader2, RefreshCw } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -38,8 +38,19 @@ export default function ProductManagement({ searchTerm, setSearchTerm }: {
     const [isDeleting, setIsDeleting] = useState(false)
     const [selectedTags, setSelectedTags] = useState<string[]>([])
     if (isLoading) return (
-        <div className="flex items-center justify-center h-64">
-            <div className="text-lg text-muted-foreground">Loading products...</div>
+        <div className="flex flex-col items-center justify-center h-64 gap-4">
+            <div className="flex items-center gap-2 text-lg text-muted-foreground">
+                <Loader2 className="animate-spin h-5 w-5 text-primary" />
+                Loading products...
+            </div>
+            <Button
+                variant="outline"
+                onClick={() => refetch()}
+                className="mt-2"
+            >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh
+            </Button>
         </div>
     )
 
@@ -356,6 +367,7 @@ const editProductSchema = z.object({
     description: z.string().min(1, "Description is required"),
     link: z.string().min(1, "Product link is required").regex(/^\S+$/, "No spaces allowed in product link"),
     inStock: z.boolean(),
+    weight: z.coerce.number().min(0, "Weight is required (lbs)"),
     tags: z.array(z.string()).min(1, "At least one tag is required"),
     default_price: z.coerce.number().min(0.01, "Price is required"),
     imageSrc: z.instanceof(File).or(z.string()).optional(),
@@ -365,7 +377,8 @@ const editProductSchema = z.object({
     modifiers: z.array(z.object({
         name: z.string().min(1, "Modifier name is required"),
         description: z.string().min(1, "Modifier description is required"),
-        additional_cost: z.coerce.number().min(0, "Additional cost must be 0 or greater")
+        additional_cost: z.coerce.number().min(0, "Additional cost must be 0 or greater"),
+        weight: z.coerce.number().min(0, "Weight is required (lbs)")
     })),
     brochure: z.instanceof(File).optional(),
     brochureUrl: z.string().optional()
@@ -384,6 +397,7 @@ function ProductEditForm({ product }: { product: any }) {
             link: product.link || '',
             inStock: product.inStock || false,
             tags: product.tags || [],
+            weight: product.weight || 0,
             default_price: product.default_price || 0,
             imageSrc: product.imageSrc || '',
             isSubscription: product.is_subscription || product.subscription || false,
@@ -406,6 +420,7 @@ function ProductEditForm({ product }: { product: any }) {
             link: values.link,
             inStock: values.inStock,
             tags: values.tags,
+            weight: values.weight,
             default_price: values.default_price,
             imageSrc: values.imageSrc || product.imageSrc,
             isSubscription: values.isSubscription,
@@ -517,6 +532,26 @@ function ProductEditForm({ product }: { product: any }) {
                         </FormItem>
                     )}
                 />
+                <FormField
+                    control={form.control}
+                    name="weight"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Weight (lbs)</FormLabel>
+                            <FormControl>
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    {...field}
+                                    value={field.value ?? ""}
+                                    placeholder="Enter weight in pounds"
+                                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                         control={form.control}
@@ -567,13 +602,11 @@ function ProductEditForm({ product }: { product: any }) {
                                     <div className="flex gap-2 mb-2">
                                         <Select
                                             value={""}
-                                            onChange={e => {
-                                                const tag = e.target.value
+                                            onValueChange={tag => {
                                                 if (tag && !field.value.includes(tag)) {
                                                     field.onChange([...field.value, tag])
                                                 }
                                             }}
-                                            className="w-[180px]"
                                         >
                                             <option value="" disabled>Select a tag</option>
                                             {tagOptions.filter(option => !field.value.includes(option)).map(option => (
@@ -643,7 +676,7 @@ function ProductEditForm({ product }: { product: any }) {
                                         <FormControl>
                                             <Select
                                                 value={field.value}
-                                                onChange={e => field.onChange(e.target.value)}
+                                                onValueChange={field.onChange}
                                             >
                                                 <option value="">Select interval</option>
                                                 <option value="monthly">Monthly</option>
@@ -684,7 +717,7 @@ function ProductEditForm({ product }: { product: any }) {
                                 const currentModifiers = form.getValues("modifiers")
                                 form.setValue("modifiers", [
                                     ...currentModifiers,
-                                    { name: "", description: "", additional_cost: 0 }
+                                    { name: "", description: "", additional_cost: 0, weight: 0 }
                                 ])
                             }}
                         >
@@ -736,6 +769,22 @@ function ProductEditForm({ product }: { product: any }) {
                                             const currentModifiers = form.getValues("modifiers")
                                             const updatedModifiers = [...currentModifiers]
                                             updatedModifiers[index] = { ...updatedModifiers[index], additional_cost: parseFloat(e.target.value) || 0 }
+                                            form.setValue("modifiers", updatedModifiers)
+                                        }}
+                                        placeholder="0.00"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-foreground">Weight (lbs)</label>
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={modifier.weight}
+                                        onChange={e => {
+                                            const currentModifiers = form.getValues("modifiers")
+                                            const updatedModifiers = [...currentModifiers]
+                                            updatedModifiers[index] = { ...updatedModifiers[index], weight: parseFloat(e.target.value) || 0 }
                                             form.setValue("modifiers", updatedModifiers)
                                         }}
                                         placeholder="0.00"
@@ -826,6 +875,7 @@ const productSchema = z.object({
     description: z.string().min(1, "Description is required"),
     link: z.string().min(1, "Product link is required").regex(/^\S+$/, "No spaces allowed in product link"),
     inStock: z.boolean(),
+    weight: z.coerce.number().min(0, "Weight is required (lbs)"),
     tags: z.array(z.string()).min(1, "At least one tag is required"),
     default_price: z.coerce.number().min(0.01, "Price is required"),
     imageSrc: z.instanceof(File, { message: "Product image is required" }),
@@ -835,7 +885,8 @@ const productSchema = z.object({
     modifiers: z.array(z.object({
         name: z.string().min(1, "Modifier name is required"),
         description: z.string().min(1, "Modifier description is required"),
-        additional_cost: z.coerce.number().min(0, "Additional cost must be 0 or greater")
+        additional_cost: z.coerce.number().min(0, "Additional cost must be 0 or greater"),
+        weight: z.coerce.number().min(0, "Weight is required (lbs)")
     })),
     brochure: z.instanceof(File).optional()
 })
@@ -851,6 +902,7 @@ function ProductAddForm() {
             description: '',
             link: '',
             inStock: false,
+            weight: 0,
             tags: [],
             default_price: 0,
             imageSrc: undefined as any,
@@ -974,6 +1026,19 @@ function ProductAddForm() {
                         </FormItem>
                     )}
                 />
+                <FormField
+                    control={form.control}
+                    name="weight"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Weight (lbs)</FormLabel>
+                            <FormControl>
+                                <Input type="number" min="0" step="0.01" {...field} placeholder="0.00" />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                         control={form.control}
@@ -1052,7 +1117,7 @@ function ProductAddForm() {
                                         <FormControl>
                                             <Select
                                                 value={field.value}
-                                                onChange={e => field.onChange(e.target.value)}
+                                                onValueChange={field.onChange}
                                             >
                                                 <option value="">Select interval</option>
                                                 <option value="monthly">Monthly</option>
@@ -1091,13 +1156,11 @@ function ProductAddForm() {
                                     <div className="flex gap-2 mb-2">
                                         <Select
                                             value={""}
-                                            onChange={e => {
-                                                const tag = e.target.value
+                                                onValueChange={tag => {
                                                 if (tag && !field.value.includes(tag)) {
                                                     field.onChange([...field.value, tag])
                                                 }
                                             }}
-                                            className="w-[180px]"
                                         >
                                             <option value="" disabled>Select a tag</option>
                                             {tagOptions.filter(option => !field.value.includes(option)).map(option => (
@@ -1141,7 +1204,7 @@ function ProductAddForm() {
                                 const currentModifiers = form.getValues("modifiers")
                                 form.setValue("modifiers", [
                                     ...currentModifiers,
-                                    { name: "", description: "", additional_cost: 0 }
+                                    { name: "", description: "", additional_cost: 0, weight: 0 }
                                 ])
                             }}
                         >
@@ -1168,7 +1231,7 @@ function ProductAddForm() {
                                 </Button>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
                                     <label className="text-sm font-medium text-foreground">Name</label>
                                     <Input
@@ -1193,6 +1256,22 @@ function ProductAddForm() {
                                             const currentModifiers = form.getValues("modifiers")
                                             const updatedModifiers = [...currentModifiers]
                                             updatedModifiers[index] = { ...updatedModifiers[index], additional_cost: parseFloat(e.target.value) || 0 }
+                                            form.setValue("modifiers", updatedModifiers)
+                                        }}
+                                        placeholder="0.00"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-foreground">Weight (lbs)</label>
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={modifier.weight}
+                                        onChange={e => {
+                                            const currentModifiers = form.getValues("modifiers")
+                                            const updatedModifiers = [...currentModifiers]
+                                            updatedModifiers[index] = { ...updatedModifiers[index], weight: parseFloat(e.target.value) || 0 }
                                             form.setValue("modifiers", updatedModifiers)
                                         }}
                                         placeholder="0.00"

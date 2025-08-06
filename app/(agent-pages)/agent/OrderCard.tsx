@@ -12,6 +12,7 @@ import { deleteOrder } from "../actions/delete-order";
 import { editOrderInfo } from "../actions/edit-order-info";
 import { submitOrder } from "../actions/submit-order";
 import { useProfile } from "@/lib/hooks/useProfile";
+import Link from "next/link";
 
 function statusBadge(status: string) {
     const config: Record<string, { color: string; label: string }> = {
@@ -144,9 +145,11 @@ export default function OrderCard({ order, refetchOrders, setSelectedInquiryForC
                         </Button>
 
                         <div className="flex gap-2">
-                            <Button size="sm" variant="outline" onClick={onEdit}>
-                                <Eye className="h-4 w-4 mr-1" /> View
-                            </Button>
+                            <Link href={`/agent/order/${order.id}`} >
+                                <Button size="sm" variant="outline" >
+                                    <Eye className="h-4 w-4 mr-1" /> View
+                                </Button>
+                            </Link>
                             {order.status === 'approved' ? (
                                 <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={onShop}>
                                     <CheckCircle className="h-4 w-4 mr-1" />Checkout 
@@ -161,8 +164,9 @@ export default function OrderCard({ order, refetchOrders, setSelectedInquiryForC
                 </section>
                 {/* Vertical Divider */}
                 <div className="w-px bg-border mx-6" />
+
                 {/* Items in the order */}
-                <section className="w-[40%] flex flex-col justify-center">
+                <section className="w-[40%] overflow-y-auto overflow-x-hidden flex flex-col justify-center">
                     <div className="mb-2">
                         <span className="block text-xs font-medium text-muted-foreground mb-1">Cart Items</span>
                         {hasItems ? (

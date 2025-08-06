@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
-import { CheckCircle, Loader2, Pencil, Plus, Trash2, UserCheck, Users, Package, MessageSquare, History } from 'lucide-react';
+import { CheckCircle, Loader2, Pencil, Plus, Trash2, UserCheck, Users, Package, MessageSquare, History, Truck } from 'lucide-react';
 import OrderItemCard from './OrderItemCard';
 import { OrderItems } from '@/lib/types';
 import { UpdateOrderItem } from '@/app/(master-admin)/master-admin/actions/order-actions/update-order-item';
@@ -25,6 +25,7 @@ import OrderProductShopping from '../../components/OrderProductShopping';
 import OrderNotes from '../[order_id]/components/OrderNotes';
 import OrderAuditLog from '../[order_id]/components/OrderAuditLog';
 import CreateReturnDialog from '../[order_id]/components/CreateReturnDialog';
+import ShippingItemSelector from '@/components/shipping/ShippingItemSelector';
 // 
 const statusOptions = [
     { value: "submitted", label: "Submitted" },
@@ -55,6 +56,7 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
     const [assignedTo, setAssignedTo] = useState(OrderInfo.admin_assigned || '');
     const [isAssigning, setIsAssigning] = useState(false);
     const [showReturnDialog, setShowReturnDialog] = useState(false);
+    const [showShippingSelector, setShowShippingSelector] = useState(false);
     const router = useRouter();
 
     // Fetch admin profiles for assignment
@@ -143,7 +145,6 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
             </div>
         );
     }
-    console.log(adminProfiles)
     return (
         <div className="max-w-8xl mx-auto py-10 px-4 space-y-8 animate-in fade-in-0 slide-in-from-bottom-2">
             <Button
@@ -325,14 +326,21 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
                                 key={item.id}
                                 item={item}
                                 order_id={params.order_id}
+                                agentTierId={OrderInfo.agent?.agent_tiers?.id}
                                 refetchOrderInfo={async () => {
                                     await queryClient.invalidateQueries({ queryKey: ['order', params.order_id] });
                                 }}
                             />
                         ))}
                     </div>
-                    <div className="flex justify-end mt-6">
-                        <Button variant="outline" onClick={() => setShowAddItemDialog(true)}>
+                    <div className="flex justify-end gap-2 mt-6">
+                        <Button variant="outline" onClick={() => setShowShippingSelector(true)}>
+                            <Truck className="h-4 w-4 mr-1" /> Get Shipping Rates
+                        </Button>
+                        <Button variant="outline" onClick={() => {
+                            setShowAddItemDialog(true);
+                            document.getElementById('add-item-options')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }}>
                             <Plus className="h-4 w-4 mr-1" /> Add Products
                         </Button>
                     </div>
@@ -365,19 +373,22 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
             </Dialog>
 
             {/* Add Item Options */}
-            {
-                showAddItemDialog && (
-                    <OrderProductShopping
-                        agent_id={OrderInfo.agent.id}
-                        agent_tier={OrderInfo.agent.agent_tiers}
-                        agent_profile={OrderInfo.agent}
-                        agent_notes={OrderInfo.notes}
-                        order_id={params.order_id}
-                        setShowAddItemDialog={setShowAddItemDialog}
-                        refetchOrderInfo={refetchOrderInfo}
-                    />
-                )
-            }
+
+            <section id="add-item-options" className="scroll-mt-10">
+                {
+                    showAddItemDialog && (
+                        <OrderProductShopping
+                            agent_id={OrderInfo.agent.id}
+                            agent_tier={OrderInfo.agent.agent_tiers}
+                            agent_profile={OrderInfo.agent}
+                            agent_notes={OrderInfo.notes}
+                            order_id={params.order_id}
+                            setShowAddItemDialog={setShowAddItemDialog}
+                            refetchOrderInfo={refetchOrderInfo}
+                        />
+                    )
+                }
+            </section>
 
             {/* Create Return Dialog */}
             <CreateReturnDialog
@@ -386,6 +397,19 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
                 orderId={params.order_id}
                 orderItems={OrderInfo.order_items}
                 orderName={OrderInfo.order_name}
+            />
+
+            {/* Shipping Item Selector */}
+            <ShippingItemSelector
+                isOpen={showShippingSelector}
+                onClose={() => setShowShippingSelector(false)}
+                orderItems={OrderInfo.order_items}
+                onRateSelected={(rate, selectedItems) => {
+                    console.log('Selected rate:', rate);
+                    console.log('Selected items:', selectedItems);
+                    // TODO: Handle the selected rate - could save to database, update order, etc.
+                    toast.success(`Shipping rate selected: ${rate.serviceName} - $${rate.ratedShipmentDetails[0].totalNetCharge.amount}`);
+                }}
             />
 
         </div>

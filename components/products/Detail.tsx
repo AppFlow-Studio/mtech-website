@@ -156,8 +156,8 @@ function Detail({ slug }: { slug: string }) {
 
           {/* Brochure Section */}
           <BrochureSection
-            brochureUrl={product.brochureUrl}
-            productName={product.name}
+            brochureUrl={product?.brochureUrl}
+            productName={product?.name}
           />
 
           <div className="mt-8">

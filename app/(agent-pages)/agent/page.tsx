@@ -317,7 +317,7 @@ export default function AgentPage() {
     }
 
     // Cart functions
-    const addToCart = (product: any) => {
+    const addToCart = async (product: any) => {
         setCartItems(prev => {
             const existingItem = prev.find(item => item.id === product.id)
             if (existingItem) {
@@ -329,6 +329,23 @@ export default function AgentPage() {
             }
             return [...prev, { ...product, quantity: 1 }]
         })
+        // const orders_items = cartItems.map((item) => ({
+        //     order_id: selectedInquiryForCart.id,
+        //     product_id: item.id,
+        //     quantity: Number(item.quantity),
+        //     price_at_order: item.price
+        // }))
+
+        // console.log('Cart Items', cartItems)
+        // const result = await syncOrderItems(selectedInquiryForCart.id, orders_items)
+        // if (result instanceof Error) {
+        //     toast.error(result.message)
+        // } else {
+        //     toast.success('Order items assigned successfully')
+        //     setIsCartOpen(false)
+        //     clearCart()
+        //     refetchAgentOrders()
+        // }
     }
 
     const removeFromCart = (productId: string) => {
@@ -383,8 +400,7 @@ export default function AgentPage() {
             quantity: Number(item.quantity),
             price_at_order: item.price
         }))
-        console.log('Selected Inquiry For Cart items', orders_items)
-        console.log('Order Items', orders_items)
+       
         const result = await syncOrderItems(selectedInquiryForCart.id, orders_items)
         if (result instanceof Error) {
             toast.error(result.message)
@@ -397,7 +413,6 @@ export default function AgentPage() {
         setIsAssigningOrderItems(false)
     }
 
-    console.log(orders)
     return (
         <div className="min-h-screen bg-background">
             <div className="container mx-auto px-4 py-8">
@@ -656,6 +671,10 @@ export default function AgentPage() {
                         agent_id={profile?.id || ''}
                         addToCart={addToCart}
                         selectedInquiryForCart={selectedInquiryForCart}
+                        setSelectedInquiryForCart={setSelectedInquiryForCart}
+                        cartItems={cartItems}
+                        removeFromCart={removeFromCart}
+                        updateQuantity={updateQuantity}
                     />
                 ) : (
                     <AgentOrdersScreen />

@@ -32,6 +32,7 @@ export async function updateProduct(productId: string, product: {
     modifiers?: any[];
     brochure?: File;
     brochureUrl?: string;
+    weight?: number;
 }, imageurl: string) {
     const supabase = await createClient();
     
@@ -44,7 +45,8 @@ export async function updateProduct(productId: string, product: {
         imageSrc: imageurl,
         subscription: isSubscription,
         subscription_interval: subscriptionInterval || null,
-        subscription_price: subscriptionPrice || null
+        subscription_price: subscriptionPrice || null,
+        weight: product.weight || null
     };
     
     const { data, error } = await supabase.from('products').update(updateData).eq('id', productId).select().single();
@@ -93,7 +95,8 @@ export async function updateProduct(productId: string, product: {
                 product_id: productId,
                 name: modifier.name,
                 description: modifier.description,
-                additional_cost: modifier.additional_cost
+                additional_cost: modifier.additional_cost,
+                weight: modifier.weight
             }));
 
             const { error: modifierError } = await supabase
@@ -101,7 +104,7 @@ export async function updateProduct(productId: string, product: {
                 .insert(modifierData);
 
             if (modifierError) {
-                console.error('Error inserting modifiers:', modifierError);
+               throw new Error(modifierError.message);
                 // Don't fail the entire operation if modifiers fail
             }
         }

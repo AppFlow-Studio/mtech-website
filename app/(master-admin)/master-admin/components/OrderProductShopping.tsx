@@ -32,6 +32,9 @@ export default function OrderProductShopping({ agent_id, agent_tier, agent_profi
     const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
     const [isStickyCartVisible, setIsStickyCartVisible] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
+    const getTotalCartItems = () => {
+        return Object.values(cart).reduce((sum, count) => sum + count, 0)
+    }
     // Handle scroll for sticky cart
     useEffect(() => {
         const handleScroll = () => {
@@ -113,9 +116,6 @@ export default function OrderProductShopping({ agent_id, agent_tier, agent_profi
         return cart[productId] || 0
     }
 
-    const getTotalCartItems = () => {
-        return Object.values(cart).reduce((sum, count) => sum + count, 0)
-    }
 
     const getCartTotal = () => {
         return Object.entries(cart).reduce((total, [productId, quantity]) => {
@@ -469,7 +469,7 @@ export default function OrderProductShopping({ agent_id, agent_tier, agent_profi
                     {filteredProducts?.map((agent_products: any) => {
                         const cartQuantity = getCartItemCount(agent_products.products.id)
                         return (
-                            <div key={agent_products.products.link} className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                            <div key={agent_products.products.id} className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
                                 <div className="aspect-square bg-muted relative">
                                     <img
                                         src={agent_products.products.imageSrc}

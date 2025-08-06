@@ -32,7 +32,8 @@ export async function addProduct(product: {
     modifiers: Array<{
         name: string,
         description: string,
-        additional_cost: number
+        additional_cost: number,
+        weight: number
     }>,
     brochure?: File
 }) {
@@ -96,7 +97,8 @@ export async function addProduct(product: {
             product_id: productData.id,
             name: modifier.name,
             description: modifier.description,
-            additional_cost: modifier.additional_cost
+            additional_cost: modifier.additional_cost,
+            weight: modifier.weight
         }));
 
         const { error: modifierError } = await supabase

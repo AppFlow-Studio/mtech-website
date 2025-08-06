@@ -1,21 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Pencil, CheckCircle } from "lucide-react";
+import { Loader2, Pencil, CheckCircle, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
 import { OrderItems } from "@/lib/types";
 import { createClient } from "@/utils/supabase/server";
 import { UpdateOrderItem } from "@/app/(master-admin)/master-admin/actions/order-actions/update-order-item";
 import { DeleteOrderItem } from "@/app/(master-admin)/master-admin/actions/order-actions/delete-order-item";
+import { GetAgentTierPrice } from "@/app/(master-admin)/master-admin/actions/order-actions/get-agent-tier-price";
 import { toast } from "sonner";
 // Types for props
 interface OrderItemCardProps {
     item: OrderItems;
     order_id: string;
     refetchOrderInfo: () => void | Promise<void>;
+    agentTierId?: string;
 }
 
 const statusOptions = [
@@ -37,9 +39,10 @@ function statusBadge(status: string) {
 }
 
 
-export function OrderItemCard({ item, order_id, refetchOrderInfo }: OrderItemCardProps) {
+export function OrderItemCard({ item, order_id, refetchOrderInfo, agentTierId }: OrderItemCardProps) {
     const [editDialog, setEditDialog] = useState(false);
     const [editQty, setEditQty] = useState(item.quantity);
+    const [editPrice, setEditPrice] = useState(item.price_at_order);
     const [editStatus, setEditStatus] = useState(item.order_status);
     const [editTracking, setEditTracking] = useState(item.tracking_number || "");
     const [editCarrier, setEditCarrier] = useState(item.carrier || "");
@@ -49,7 +52,32 @@ export function OrderItemCard({ item, order_id, refetchOrderInfo }: OrderItemCar
     const [error, setError] = useState("");
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
-    console.log(item)
+    const [agentTierPrice, setAgentTierPrice] = useState<number | null>(null);
+    const [isLoadingTierPrice, setIsLoadingTierPrice] = useState(false);
+
+    // Fetch agent tier price when component mounts
+    useEffect(() => {
+        const fetchAgentTierPrice = async () => {
+            if (agentTierId && item.products?.id) {
+                setIsLoadingTierPrice(true);
+                try {
+                    const price = await GetAgentTierPrice(agentTierId, item.products.id);
+                    setAgentTierPrice(price);
+                } catch (error) {
+                    console.error('Failed to fetch agent tier price:', error);
+                } finally {
+                    setIsLoadingTierPrice(false);
+                }
+            }
+        };
+
+        fetchAgentTierPrice();
+    }, [agentTierId, item.products?.id]);
+
+    // Calculate price difference
+    const priceDifference = agentTierPrice ? item.price_at_order - agentTierPrice : 0;
+    const priceDifferencePercentage = agentTierPrice ? ((priceDifference / agentTierPrice) * 100) : 0;
+
     const handleSave = async () => {
         setIsSaving(true);
         setError("");
@@ -57,6 +85,7 @@ export function OrderItemCard({ item, order_id, refetchOrderInfo }: OrderItemCar
             // Add Trigger to notify the user that the item is being updated via email
             const isUpdated = await UpdateOrderItem(order_id, item.id, {
                 quantity: editQty,
+                price_at_order: editPrice,
                 order_status: editStatus,
                 tracking_number: editTracking,
                 carrier: editCarrier,
@@ -114,6 +143,38 @@ export function OrderItemCard({ item, order_id, refetchOrderInfo }: OrderItemCar
                                 <span>Price: ${item.price_at_order}</span>
                                 <span>Subtotal: ${item.price_at_order * Number(item.quantity)}</span>
                             </div>
+                            {/* Price Comparison Display */}
+                            {agentTierId && (
+                                <div className="flex items-center gap-2 mt-1">
+                                    {isLoadingTierPrice ? (
+                                        <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                            <Loader2 className="h-3 w-3 animate-spin" />
+                                            Loading tier price...
+                                        </div>
+                                    ) : agentTierPrice ? (
+                                        <div className="flex items-center gap-2 text-xs">
+                                            <span className="text-muted-foreground">Tier Price: ${agentTierPrice}</span>
+                                            {priceDifference !== 0 && (
+                                                <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${priceDifference > 0
+                                                    ? 'bg-green-100 text-green-700'
+                                                    : 'bg-red-100 text-red-700'
+                                                    }`}>
+                                                    {priceDifference > 0 ? (
+                                                        <TrendingUp className="h-3 w-3" />
+                                                    ) : (
+                                                        <TrendingDown className="h-3 w-3" />
+                                                    )}
+                                                    {priceDifference > 0 ? '+' : ''}{priceDifference.toFixed(2)} ({priceDifferencePercentage > 0 ? '+' : ''}{priceDifferencePercentage.toFixed(1)}%)
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="text-xs text-muted-foreground italic">
+                                            No tier price available
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                         <div className="w-px bg-border mx-6" />
                         <div className="flex flex-col gap-2">
@@ -123,7 +184,7 @@ export function OrderItemCard({ item, order_id, refetchOrderInfo }: OrderItemCar
                                     Tracking: <span className="font-medium">{item.tracking_number || "-"}</span> | Carrier: <span className="font-medium">{item.carrier || "-"}</span>
                                 </div>
                             )}
-                            {item.order_status === "READY_FOR_PICKUP" || item.fulfillment_type === "PICKUP" && (
+                            {item.fulfillment_type === "PICKUP" && (
                                 <div className="text-xs mt-1 text-muted-foreground">
                                     Pickup Details: <span className="font-medium">{item.pickup_details || "-"}</span>
                                 </div>
@@ -171,6 +232,32 @@ export function OrderItemCard({ item, order_id, refetchOrderInfo }: OrderItemCar
                                     onChange={e => setEditQty(Number(e.target.value))}
                                     disabled={isSaving}
                                 />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Order Price</label>
+                                <div className="relative">
+                                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={editPrice}
+                                        onChange={e => setEditPrice(Number(e.target.value))}
+                                        disabled={isSaving}
+                                        className="pl-8"
+                                    />
+                                </div>
+                                {agentTierPrice && (
+                                    <div className="text-xs text-muted-foreground mt-1">
+                                        Tier Price: ${agentTierPrice}
+                                        {editPrice !== agentTierPrice && (
+                                            <span className={`ml-2 ${editPrice > agentTierPrice ? 'text-green-600' : 'text-red-600'
+                                                }`}>
+                                                ({editPrice > agentTierPrice ? '+' : ''}{((editPrice - agentTierPrice) / agentTierPrice * 100).toFixed(1)}%)
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium mb-1">Status</label>
