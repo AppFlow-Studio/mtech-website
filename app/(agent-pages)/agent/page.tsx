@@ -400,7 +400,7 @@ export default function AgentPage() {
             quantity: Number(item.quantity),
             price_at_order: item.price
         }))
-       
+
         const result = await syncOrderItems(selectedInquiryForCart.id, orders_items)
         if (result instanceof Error) {
             toast.error(result.message)
