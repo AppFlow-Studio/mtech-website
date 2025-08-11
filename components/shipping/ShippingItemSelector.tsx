@@ -34,6 +34,7 @@ interface OrderItem {
     products: Product;
     price_at_order: number;
     fulfillment_type: "PICKUP" | "SHIPPING";
+    fulfillment_id: string | null;
 }
 
 interface ShippingItemSelectorProps {
@@ -42,6 +43,10 @@ interface ShippingItemSelectorProps {
     orderItems: OrderItem[];
     onRateSelected?: (rate: any, selectedItems: OrderItem[]) => void;
     order_shipping_address: any;
+    order_id: string;
+    orderNumber: string;
+    customerEmail: string;
+    refetchOrderInfo: () => void;
 }
 
 export default function ShippingItemSelector({
@@ -49,13 +54,17 @@ export default function ShippingItemSelector({
     onClose,
     orderItems,
     onRateSelected,
-    order_shipping_address
+    order_shipping_address,
+    order_id,
+    orderNumber,
+    customerEmail,
+    refetchOrderInfo
 }: ShippingItemSelectorProps) {
     const [selectedItems, setSelectedItems] = useState<OrderItem[]>([]);
     const [showRateCalculator, setShowRateCalculator] = useState(false);
 
     // Filter items that are marked for shipping
-    const shippingItems = orderItems.filter(item => item.fulfillment_type === 'SHIPPING');
+    const shippingItems = orderItems.filter(item => item.fulfillment_type === 'SHIPPING' && item.fulfillment_id === null);
 
     const handleItemToggle = (item: OrderItem) => {
         setSelectedItems(prev => {
@@ -243,10 +252,15 @@ export default function ShippingItemSelector({
             {/* FedEx Rate Calculator */}
             <FedExRateCalculator
                 isOpen={showRateCalculator}
+                onCloseShippingSelector={() => setShowRateCalculator(false)}
                 onClose={() => setShowRateCalculator(false)}
                 selectedItems={selectedItems}
                 onRateSelected={handleRateSelected}
                 order_shipping_address={order_shipping_address}
+                order_id={order_id}
+                orderNumber={orderNumber}
+                customerEmail={customerEmail}
+                refetchOrderInfo={refetchOrderInfo}
             />
         </>
     );

@@ -102,7 +102,6 @@ async function page() {
     query: defineQuery(`*[_type == "POS_SYSTEM_TYPES" && POS_System_Link == "/supersonic-pos"]`),
     ...options,
   });
-  console.log(SuperSonicPOS);
   return (
     <>
       <section className="py-8 sm:py-12">

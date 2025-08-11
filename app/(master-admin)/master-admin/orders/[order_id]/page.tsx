@@ -25,11 +25,13 @@ import OrderProductShopping from '../../components/OrderProductShopping';
 import OrderNotes from '../[order_id]/components/OrderNotes';
 import OrderAuditLog from '../[order_id]/components/OrderAuditLog';
 import CreateReturnDialog from '../[order_id]/components/CreateReturnDialog';
+import FulfillmentCard from '../[order_id]/components/FulfillmentCard';
 import ShippingItemSelector from '@/components/shipping/ShippingItemSelector';
 import { Label } from '@/components/ui/label';
 import Autocomplete from "react-google-autocomplete";
 import { parseAddress } from '@/utils/parse-address';
 import { cn } from '@/lib/utils';
+import { useProfile } from '@/lib/hooks/useProfile';
 
 const statusOptions = [
     { value: "submitted", label: "Submitted" },
@@ -43,6 +45,7 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
         queryKey: ['order', params.order_id],
         queryFn: () => GetOrderInfo(params.order_id),
     })
+    const { profile } = useProfile();
     const [shippingAddress, setShippingAddress] = useState(OrderInfo.shipping_address);
     const [editStatus, setEditStatus] = useState(false);
     const [status, setStatus] = useState(OrderInfo.status);
@@ -83,7 +86,7 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
     }
     const handlePlaceSelected = (place: any) => {
         const parsedAddress = parseAddress(place.address_components);
-        setShippingAddress(prev => ({
+        setShippingAddress((prev: any) => ({
             ...prev,
             formatted_address: parsedAddress.formatted_address,
             apartment_suite: parsedAddress.apartment_suite || '',
@@ -144,8 +147,8 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
         }
     };
 
-    const handleAddressInputChange = (field: keyof Address, value: string) => {
-        setShippingAddress(prev => ({
+    const handleAddressInputChange = (field: keyof any, value: string) => {
+        setShippingAddress((prev: any) => ({
             ...prev,
             [field]: value
         }));
@@ -184,7 +187,7 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
                     <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                         <div>
                             <CardTitle className="text-xl font-bold text-foreground">Order: {OrderInfo.order_name}</CardTitle>
-                            <CardDescription className="text-muted-foreground">Order ID: {OrderInfo.id}</CardDescription>
+                            <CardDescription className="text-muted-foreground">Order ID: {OrderInfo.order_confirmation_number || OrderInfo.id}</CardDescription>
                             <div className="mt-2 flex items-center gap-2">
                                 <span className="text-xs text-muted-foreground">Created: {formatDate(OrderInfo.created_at)}</span>
                                 {statusBadge(OrderInfo.status)}
@@ -335,28 +338,55 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
                 <OrderNotes orderId={params.order_id} />
             </div>
 
-            {/* Tabs Section */}
+            {/* Fulfillment History */}
+            {OrderInfo.fulfillments && OrderInfo.fulfillments.length > 0 && (
+                <Card className="animate-in fade-in-0 slide-in-from-bottom-2">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Truck className="h-5 w-5" />
+                            Fulfillment History
+                        </CardTitle>
+                        <CardDescription>Shipping and pickup fulfillments for this order</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-4">
+                            {OrderInfo.fulfillments.map((fulfillment: any) => (
+                                <FulfillmentCard key={fulfillment.id} fulfillment={fulfillment} profileId={profile?.id || ''} />
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Unfulfilled Items */}
             <Card className="animate-in fade-in-0 slide-in-from-bottom-2">
                 <CardHeader>
-                    <CardTitle>Cart Items</CardTitle>
+                    <CardTitle>Unfulfilled Items</CardTitle>
                     <CardDescription>Manage the items in this order</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
-                        {OrderInfo.order_items.length === 0 && (
-                            <div className="text-center text-muted-foreground py-8">No items in this order.</div>
+                        {OrderInfo.order_items.filter((item: OrderItems) => !item.fulfillment_id).length === 0 ? (
+                            <div className="text-center text-muted-foreground py-8">
+                                <Package className="h-12 w-12 mx-auto mb-4 text-green-500" />
+                                <p className="text-lg font-medium text-green-700">All items have been fulfilled!</p>
+                                <p className="text-sm text-muted-foreground">Check the fulfillment history above for shipping details.</p>
+                            </div>
+                        ) : (
+                            OrderInfo.order_items
+                                .filter((item: OrderItems) => !item.fulfillment_id)
+                                .map((item: OrderItems) => (
+                                    <OrderItemCard
+                                        key={item.id}
+                                        item={item}
+                                        order_id={params.order_id}
+                                        agentTierId={OrderInfo.agent?.agent_tiers?.id}
+                                        refetchOrderInfo={async () => {
+                                            await queryClient.invalidateQueries({ queryKey: ['order', params.order_id] });
+                                        }}
+                                    />
+                                ))
                         )}
-                        {OrderInfo.order_items.map((item: OrderItems) => (
-                            <OrderItemCard
-                                key={item.id}
-                                item={item}
-                                order_id={params.order_id}
-                                agentTierId={OrderInfo.agent?.agent_tiers?.id}
-                                refetchOrderInfo={async () => {
-                                    await queryClient.invalidateQueries({ queryKey: ['order', params.order_id] });
-                                }}
-                            />
-                        ))}
                     </div>
                     <div className="flex justify-end gap-2 mt-6">
                         <Button variant="outline" onClick={() => setShowShippingSelector(true)}>
@@ -371,7 +401,7 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
                     </div>
                 </CardContent>
             </Card>
-            
+
             <OrderAuditLog orderId={params.order_id} />
 
             {/* Delete Order Dialog */}
@@ -397,8 +427,9 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
                 </DialogContent>
             </Dialog>
 
-            {/* Add Item Options */}
 
+
+            {/* Add Item Options */}
             <section id="add-item-options" className="scroll-mt-10">
                 {
                     showAddItemDialog && (
@@ -427,8 +458,12 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
             {/* Shipping Item Selector */}
             <ShippingItemSelector
                 isOpen={showShippingSelector}
+                order_id={OrderInfo.id}
+                orderNumber={OrderInfo.order_confirmation_number}
+                customerEmail={OrderInfo.agent.email}
                 onClose={() => setShowShippingSelector(false)}
                 orderItems={OrderInfo.order_items}
+                refetchOrderInfo={refetchOrderInfo}
                 order_shipping_address={shippingAddress}
                 onRateSelected={(rate, selectedItems) => {
                     console.log('Selected rate:', rate);

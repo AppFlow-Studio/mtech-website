@@ -129,7 +129,7 @@ export default function CreateOrderWithCartDialog({
                 orderForm.notes,
                 shippingAddress,
                 cartItems.map((item) => ({
-                    product_id: item.product.id,
+                    product_id: item?.product?.id || item.id,
                     quantity: Number(item.quantity),
                     price_at_order: item.price
                 }))
@@ -148,7 +148,7 @@ export default function CreateOrderWithCartDialog({
             // Add cart items to the order
             const orderItems = cartItems.map((item) => ({
                 order_id: orderResult.order.id,
-                product_id: item.product.id,
+                product_id: item?.product?.id || item.id,
                 quantity: Number(item.quantity),
                 price_at_order: item.price
             }));
@@ -192,6 +192,7 @@ export default function CreateOrderWithCartDialog({
     };
 
 
+    console.log(cartItems);
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">

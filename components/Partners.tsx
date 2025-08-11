@@ -43,6 +43,12 @@ const partners = [
     width: 180,
     height: 60,
   },
+  {
+    name : 'Dejavoo',
+    logo : '/logos/dejavoo.png',
+    width : 120,
+    height : 40,
+  }
 ];
 
 const PartnerLogo = ({ partner }: { partner: (typeof partners)[0] }) => {

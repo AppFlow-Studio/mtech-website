@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Plus, Edit, Trash2, AlertTriangle, Loader2, Users, Shield, Crown } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Select } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useQuery } from "@tanstack/react-query"
 import { GetAdminProfiles } from "../actions/order-actions/get-admin-profiles"
 import { CreateAdmin } from "../actions/admin-actions/create-admin"
@@ -42,7 +42,7 @@ export default function AgentManagement() {
         email: '',
         tier: undefined,
         password: '',
-        role: 'ADMIN' as 'ADMIN' | 'MASTER_ADMIN' 
+        role: 'ADMIN' as 'ADMIN' | 'MASTER_ADMIN'
     })
 
     // Fetch admin profiles
@@ -53,7 +53,7 @@ export default function AgentManagement() {
 
     const handleAgentCreate = (e: React.FormEvent) => {
         e.preventDefault()
-        createUser({...formData, tier: formData.tier ? Number(formData.tier) : undefined}, {
+        createUser({ ...formData, tier: formData.tier ? Number(formData.tier) : undefined }, {
             onSuccess: () => {
                 toast.success('Agent added successfully')
                 setFormData({
@@ -500,12 +500,16 @@ function AgentForm({ onSubmit, formData, setFormData, tiers }: {
                 <label className="block text-sm font-medium text-foreground mb-2">Tier</label>
                 <Select
                     value={formData.tier}
-                    onChange={(e) => setFormData({ ...formData, tier: e.target.value })}
+                    onValueChange={(value) => setFormData({ ...formData, tier: value })}
                 >
-                    <option value={undefined}>Unassigned</option>
-                    {tiers?.map((tier: any) => (
-                        <option key={tier.id} value={tier.id}>{tier.name}</option>
-                    ))}
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select a tier" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {tiers?.map((tier: any) => (
+                            <SelectItem key={tier.id} value={tier.name} onClick={() => setFormData({ ...formData, tier: tier.id })}>{tier.name}</SelectItem>
+                        ))}
+                    </SelectContent>
                 </Select>
             </div>
             <div className="flex justify-end gap-2 pt-4">

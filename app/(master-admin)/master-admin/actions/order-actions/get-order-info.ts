@@ -15,6 +15,27 @@ export async function GetOrderInfo(order_id: string) {
             *,
             products (
                 *
+            ),
+            fulfillments (
+                *,
+                shipments (
+                    *
+                )
+            )
+        ),
+        fulfillments (
+            *,
+            shipments (
+                *
+            ),
+            pickups (
+                *
+            ),
+            order_items (
+                *,
+                products (
+                    *
+                )
             )
         )
         `

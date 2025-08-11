@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { History, Loader2, User, Clock, Paperclip, Send, Printer, Mail } from "lucide-react";
+import { History, Loader2, User, Clock, Paperclip, Send, Printer, Mail, RefreshCw } from "lucide-react";
 import { getOrderAuditLog } from "../actions/get-order-audit-log";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent } from "@/components/ui/tooltip";
@@ -15,11 +15,12 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ResendEmail } from "../../../quote-requests/[id]/actions/resend-email";
 import { useProfile } from "@/lib/hooks/useProfile";
+import { OrderItem } from "@/lib/types";
 
 interface AuditLogEntry {
     id: string
     quote_request_id: string
-    event_type: 'PAYMENT_PROCESSED' | 'NOTE_ADDED' | 'EMAIL_SENT' | 'SYSTEM_ACTION'
+    event_type: 'PAYMENT_PROCESSED' | 'NOTE_ADDED' | 'EMAIL_SENT' | 'SYSTEM_ACTION' | 'SHIPMENT_CREATED' | 'ORDER_UPDATED_ADD' | 'ORDER_UPDATED_DELETE'
     user_id: string
     user_name: string
     message: string
@@ -43,6 +44,21 @@ interface AuditLogEntry {
             action_type: string
             action_details: string
         }
+        SHIPMENT_CREATED?: {
+            carrier: string
+            tracking_number: string
+            items_in_shipment: string
+            weight_and_size: string
+            cost: string
+        }
+        ORDER_UPDATED_ADD?: {
+            order_items: OrderItem[]
+        }
+        'ORDER_UPDATED_DELETE': {
+            item_name: string,
+            quantity: number
+        }
+
     }
     created_at: string
 }
@@ -91,6 +107,10 @@ export default function OrderAuditLog({ orderId }: OrderAuditLogProps) {
                 return 'processed payment'
             case 'SYSTEM_ACTION':
                 return 'performed system action'
+            case 'ORDER_UPDATED_DELETE':
+                return 'deleted order items'
+            case 'ORDER_UPDATED_ADD':
+                return 'added order items'
             default:
                 return 'performed an action'
         }
@@ -254,7 +274,21 @@ export default function OrderAuditLog({ orderId }: OrderAuditLogProps) {
         <div className="space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Timeline</CardTitle>
+                    <div className="flex items-center w-full justify-between">
+                        <CardTitle className="flex items-center gap-2 justify-between w-full pr-4">
+                            Timeline
+                            <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => refetch()}
+                                className="ml-2"
+                                title="Refresh"
+                            >
+                                <p className="text-xl font-bold"> Refresh</p><RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+                            </Button>
+                        </CardTitle>
+
+                    </div>
                 </CardHeader>
                 <CardContent>
                     {/* Comment Input */}
@@ -386,15 +420,91 @@ export default function OrderAuditLog({ orderId }: OrderAuditLogProps) {
                                                 </div>
                                             )}
 
+                                            {entry.event_type === 'SHIPMENT_CREATED' && entry.details.SHIPMENT_CREATED && (
+                                                <div className="mt-2">
+                                                    <p className="text-sm text-gray-700">{entry.message}</p>
+
+                                                    <button
+                                                        className="mt-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                                                        onClick={() => toggleLogEntryExpansion(entry.id)}
+                                                    >
+                                                        {isExpanded ? 'Hide Details' : 'View Details'}
+                                                    </button>
+                                                    {hasDetails && isExpanded && (
+                                                        <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                                            <h4 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Details</h4>
+                                                            <div className="mt-1">
+                                                                <strong>Carrier:</strong> {entry.details.SHIPMENT_CREATED.carrier}<br />
+                                                                <strong>Tracking Number:</strong> {entry.details.SHIPMENT_CREATED.tracking_number}<br />
+                                                                <strong>Cost:</strong> ${entry.details.SHIPMENT_CREATED.cost}<br />
+                                                                <strong>Weight &amp; Size:</strong> {entry.details.SHIPMENT_CREATED.weight_and_size}<br />
+                                                                <strong>Items in Shipment:</strong> {entry.details.SHIPMENT_CREATED.items_in_shipment}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {entry.event_type === 'ORDER_UPDATED_ADD' && entry.details.ORDER_UPDATED_ADD && (
+                                                <div className="mt-2">
+                                                    <p className="text-sm text-gray-700">{entry.message}</p>
+                                                    <button
+                                                        className="mt-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                                                        onClick={() => toggleLogEntryExpansion(entry.id)}
+                                                    >
+                                                        {isExpanded ? 'Hide Details' : 'View Details'}
+                                                    </button>
+                                                    {hasDetails && isExpanded && (
+                                                        <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                                            <h4 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Details</h4>
+                                                            <div className="mt-1">
+                                                                {entry.details.ORDER_UPDATED_ADD.map((item: {
+                                                                    product_name: string,
+                                                                    quantity: number,
+                                                                    price_at_order: number
+                                                                }) => (
+                                                                    <div key={item.product_name}>
+                                                                        <strong>Product:</strong> {item.product_name}<br />
+                                                                        <strong>Quantity:</strong> {item.quantity}<br />
+                                                                        <strong>Price:</strong> ${item.price_at_order}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {entry.event_type === 'ORDER_UPDATED_DELETE' && entry.details['ORDER_UPDATED_DELETE'] && (
+                                                <div className="mt-2">
+                                                    <p className="text-sm text-gray-700">{entry.message}</p>
+                                                    <button
+                                                        className="mt-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                                                        onClick={() => toggleLogEntryExpansion(entry.id)}
+                                                    >
+                                                        {isExpanded ? 'Hide Details' : 'View Details'}
+                                                    </button>
+                                                    {hasDetails && isExpanded && (
+                                                        <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                                            <h4 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Details</h4>
+                                                            <div className="mt-1">
+                                                                <strong>Product:</strong> {entry.details['ORDER_UPDATED_DELETE'].item_name}<br />
+                                                                <strong>Quantity:</strong> {entry.details['ORDER_UPDATED_DELETE'].quantity}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
                                             {/* Expandable details */}
-                                            {hasDetails && isExpanded && (
+                                            {/* {hasDetails && isExpanded && (
                                                 <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                                                     <h4 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Details</h4>
                                                     <pre className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
                                                         {JSON.stringify(entry.details, null, 2)}
                                                     </pre>
                                                 </div>
-                                            )}
+                                            )} */}
                                         </div>
                                     </div>
                                 </div>

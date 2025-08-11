@@ -33,6 +33,11 @@ import {
 import { toast } from 'sonner';
 import { GetFedExRates } from '@/app/(master-admin)/master-admin/actions/shipping/get-fedex-rates';
 import { createShipmentLabel, CreateShipmentLabelRequest } from '@/app/(master-admin)/master-admin/actions/shipping/create-shipment-label';
+import { createShippingFulfillmentOrder } from '@/app/(master-admin)/master-admin/actions/shipping/create-shipping-fulfillment-order';
+import { saveShippingOrder } from '@/app/(master-admin)/master-admin/actions/shipping/save-shipping-order';
+import { addShippingAuditLog } from '@/app/(master-admin)/master-admin/actions/shipping/shipping-audit-logs';
+import { Profile, useProfile } from '@/lib/hooks/useProfile';
+import { sendOrderEmail } from '@/utils/emails/Order-Fulfillment-Emails/SendOrderEmail';
 
 // Import the type from the server action
 type FedExRateResponse = Awaited<ReturnType<typeof GetFedExRates>>;
@@ -48,6 +53,7 @@ interface Product {
         width?: number;
         height?: number;
     };
+    imageSrc?: string;
 }
 
 interface OrderItem {
@@ -103,12 +109,16 @@ interface FedExRateRequest {
 
 
 interface FedExRateCalculatorProps {
+    customerEmail : string
     isOpen: boolean;
+    onCloseShippingSelector: () => void;
     onClose: () => void;
+    orderNumber: string;
     selectedItems: OrderItem[];
     onRateSelected?: (rate: any) => void;
     order_shipping_address: any;
-    onShipmentCreated?: (shipmentData: any) => void;
+    order_id: string;
+    refetchOrderInfo: () => void;
 }
 
 const PICKUP_TYPES = [
@@ -147,11 +157,15 @@ const LABEL_STOCK_TYPES = [
 
 export default function FedExRateCalculator({
     isOpen,
+    onCloseShippingSelector,
     onClose,
+    orderNumber,
     selectedItems,
     onRateSelected,
     order_shipping_address,
-    onShipmentCreated
+    order_id,
+    customerEmail,
+    refetchOrderInfo
 }: FedExRateCalculatorProps) {
     const [currentStep, setCurrentStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
@@ -159,7 +173,7 @@ export default function FedExRateCalculator({
     const [rates, setRates] = useState<FedExRateResponse | null>(null);
     const [selectedRate, setSelectedRate] = useState<any>(null);
     const [shipmentResponse, setShipmentResponse] = useState<any>(null);
-
+    const { profile } = useProfile();
     // Fulfillment step state
     const [labelFormat, setLabelFormat] = useState('COMMON2D');
     const [imageType, setImageType] = useState('PDF');
@@ -219,6 +233,7 @@ export default function FedExRateCalculator({
         );
     };
 
+    // get rate quote FedEx API
     const getRateQuote = async () => {
         setIsLoading(true);
         try {
@@ -295,6 +310,7 @@ export default function FedExRateCalculator({
         toast.success(`Selected ${rate.serviceName} - Proceeding to shipment creation`);
     };
 
+    // create shipment and save the order items with the tracking number and carrier
     const createShipment = async () => {
         if (!selectedRate) {
             toast.error('No rate selected');
@@ -369,26 +385,83 @@ export default function FedExRateCalculator({
                     }]
                 }
             };
-            console.log('shipmentData', shipmentData)
+
             // Call the callback to handle shipment creation
             const response = await createShipmentLabel(shipmentData);
             console.log('response', response)
-
             if (response instanceof Error) {
                 toast.error('Failed to create shipment. Please try again.', {
                     description: response.message
                 });
                 return;
-            } else {
-                setShipmentResponse(response);
-                setCurrentStep(5); // Move to confirmation step
-                toast.success('Shipment created successfully!', {
-                    description: `Tracking: ${response.output.transactionShipments[0].masterTrackingNumber}`
-                });
             }
+
+            // New Fulfillment Shipping Order Record and save the order items with the tracking number and carrier
+            const fulfillmentShippingOrder = await createShippingFulfillmentOrder(order_id, selectedItems, response.output.transactionShipments[0].completedShipmentDetail.shipmentRating.shipmentRateDetails[0].totalNetCharge.toFixed(2));
+            if (fulfillmentShippingOrder instanceof Error) {
+                toast.error('Failed to create fulfillment shipping order. Please try again.', {
+                    description: fulfillmentShippingOrder.message
+                });
+                return;
+            }
+
+            // Create new shipments order record
+            const saveShippingOrderRecord = await saveShippingOrder(
+                fulfillmentShippingOrder.id, 
+                response.output.transactionShipments[0].masterTrackingNumber, 
+                response.output.transactionShipments[0].pieceResponses[0].packageDocuments[0].url, 
+                selectedRate.serviceType, 
+                response.output.transactionShipments[0].pieceResponses[0].deliveryTimestamp, 
+                response.output.transactionShipments[0].pieceResponses[0].packageDocuments[0].encodedLabel);
+
+
+            if (saveShippingOrderRecord instanceof Error) {
+                toast.error('Failed to save shipping order. Please try again.', {
+                    description: saveShippingOrderRecord.message
+                });
+                return;
+            }
+
+            // Add to audit log
+            await addShippingAuditLog({
+                user_name : profile?.first_name + ' ' + profile?.last_name || '',
+                fulfillmentId: order_id,
+                profileId: profile?.id || '',
+                carrier: 'FedEx',
+                trackingNumber: response.output.transactionShipments[0].masterTrackingNumber,
+                itemsInShipment: selectedItems.map(item => {
+                    return `${item.products.name} (${item.quantity}x)`
+                }),
+                weightAndSize: `${packageLineItems[0].weight} lbs`,
+                cost: response.output.transactionShipments[0].completedShipmentDetail.shipmentRating.shipmentRateDetails[0].totalNetCharge.toFixed(2)
+            });
+
+            // send order email
+            await sendOrderEmail({
+                order_id: order_id,
+                orderNumber: orderNumber,
+                trackingNumber: response.output.transactionShipments[0].masterTrackingNumber,
+                shippingService: selectedRate.serviceType,
+                items: selectedItems.map(item => ({
+                    name: item.products.name,
+                    quantity: item.quantity,
+                    imageUrl: item.products.imageSrc
+                })),
+                additionalFees: Number(response.output.transactionShipments[0].completedShipmentDetail.shipmentRating.shipmentRateDetails[0].totalNetCharge.toFixed(2)),
+                customerEmail:customerEmail 
+            });
+
+            setShipmentResponse(response);
+            setCurrentStep(5); // Move to confirmation step
+            toast.success('Shipment created successfully!', {
+                description: `Tracking: ${response.output.transactionShipments[0].masterTrackingNumber}`
+            });
+            refetchOrderInfo();
         } catch (error) {
             console.error('Error creating shipment:', error);
-            toast.error('Failed to create shipment. Please try again.');
+            toast.error('Failed to create shipment. Please try again.', {
+                description: error instanceof Error ? error.message : 'An unknown error occurred'
+            });
         } finally {
             setIsCreatingShipment(false);
         }
@@ -397,7 +470,11 @@ export default function FedExRateCalculator({
     const totalWeight = packageLineItems.reduce((sum, item) => sum + (item.weight * item.quantity), 0);
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="min-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <DialogContent
+                onInteractOutside={(e) => {
+                    e.preventDefault();
+                }}
+                className="min-w-6xl w-full max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Truck className="h-5 w-5" />
@@ -1761,7 +1838,10 @@ export default function FedExRateCalculator({
                                         Back to Shipment
                                     </Button>
                                     <Button
-                                        onClick={onClose}
+                                        onClick={() => {
+                                            onClose();
+                                            onCloseShippingSelector();
+                                        }}
                                         className="flex-1 bg-green-600 hover:bg-green-700"
                                     >
                                         <CheckCircle className="h-4 w-4 mr-2" />

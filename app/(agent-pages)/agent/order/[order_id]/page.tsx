@@ -14,6 +14,9 @@ import { toast } from 'sonner';
 import { UpdateOrderShippingAddress } from '../../../actions/update-order-shipping-address';
 import { submitOrder } from '@/app/(agent-pages)/actions/submit-order';
 import { useProfile } from '@/lib/hooks/useProfile';
+import FulfillmentMethodSelector from '../../../components/FulfillmentMethodSelector';
+import { updateOrderItemFulfillment } from '../../../actions/update-order-item-fulfillment';
+import CheckoutDialog from '../../../components/CheckoutDialog';
 
 function statusBadge(status: string) {
     const config: Record<string, { color: string; label: string }> = {
@@ -45,6 +48,7 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
     const router = useRouter();
     const [showApprovalDialog, setShowApprovalDialog] = useState(false);
     const [showAddressModal, setShowAddressModal] = useState(false);
+    const [showCheckoutDialog, setShowCheckoutDialog] = useState(false);
     const [isSavingAddress, setIsSavingAddress] = useState(false);
     const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
     const total = OrderInfo.order_items.reduce((acc: number, item: OrderItems) => acc + item.price_at_order * Number(item.quantity), 0);
@@ -52,16 +56,34 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
     const totalWithTax = total + tax;
 
     const handleCheckout = () => {
-        if(OrderInfo.order_items.length === 0) {
+        if (OrderInfo.order_items.length === 0) {
             toast.error('No items in this order');
             return;
         }
         if (OrderInfo.status !== 'approved') {
-            setShowApprovalDialog(true);
+            setShowCheckoutDialog(true);
         } else {
-            // Navigate to checkout page for approved orders
-            router.push(`/agent/order/${params.order_id}/checkout`);
+            // Show checkout dialog for approved orders
+            setShowCheckoutDialog(true);
         }
+    };
+
+    const handleCheckoutSubmit = async (paymentData: any) => {
+        // Here you would integrate with your payment processor for authorization hold
+        // For now, we'll simulate a successful authorization hold
+        console.log('Payment authorization data:', paymentData);
+
+        // You can add your payment authorization logic here
+        // Example: await authorizePaymentHold(paymentData, OrderInfo);
+
+        // For demo purposes, we'll just show a success message
+        toast.success('Payment authorization hold placed successfully!');
+
+        // You might want to update the order status here
+        // await updateOrderStatus(params.order_id, 'pending_payment');
+
+        // Refetch order data
+        refetchOrderInfo();
     };
     const handleSubmitOrderForApproval = async () => {
         setIsSubmittingOrder(true);
@@ -72,7 +94,7 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
             setIsSubmittingOrder(false);
         } else {
             toast.error('Failed to submit order for approval');
-            setIsSubmittingOrder(false);    
+            setIsSubmittingOrder(false);
         }
     }
 
@@ -82,13 +104,30 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
             await UpdateOrderShippingAddress(params.order_id, address);
             toast.success('Shipping address updated successfully!');
             setShowAddressModal(false);
-            // Refetch the order data to get the updated address
-            // You might want to use React Query's invalidateQueries here
+            refetchOrderInfo();
         } catch (error) {
             console.error('Error saving address:', error);
             toast.error('Failed to update shipping address');
         } finally {
             setIsSavingAddress(false);
+        }
+    };
+
+    const handleFulfillmentUpdate = async (itemId: string, fulfillmentMethod: 'SHIPPING' | 'PICKUP', shippingAddress?: any) => {
+        try {
+            const result = await updateOrderItemFulfillment(itemId, {
+                fulfillment_type: fulfillmentMethod,
+            });
+
+            if (result.success) {
+                toast.success('Fulfillment method updated successfully!');
+                refetchOrderInfo();
+            } else {
+                toast.error(result.error || 'Failed to update fulfillment method');
+            }
+        } catch (error) {
+            console.error('Error updating fulfillment method:', error);
+            toast.error('An error occurred while updating fulfillment method');
         }
     };
 
@@ -114,7 +153,7 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
         );
     }
     return (
-        <div className="max-w-5xl mx-auto py-10 space-y-8 animate-in fade-in-0 slide-in-from-bottom-2">
+        <div className="max-w-7xl mx-auto py-10 space-y-8 animate-in fade-in-0 slide-in-from-bottom-2">
             <Button
                 variant="outline"
                 className="mb-4"
@@ -123,106 +162,116 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
                 ← Back to Orders
             </Button>
             {/* Order Overview */}
-            <Card className="mb-6">
-                <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div>
-                        <CardTitle className="text-xl font-bold text-foreground">Order: {OrderInfo.order_name}</CardTitle>
-                        <CardDescription className="text-muted-foreground">Order ID: {OrderInfo.id}</CardDescription>
-                        <div className="mt-2 flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground">Created: {formatDate(OrderInfo.created_at)}</span>
-                            {statusBadge(OrderInfo.status)}
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent className="flex flex-col md:flex-row gap-8">
-                    {/* Agent Info */}
-                    <div className="w-full md:w-1/3 bg-muted/40 rounded-lg p-4 flex flex-col gap-2 animate-in fade-in-0 slide-in-from-left-2">
-                        <h4 className="font-semibold text-foreground mb-2">Agent Info</h4>
-                        <div className="text-sm"><span className="font-medium">Name:</span> {OrderInfo.agent.first_name} {OrderInfo.agent.last_name}</div>
-                        <div className="text-sm"><span className="font-medium">Email:</span> {OrderInfo.agent.email}</div>
-                        <div className="text-sm"><span className="font-medium">Phone:</span> {OrderInfo.agent.phone_number}</div>
-                        <div className="text-sm"><span className="font-medium">Tier:</span> {OrderInfo.agent.agent_tiers.name}</div>
-                    </div>
-                    {/* Order Info */}
-                    <div className="flex-1 flex flex-col gap-4">
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">Status:</span>
-                            {statusBadge(OrderInfo.status)}
-                        </div>
+            <section className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+                <Card className="">
+                    <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                         <div>
-                            <span className="text-sm font-medium">Agent Notes:</span>
-                            <div className="text-muted-foreground mt-1">{OrderInfo.notes || <span className="italic">No notes</span>}</div>
+                            <CardTitle className="text-xl font-bold text-foreground">Order: {OrderInfo.order_name}</CardTitle>
+                            <CardDescription className="text-muted-foreground">Order ID: {OrderInfo.order_confirmation_number || OrderInfo.id}</CardDescription>
+                            <div className="mt-2 flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">Created: {formatDate(OrderInfo.created_at)}</span>
+                                {statusBadge(OrderInfo.status)}
+                            </div>
                         </div>
+                    </CardHeader>
+                    <CardContent className="flex flex-col md:flex-row gap-8">
+                        {/* Agent Info */}
+                        <div className="w-full md:w-1/3 bg-muted/40 rounded-lg p-4 flex flex-col gap-2 animate-in fade-in-0 slide-in-from-left-2">
+                            <h4 className="font-semibold text-foreground mb-2">Agent Info</h4>
+                            <div className="text-sm"><span className="font-medium">Name:</span> {OrderInfo.agent.first_name} {OrderInfo.agent.last_name}</div>
+                            <div className="text-sm"><span className="font-medium">Email:</span> {OrderInfo.agent.email}</div>
+                            <div className="text-sm"><span className="font-medium">Phone:</span> {OrderInfo.agent.phone_number}</div>
+                            <div className="text-sm"><span className="font-medium">Tier:</span> {OrderInfo.agent.agent_tiers.name}</div>
+                        </div>
+                        {/* Order Info */}
+                        <div className="flex-1 flex flex-col gap-4">
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">Status:</span>
+                                {statusBadge(OrderInfo.status)}
+                            </div>
+                            <div>
+                                <span className="text-sm font-medium">Agent Notes:</span>
+                                <div className="text-muted-foreground mt-1">{OrderInfo.notes || <span className="italic">No notes</span>}</div>
+                            </div>
+                            <div>
+                                <span className="text-sm font-medium">Order Total:</span>
+                                <span className="ml-2 text-lg font-bold text-green-700">${totalWithTax.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+    
+                {/* Shipping Address Section */}
+                <Card className="animate-in fade-in-0 slide-in-from-bottom-2">
+                    <CardHeader className="flex flex-row items-center justify-between">
                         <div>
-                            <span className="text-sm font-medium">Order Total:</span>
-                            <span className="ml-2 text-lg font-bold text-green-700">${totalWithTax.toFixed(2)}</span>
+                            <CardTitle className="flex items-center gap-2">
+                                <MapPin className="h-5 w-5 text-muted-foreground" />
+                                Shipping Address
+                            </CardTitle>
+                            <CardDescription>
+                                Delivery information for this order
+                            </CardDescription>
                         </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Shipping Address Section */}
-            <Card className="animate-in fade-in-0 slide-in-from-bottom-2">
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                        <CardTitle className="flex items-center gap-2">
-                            <MapPin className="h-5 w-5 text-muted-foreground" />
-                            Shipping Address
-                        </CardTitle>
-                        <CardDescription>
-                            Delivery information for this order
-                        </CardDescription>
-                    </div>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowAddressModal(true)}
-                        className="flex items-center gap-2"
-                    >
-                        <Edit className="h-4 w-4" />
-                        {shippingAddress ? 'Edit Address' : 'Add Address'}
-                    </Button>
-                </CardHeader>
-                <CardContent>
-                    {shippingAddress ? (
-                        <div className="space-y-3">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <div className="text-sm font-medium text-foreground mb-1">Contact Information</div>
-                                    <div className="space-y-1 text-sm text-muted-foreground">
-                                        <div>{shippingAddress.first_name} {shippingAddress.last_name}</div>
-                                        {shippingAddress.company && (
-                                            <div>{shippingAddress.company}</div>
-                                        )}
-                                        <div>{shippingAddress.phone}</div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="text-sm font-medium text-foreground mb-1">Address</div>
-                                    <div className="space-y-1 text-sm text-muted-foreground">
-                                        <div>{shippingAddress.formatted_address}</div>
-                                        {shippingAddress.apartment_suite && (
-                                            <div>{shippingAddress.apartment_suite}</div>
-                                        )}
-                                        <div>
-                                            {shippingAddress.city}, {shippingAddress.state} {shippingAddress.zip_code}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowAddressModal(true)}
+                            className="flex items-center gap-2"
+                        >
+                            <Edit className="h-4 w-4" />
+                            {shippingAddress ? 'Edit Address' : 'Add Address'}
+                        </Button>
+                    </CardHeader>
+                    <CardContent>
+                        {shippingAddress ? (
+                            <div className="space-y-3">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <div className="text-sm font-medium text-foreground mb-1">Contact Information</div>
+                                        <div className="space-y-1 text-sm text-muted-foreground">
+                                            <div>{shippingAddress.first_name} {shippingAddress.last_name}</div>
+                                            {shippingAddress.company && (
+                                                <div>{shippingAddress.company}</div>
+                                            )}
+                                            <div>{shippingAddress.phone}</div>
                                         </div>
-                                        <div>{shippingAddress.country}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-sm font-medium text-foreground mb-1">Address</div>
+                                        <div className="space-y-1 text-sm text-muted-foreground">
+                                            <div>{shippingAddress.formatted_address}</div>
+                                            {shippingAddress.apartment_suite && (
+                                                <div>{shippingAddress.apartment_suite}</div>
+                                            )}
+                                            <div>
+                                                {shippingAddress.city}, {shippingAddress.state} {shippingAddress.zip_code}
+                                            </div>
+                                            <div>{shippingAddress.country}</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    ) : (
-                        <div className="text-center py-8">
-                            <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                            <p className="text-muted-foreground mb-2">No shipping address added yet</p>
-                            <p className="text-sm text-muted-foreground">
-                                Add a shipping address to enable delivery options for this order.
-                            </p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+                        ) : (
+                            <div className="text-center py-8">
+                                <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                                <p className="text-muted-foreground mb-2">No shipping address added yet</p>
+                                <p className="text-sm text-muted-foreground">
+                                    Add a shipping address to enable delivery options for this order.
+                                </p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </section>
+            {/* Fulfillment Methods Section */}
+            <FulfillmentMethodSelector
+                orderItems={OrderInfo.order_items}
+                shippingAddress={shippingAddress}
+                onFulfillmentUpdate={handleFulfillmentUpdate}
+                onSaveAddress={handleSaveAddress}
+            />
+
             {/* Cart Items Section */}
             <Card className="animate-in fade-in-0 slide-in-from-bottom-2">
                 <CardHeader>
@@ -298,7 +347,13 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
                                         </div>
                                         <div className="w-px bg-border mx-6" />
                                         <div className="flex flex-col gap-2">
-                                            {item.fulfillment_type && <Badge variant="outline">{item.fulfillment_type}</Badge>}
+
+
+                                            {/* Legacy fulfillment info */}
+                                            {item.fulfillment_type && (
+                                                <Badge variant="outline">{item.fulfillment_type}</Badge>
+                                            )}
+
                                             {(item.order_status === "SHIPPED" || item.fulfillment_type === "SHIPPING") && (
                                                 <div className="text-xs mt-1 text-muted-foreground">
                                                     Tracking: <span className="font-medium">{item.tracking_number || "-"}</span> | Carrier: <span className="font-medium">{item.carrier || "-"}</span>
@@ -309,9 +364,9 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
                                                     Pickup Details: <span className="font-medium">{item.pickup_details || "-"}</span>
                                                 </div>
                                             )}
-                                            {item.fulfillment_type == null && (
+                                            {!item.fulfillment_type && (
                                                 <div className="text-xs italic text-muted-foreground px-2 py-1 rounded bg-muted">
-                                                    No fulfillment info assigned yet
+                                                    No fulfillment method assigned
                                                 </div>
                                             )}
                                         </div>
@@ -359,15 +414,15 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
                         >
                             Close
                         </Button>
-                       { OrderInfo.status === 'draft' && 
-                        <Button
-                            onClick={() => {
-                                handleSubmitOrderForApproval();
-                            }}
-                            disabled={isSubmittingOrder}
-                        >
-                            {isSubmittingOrder ? 'Submitting...' : 'Submit Order'}
-                        </Button> }
+                        {OrderInfo.status === 'draft' &&
+                            <Button
+                                onClick={() => {
+                                    handleSubmitOrderForApproval();
+                                }}
+                                disabled={isSubmittingOrder}
+                            >
+                                {isSubmittingOrder ? 'Submitting...' : 'Submit Order'}
+                            </Button>}
                     </div>
                 </DialogContent>
             </Dialog>
@@ -391,6 +446,16 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
                 type="shipping"
                 onSave={handleSaveAddress}
                 isSaving={isSavingAddress}
+            />
+
+            {/* Checkout Dialog */}
+            <CheckoutDialog
+                open={showCheckoutDialog}
+                onOpenChange={setShowCheckoutDialog}
+                orderInfo={OrderInfo}
+                profile={profile}
+                refetchOrderInfo={refetchOrderInfo}
+                onCheckout={handleCheckoutSubmit}
             />
         </div>
     );

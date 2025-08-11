@@ -1,10 +1,30 @@
 'use client'
 import { useState, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Star, Search, Package, DollarSign, Plus, ShoppingCart, X, Save, Trash2 } from "lucide-react"
+import {
+    Star,
+    Search,
+    Package,
+    DollarSign,
+    Plus,
+    ShoppingCart,
+    X,
+    Save,
+    Trash2,
+    Weight,
+    FileText,
+    Calendar,
+    ExternalLink,
+    Info,
+    Tag
+} from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
 import { useGetAgentById, useGetAgentProducts } from "@/app/(master-admin)/master-admin/actions/AgentStore"
 import { toast } from "sonner"
 import ProductCardWithDialog from "./ProductCardWithDialog"
@@ -51,6 +71,8 @@ export default function AgentProductsTab({
     const [isStickyCartVisible, setIsStickyCartVisible] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
     const [showNewOrderDialog, setShowNewOrderDialog] = useState(false)
+    const [selectedProduct, setSelectedProduct] = useState<any>(null);
+    const [showProductDialog, setShowProductDialog] = useState(false);
 
     // Handle scroll for sticky cart
     useEffect(() => {
@@ -218,6 +240,16 @@ export default function AgentProductsTab({
         // Add to header cart (single source of truth)
         addToCartLocal(agent_product.products.id, agent_product.products.name)
     }
+
+    const handleViewProductDetails = (agent_product: any) => {
+        const productForDialog = {
+            ...agent_product.products,
+            price: agent_product.price,
+            tier_name: agent.agent_tiers?.agent_tiers?.name || 'Standard Tier'
+        };
+        setSelectedProduct(productForDialog);
+        setShowProductDialog(true);
+    };
 
 
     return (
@@ -572,14 +604,7 @@ export default function AgentProductsTab({
                                         <Button
                                             size="sm"
                                             variant="outline"
-                                            onClick={() => {
-                                                // Open product detail dialog
-                                                const productForDialog = {
-                                                    ...agent_product.products,
-                                                    price: agent_product.price
-                                                }
-                                                // You might want to implement a dialog here
-                                            }}
+                                            onClick={() => handleViewProductDetails(agent_product)}
                                             className="flex-1"
                                         >
                                             <Package className="h-3 w-3 mr-1" />
@@ -590,7 +615,7 @@ export default function AgentProductsTab({
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
-                                                    onClick={() => removeFromCart(agent_product.products.id)}
+                                                    onClick={() => removeFromCart?.(agent_product.products.id)}
                                                 >
                                                     <X className="h-3 w-3" />
                                                 </Button>
@@ -647,6 +672,359 @@ export default function AgentProductsTab({
                     console.log('Order created with ID:', orderId)
                 }}
             />
+
+            {/* Product Detail Dialog */}
+            <Dialog open={showProductDialog} onOpenChange={setShowProductDialog}>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Package className="h-5 w-5" />
+                            Product Details
+                        </DialogTitle>
+                        <DialogDescription>
+                            Comprehensive information about this product
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {selectedProduct && (
+                        <div className="space-y-6">
+                            {/* Product Header */}
+                            <Card>
+                                <CardHeader>
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex-1">
+                                            <CardTitle className="text-xl">{selectedProduct.name}</CardTitle>
+                                            <CardDescription className="mt-2">
+                                                {selectedProduct.description || 'No description available'}
+                                            </CardDescription>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-2xl font-bold text-primary">
+                                                ${selectedProduct.price?.toFixed(2) || '0.00'}
+                                            </div>
+                                            <div className="text-sm text-muted-foreground">
+                                                {selectedProduct.tier_name} Price
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                            </Card>
+
+                            {/* Product Information Tabs */}
+                            <Tabs defaultValue="details" className="w-full">
+                                <TabsList className="grid w-full grid-cols-4">
+                                    <TabsTrigger value="details">Details</TabsTrigger>
+                                    <TabsTrigger value="pricing">Pricing</TabsTrigger>
+                                    <TabsTrigger value="specifications">Specifications</TabsTrigger>
+                                    <TabsTrigger value="documents">Documents</TabsTrigger>
+                                </TabsList>
+
+                                {/* Details Tab */}
+                                <TabsContent value="details" className="space-y-4">
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle className="flex items-center gap-2">
+                                                <Info className="h-5 w-5" />
+                                                Basic Information
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <Label className="text-sm font-medium text-muted-foreground">Product Name</Label>
+                                                    <div className="mt-1 text-lg font-semibold">{selectedProduct.name}</div>
+                                                </div>
+                                                {/* <div>
+                                                    <Label className="text-sm font-medium text-muted-foreground">SKU</Label>
+                                                    <div className="mt-1 font-mono">{selectedProduct.sku || 'N/A'}</div>
+                                                </div> */}
+                                                {/* <div>
+                                                    <Label className="text-sm font-medium text-muted-foreground">Category</Label>
+                                                    <div className="mt-1">
+                                                        <Badge variant="secondary">{selectedProduct.category || 'Uncategorized'}</Badge>
+                                                    </div>
+                                                </div> */}
+                                                <div>
+                                                    <Label className="text-sm font-medium text-muted-foreground">Stock</Label>
+                                                    <div className="mt-1">
+                                                        <Badge variant={selectedProduct.active ? "default" : "secondary"}>
+                                                            {selectedProduct.inStock ? 'Active' : 'Inactive'}
+                                                        </Badge>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {selectedProduct.description && (
+                                                <div>
+                                                    <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+                                                    <div className="mt-1 p-3 bg-muted/30 rounded-lg text-sm">
+                                                        {selectedProduct.description}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                </TabsContent>
+
+                                {/* Pricing Tab */}
+                                <TabsContent value="pricing" className="space-y-4">
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle className="flex items-center gap-2">
+                                                <DollarSign className="h-5 w-5" />
+                                                Pricing Information
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div className="space-y-4">
+                                                    <div>
+                                                        <Label className="text-sm font-medium text-muted-foreground">Current Tier Price</Label>
+                                                        <div className="mt-1 text-3xl font-bold text-primary">
+                                                            ${selectedProduct.price?.toFixed(2) || '0.00'}
+                                                        </div>
+                                                        <div className="text-sm text-muted-foreground">
+                                                            {selectedProduct.tier_name}
+                                                        </div>
+                                                    </div>
+
+                                                    {selectedProduct.subscription_interval && (
+                                                        <div>
+                                                            <Label className="text-sm font-medium text-muted-foreground">Subscription Interval</Label>
+                                                            <div className="mt-1 flex items-center gap-2">
+                                                                <Calendar className="h-4 w-4 text-muted-foreground" />
+                                                                <span className="font-semibold">
+                                                                    {selectedProduct.subscription_interval}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+
+                                                </div>
+
+                                                <div className="space-y-4">
+                                                    {selectedProduct.price_at_order && (
+                                                        <div>
+                                                            <Label className="text-sm font-medium text-muted-foreground">Price at Order</Label>
+                                                            <div className="mt-1 text-lg font-semibold">
+                                                                ${selectedProduct.price_at_order.toFixed(2)}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* {selectedProduct.discount_percentage && (
+                                                        <div>
+                                                            <Label className="text-sm font-medium text-muted-foreground">Discount</Label>
+                                                            <div className="mt-1">
+                                                                <Badge variant="secondary" className="text-green-600">
+                                                                    {selectedProduct.discount_percentage}% OFF
+                                                                </Badge>
+                                                            </div>
+                                                        </div>
+                                                    )} */}
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </TabsContent>
+
+                                {/* Specifications Tab */}
+                                <TabsContent value="specifications" className="space-y-4">
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle className="flex items-center gap-2">
+                                                <Weight className="h-5 w-5" />
+                                                Physical Specifications
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                <div>
+                                                    <Label className="text-sm font-medium text-muted-foreground">Weight</Label>
+                                                    <div className="mt-1 flex items-center gap-2">
+                                                        <Weight className="h-4 w-4 text-muted-foreground" />
+                                                        <span className="font-semibold">
+                                                            {selectedProduct.weight ? `${selectedProduct.weight} lbs` : 'N/A'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {selectedProduct.dimensions && (
+                                                    <>
+                                                        <div>
+                                                            <Label className="text-sm font-medium text-muted-foreground">Dimensions</Label>
+                                                            <div className="mt-1 font-semibold">
+                                                                {selectedProduct.dimensions.length && selectedProduct.dimensions.width && selectedProduct.dimensions.height
+                                                                    ? `${selectedProduct.dimensions.length}" × ${selectedProduct.dimensions.width}" × ${selectedProduct.dimensions.height}"`
+                                                                    : 'N/A'
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <Label className="text-sm font-medium text-muted-foreground">Volume</Label>
+                                                            <div className="mt-1 font-semibold">
+                                                                {selectedProduct.dimensions.length && selectedProduct.dimensions.width && selectedProduct.dimensions.height
+                                                                    ? `${(selectedProduct.dimensions.length * selectedProduct.dimensions.width * selectedProduct.dimensions.height).toFixed(2)} cubic inches`
+                                                                    : 'N/A'
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+
+                                            {selectedProduct.features && selectedProduct.features.length > 0 && (
+                                                <div>
+                                                    <Label className="text-sm font-medium text-muted-foreground">Features</Label>
+                                                    <div className="mt-2 flex flex-wrap gap-2">
+                                                        {selectedProduct.features.map((feature: string, index: number) => (
+                                                            <Badge key={index} variant="outline">
+                                                                {feature}
+                                                            </Badge>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {selectedProduct.specifications && (
+                                                <div>
+                                                    <Label className="text-sm font-medium text-muted-foreground">Technical Specifications</Label>
+                                                    <div className="mt-1 p-3 bg-muted/30 rounded-lg text-sm">
+                                                        <pre className="whitespace-pre-wrap">{selectedProduct.specifications}</pre>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                </TabsContent>
+
+                                {/* Documents Tab */}
+                                <TabsContent value="documents" className="space-y-4">
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle className="flex items-center gap-2">
+                                                <FileText className="h-5 w-5" />
+                                                Documents & Resources
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                            {selectedProduct.brochureUrl && (
+                                                <div className="p-4 border border-muted rounded-lg">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <FileText className="h-5 w-5 text-blue-600" />
+                                                            <div>
+                                                                <div className="font-semibold">Product Brochure</div>
+                                                                <div className="text-sm text-muted-foreground">
+                                                                    Download product brochure and specifications
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <Button
+                                                            onClick={() => window.open(selectedProduct.brochureUrl, '_blank')}
+                                                            variant="outline"
+                                                            size="sm"
+                                                        >
+                                                            <ExternalLink className="h-4 w-4 mr-2" />
+                                                            Download
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {selectedProduct.manualUrl && (
+                                                <div className="p-4 border border-muted rounded-lg">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <FileText className="h-5 w-5 text-green-600" />
+                                                            <div>
+                                                                <div className="font-semibold">User Manual</div>
+                                                                <div className="text-sm text-muted-foreground">
+                                                                    Installation and operation guide
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <Button
+                                                            onClick={() => window.open(selectedProduct.manualUrl, '_blank')}
+                                                            variant="outline"
+                                                            size="sm"
+                                                        >
+                                                            <ExternalLink className="h-4 w-4 mr-2" />
+                                                            Download
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {selectedProduct.warrantyUrl && (
+                                                <div className="p-4 border border-muted rounded-lg">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <FileText className="h-5 w-5 text-orange-600" />
+                                                            <div>
+                                                                <div className="font-semibold">Warranty Information</div>
+                                                                <div className="text-sm text-muted-foreground">
+                                                                    Warranty terms and conditions
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <Button
+                                                            onClick={() => window.open(selectedProduct.warrantyUrl, '_blank')}
+                                                            variant="outline"
+                                                            size="sm"
+                                                        >
+                                                            <ExternalLink className="h-4 w-4 mr-2" />
+                                                            Download
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {!selectedProduct.brochureUrl && !selectedProduct.manualUrl && !selectedProduct.warrantyUrl && (
+                                                <div className="text-center py-8">
+                                                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                                                    <p className="text-muted-foreground">No documents available for this product</p>
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                </TabsContent>
+                            </Tabs>
+
+                            {/* Action Buttons */}
+                            <div className="flex gap-3 pt-4 border-t">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setShowProductDialog(false)}
+                                    className="flex-1"
+                                >
+                                    Close
+                                </Button>
+                                <Button
+                                    onClick={() => {
+                                        if (selectedProduct && addToCart) {
+                                            addToCart({
+                                                id: selectedProduct.id,
+                                                name: selectedProduct.name,
+                                                price: selectedProduct.price,
+                                                weight: selectedProduct.weight || 1,
+                                                quantity: 1,
+                                                image: selectedProduct.image
+                                            });
+                                            setShowProductDialog(false);
+                                        }
+                                    }}
+                                    className="flex-1"
+                                >
+                                    <ShoppingCart className="h-4 w-4 mr-2" />
+                                    Add to Cart
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

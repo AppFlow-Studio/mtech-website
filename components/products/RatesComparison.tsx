@@ -4,6 +4,8 @@ import { CheckCircle2 } from "lucide-react";
 import { RateCardsQueryResult, RateCardsQueryResultProps } from "@/lib/sanity-types";
 import { client } from "@/sanity/lib/client";
 import { PortableText, PortableTextComponents } from "@portabletext/react";
+import { sanityFetch } from "@/utils/sanity/lib/live";
+import { defineQuery } from "next-sanity";
 
 
 // --- Data for the two rate plans ---
@@ -199,10 +201,16 @@ const PricingCard = ({ plan }: { plan: RateCardsQueryResult }) => {
 };
 
 const RateCardsQuery = `*[_type == "RateCards"]`
+const options = { next: { revalidate: 30 } };
 
 const RatesComparison = async () => {
-  const rateCards = await sanityFetch<RateCardsQueryResultProps>(RateCardsQuery);
-  if (rateCards.length < 0 || rateCards[0].RateCards.length < 0) {
+  const rateCards = await sanityFetch<RateCardsQueryResultProps>(
+    {
+      query: defineQuery(RateCardsQuery),
+      ...options,
+    }
+  );
+  if (rateCards.data && (rateCards.data == null || rateCards.data[0].RateCards.length < 0)) {
     return (
       <section className="py-16 flex flex-col items-center justify-center min-h-[300px]">
         <div className="flex flex-col items-center">
@@ -247,7 +255,7 @@ const RatesComparison = async () => {
         <div className="mt-16 flex flex-col lg:flex-row items-center lg:items-stretch justify-center gap-8 lg:gap-0">
           {/* Card 1 */}
           <div className="w-full lg:w-2/5 flex">
-            <PricingCard plan={rateCards[0].RateCards[0]} />
+            <PricingCard plan={rateCards.data[0].RateCards[0]} />
           </div>
 
           {/* VS Separator */}
@@ -264,7 +272,7 @@ const RatesComparison = async () => {
 
           {/* Card 2 */}
           <div className="w-full lg:w-2/5 flex">
-            <PricingCard plan={rateCards[0].RateCards[1]} />
+            <PricingCard plan={rateCards.data[0].RateCards[1]} />
           </div>
         </div>
       </div>

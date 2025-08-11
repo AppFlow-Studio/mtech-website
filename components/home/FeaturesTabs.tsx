@@ -95,20 +95,21 @@ const FeatureTabs: React.FC<{ features: CardFeature[]}> = ({ features }) => {
                   duration: 0.4,
                   ease: [0.25, 0.46, 0.45, 0.94],
                 }}
-                className="w-full rounded-2xl shadow-lg flex flex-col justify-between bg-[#672AB233] dark:bg-[#672AB233] overflow-hidden"
+                className="w-full rounded-2xl shadow-lg flex flex-col justify-between bg-[#380D52] hover:bg-[#E9E5F5]
+                      dark:bg-[#380D52] dark:hover:bg-[#382E5A] overflow-hidden"
               >
                 <div className="p-6 sm:p-8 h-full flex flex-col justify-between">
                   <div className="flex flex-1 flex-col gap-4">
                     {/* Text content */}
                     <div className="w-full flex flex-col">
-                      <span className="text-xl font-bold text-gray-700 dark:text-gray-400">
+                      <span className="text-xl font-bold text-white dark:text-gray-400">
                         {`0${activeIndex + 1}`}
                       </span>
-                      <h3 className="text-base font-normal my-2 text-[#2C3551] dark:text-white">
+                      <h3 className="text-base font-normal my-2 text-white dark:text-white">
                         {activeFeature.title}
                       </h3>
                       <div className="min-h-[120px]">
-                        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed max-w-lg">
+                        <p className="text-sm text-white dark:text-gray-300leading-relaxed max-w-lg">
                           {activeFeature.description}
                         </p>
                       </div>
@@ -168,11 +169,11 @@ const FeatureTabs: React.FC<{ features: CardFeature[]}> = ({ features }) => {
                       p-4 rounded-2xl transition-all duration-300
                       flex flex-col items-center justify-between
                       w-20 flex-shrink-0
-                      bg-[#672AB233] hover:bg-[#E9E5F5]
-                      dark:bg-[#672AB233] dark:hover:bg-[#382E5A]
+                      bg-[#380D52] hover:bg-[#E9E5F5]
+                      dark:bg-[#380D52] dark:hover:bg-[#382E5A]
                     "
                   >
-                    <span className="font-bold text-gray-700 dark:text-gray-400">
+                    <span className="font-bold text-white dark:text-gray-400">
                       {`0${index + 1}`}
                     </span>
 
@@ -181,7 +182,7 @@ const FeatureTabs: React.FC<{ features: CardFeature[]}> = ({ features }) => {
                         className="
                         font-semibold text-sm whitespace-nowrap
                         [writing-mode:vertical-rl] rotate-180
-                        text-gray-800 dark:text-white
+                         text-white dark:text-gray-300 
                       "
                       >
                         {feature.title}

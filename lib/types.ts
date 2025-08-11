@@ -179,13 +179,61 @@ export interface OrderItems {
   tracking_number: string | null
   carrier: string | null
   pickup_details: string | null
+  shipping_address?: string | null
+  custom_shipping_address?: string | null
+  fulfillment_id?: string | null
+  fulfillments?: Fulfillment[]
   updated_at: string
+}
+
+export interface Fulfillment {
+  id: string
+  order_id: string
+  fulfillment_type: 'SHIPPING' | 'PICKUP'
+  status: 'PENDING' | 'SHIPPED' | 'READY_FOR_PICKUP' | 'COMPLETE'
+  additional_fee: number
+  created_at: string
+  shipments: Shipment[]
+  pickups: Pickup[]
+  order_items?: OrderItem[]
+}
+
+export interface Pickup {
+  id: string
+  fulfillment_id: string
+  pickup_code: string
+  status: 'READY_FOR_PICKUP' | 'COMPLETED'
+  picked_up_at?: string
+  created_at: string
+}
+
+export interface OrderItem {
+  id: string
+  products: {
+    name: string
+    imageSrc?: string
+    description?: string
+  }
+  quantity: number
+  price_at_order: number
+  fulfillment_type: 'SHIPPING' | 'PICKUP'
+  fulfillment_id: string | null
+  order_status: 'PENDING' | 'READY_FOR_PICKUP' | 'SHIPPED' | 'COMPLETED'
+}
+
+export interface Shipment {
+  id: string
+  fulfillment_id: string
+  tracking_number: string
+  label_url: string
+  carrier: string
+  service_type: string
+  created_at: string
 }
 
 
 export interface AdminPrivileges {
   can_edit_order: boolean
-
 }
 
 // TypeScript types based on the provided JSON data structure

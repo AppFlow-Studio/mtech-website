@@ -41,7 +41,8 @@ import {
     ClipboardList,
     Send,
     PackageCheck,
-    List
+    List,
+    ChevronDown
 } from "lucide-react"
 import { useProfile } from "@/lib/hooks/useProfile"
 import makeNewOrder from "../actions/make-new-order"
@@ -61,6 +62,7 @@ import { createOrderWithItems } from "../actions/create-order-with-items"
 import { syncOrderItems } from "../actions/sync-order-items"
 import AgentOrdersScreen from "../components/AgentOrdersScreen"
 import { useRouter, useSearchParams } from "next/navigation";
+import AgentSettingsDialog from "../components/AgentSettingsDialog";
 
 
 
@@ -78,6 +80,8 @@ export default function AgentPage() {
         priority: ''
     })
     const [isUpdating, setIsUpdating] = useState(false)
+    const [showSettingsDialog, setShowSettingsDialog] = useState(false)
+    const [showSettingsDropdown, setShowSettingsDropdown] = useState(false)
     const router = useRouter();
     const searchParams = useSearchParams();
     const initialTab = searchParams?.get("tab") || "dashboard";
@@ -99,6 +103,24 @@ export default function AgentPage() {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchParams]);
+
+    // Close settings dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as Element;
+            if (!target.closest('.settings-dropdown')) {
+                setShowSettingsDropdown(false);
+            }
+        };
+
+        if (showSettingsDropdown) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showSettingsDropdown]);
     const [cartItems, setCartItems] = useState<any[]>([])
     const [isCartOpen, setIsCartOpen] = useState(false)
     const [cartMode, setCartMode] = useState<'guest' | 'inquiry'>('guest')
@@ -428,14 +450,47 @@ export default function AgentPage() {
                                 <Star className="h-4 w-4" />
                                 {agent.agent_tiers.name}
                             </Badge>
-                            <Button variant="outline" size="sm">
-                                <Settings className="h-4 w-4 mr-2" />
-                                Settings
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={signOut}>
-                                <LogOut className="h-4 w-4 mr-2" />
-                                Sign Out
-                            </Button>
+
+                            {/* Settings Dropdown */}
+                            <div className="relative settings-dropdown">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowSettingsDropdown(!showSettingsDropdown)}
+                                    className="flex items-center gap-2"
+                                >
+                                    <Settings className="h-4 w-4" />
+                                    Settings
+                                    <ChevronDown className={`h-4 w-4 transition-transform ${showSettingsDropdown ? 'rotate-180' : ''}`} />
+                                </Button>
+
+                                {showSettingsDropdown && (
+                                    <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50">
+                                        <div className="py-1">
+                                            <button
+                                                onClick={() => {
+                                                    setShowSettingsDialog(true)
+                                                    setShowSettingsDropdown(false)
+                                                }}
+                                                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                            >
+                                                <User className="h-4 w-4" />
+                                                Edit Profile
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setShowSettingsDropdown(false)
+                                                    signOut()
+                                                }}
+                                                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                            >
+                                                <LogOut className="h-4 w-4" />
+                                                Sign Out
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -869,24 +924,24 @@ export default function AgentPage() {
                                                     </>
                                                 )}
                                             </Button>}
-                                        {selectedInquiryForCart ?
-                                            <Button
-                                                onClick={() => {
-                                                    // Handle checkout logic here
-                                                    console.log('Checkout:', {
-                                                        items: cartItems,
-                                                        mode: cartMode,
-                                                        inquiry: selectedInquiryForCart,
-                                                        total: getGrandTotal()
-                                                    })
-                                                    clearCart()
-                                                    setIsCartOpen(false)
-                                                }}
-                                                className="flex-1 bg-green-600 text-white hover:bg-green-700"
-                                            >
-                                                <Plane className="h-4 w-4 mr-2" />
-                                                Submit Order
-                                            </Button> :
+                                        {selectedInquiryForCart &&
+                                            // <Button
+                                            //     onClick={() => {
+                                            //         // Handle checkout logic here
+                                            //         console.log('Checkout:', {
+                                            //             items: cartItems,
+                                            //             mode: cartMode,
+                                            //             inquiry: selectedInquiryForCart,
+                                            //             total: getGrandTotal()
+                                            //         })
+                                            //         clearCart()
+                                            //         setIsCartOpen(false)
+                                            //     }}
+                                            //     className="flex-1 bg-green-600 text-white hover:bg-green-700"
+                                            // >
+                                            //     <Plane className="h-4 w-4 mr-2" />
+                                            //     Submit Order
+                                            // </Button> :
                                             <Button
                                                 onClick={() => setOpenCreateOrderDialog(true)}
                                                 className="flex-1 bg-green-600 text-white hover:bg-green-700"
@@ -987,6 +1042,17 @@ export default function AgentPage() {
                         </form>
                     </DialogContent>
                 </Dialog>
+
+                {/* Agent Settings Dialog */}
+                <AgentSettingsDialog
+                    open={showSettingsDialog}
+                    onOpenChange={setShowSettingsDialog}
+                    agent={agent}
+                    onProfileUpdated={() => {
+                        // Refresh agent data after profile update
+                        refetch()
+                    }}
+                />
 
             </div>
         </div>

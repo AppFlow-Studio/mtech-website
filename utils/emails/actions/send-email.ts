@@ -199,7 +199,7 @@ export async function sendOrderSubmissionEmail({ customerEmail,
 
     try {
         const { data, error } = await resend.emails.send({
-            from: 'MTech Distributors <noreply@mtechdistributor.com>',
+            from: 'MTech Distributors <support@mtechdistributor.com>',
             to: customerEmail,
             subject,
             react: OrderSubmissionEmail({ customerName, customerEmail, orderConfirmationNumber: orderId, orderItems: items, orderNotes: notes, agentName: agentName, agentEmail: agentEmail, totalAmount: totalAmount, submittedAt: new Date().toISOString() }),

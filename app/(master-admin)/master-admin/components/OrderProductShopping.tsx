@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 import { AddOrderItems } from "../actions/order-actions/add-order-items"
+import { useProfile } from "@/lib/hooks/useProfile"
 const tags = [
     "atm parts",
     "pos parts",
@@ -23,6 +24,7 @@ const tags = [
 export default function OrderProductShopping({ agent_id, agent_tier, agent_profile, agent_notes, order_id, setShowAddItemDialog, refetchOrderInfo }: { agent_id: string, agent_tier: any, agent_profile: any, agent_notes: any, order_id: string, setShowAddItemDialog: (show: boolean) => void, refetchOrderInfo: () => void }) {
     const { data: AgentProducts, isLoading, isError } = useGetAgentProducts(agent_id)
     // const { tags } = useTags()
+    const { profile } = useProfile()
     const [selectedTags, setSelectedTags] = useState<string[]>([])
     const [cart, setCart] = useState<Record<string, number>>({})
     const [searchTerm, setSearchTerm] = useState('')
@@ -146,9 +148,10 @@ export default function OrderProductShopping({ agent_id, agent_tier, agent_profi
             order_id: order_id,
             product_id: item.product.id,
             quantity: item.quantity,
-            price_at_order: item.price
+            price_at_order: item.price,
+            product_name: item.product.name
         }))
-        const isSaved = await AddOrderItems(orderItems)
+        const isSaved = await AddOrderItems(orderItems, profile?.first_name + ' ' + profile?.last_name || '')
         if (isSaved instanceof Error) {
             toast.error('Failed to save cart')
         } else {

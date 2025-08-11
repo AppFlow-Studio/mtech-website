@@ -5,13 +5,17 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Pencil, CheckCircle, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
+import { Loader2, Pencil, CheckCircle, DollarSign, TrendingUp, TrendingDown, Package, Truck, ExternalLink, Printer, Clock } from "lucide-react";
 import { OrderItems } from "@/lib/types";
 import { createClient } from "@/utils/supabase/server";
 import { UpdateOrderItem } from "@/app/(master-admin)/master-admin/actions/order-actions/update-order-item";
 import { DeleteOrderItem } from "@/app/(master-admin)/master-admin/actions/order-actions/delete-order-item";
 import { GetAgentTierPrice } from "@/app/(master-admin)/master-admin/actions/order-actions/get-agent-tier-price";
+import { createPickupFulfillment } from "@/app/(master-admin)/master-admin/actions/shipping/create-pickup-fulfillment";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { useProfile } from "@/lib/hooks/useProfile";
+
 // Types for props
 interface OrderItemCardProps {
     item: OrderItems;
@@ -20,26 +24,25 @@ interface OrderItemCardProps {
     agentTierId?: string;
 }
 
-const statusOptions = [
-    { value: "PENDING", label: "Pending" },
-    { value: "READY_FOR_PICKUP", label: "Ready for Pickup" },
-    { value: "SHIPPED", label: "Shipped" },
-    { value: "COMPLETED", label: "Completed" },
-];
-
 function statusBadge(status: string) {
-    const config: Record<string, { color: string; label: string }> = {
-        PENDING: { color: "bg-gray-100 text-gray-800", label: "Pending" },
-        READY_FOR_PICKUP: { color: "bg-blue-100 text-blue-800", label: "Ready for Pickup" },
-        SHIPPED: { color: "bg-green-100 text-green-800", label: "Shipped" },
-        COMPLETED: { color: "bg-purple-100 text-purple-800", label: "Completed" },
+    const config: Record<string, { color: string; label: string; icon: any }> = {
+        PENDING: { color: "bg-yellow-100 text-yellow-800", label: "Pending", icon: Loader2 },
+        READY_FOR_PICKUP: { color: "bg-green-100 text-green-800", label: "Ready for Pickup", icon: Package },
+        SHIPPED: { color: "bg-blue-100 text-blue-800", label: "Shipped", icon: Truck },
+        COMPLETED: { color: "bg-purple-100 text-purple-800", label: "Completed", icon: CheckCircle },
     };
     const c = config[status] || config.PENDING;
-    return <Badge className={`${c.color} font-medium`}>{c.label}</Badge>;
+    const Icon = c.icon;
+    return (
+        <Badge className={`${c.color} font-medium flex items-center gap-1`}>
+            <Icon className="h-3 w-3" />
+            {c.label}
+        </Badge>
+    );
 }
 
-
 export function OrderItemCard({ item, order_id, refetchOrderInfo, agentTierId }: OrderItemCardProps) {
+    const { profile } = useProfile()
     const [editDialog, setEditDialog] = useState(false);
     const [editQty, setEditQty] = useState(item.quantity);
     const [editPrice, setEditPrice] = useState(item.price_at_order);
@@ -54,6 +57,11 @@ export function OrderItemCard({ item, order_id, refetchOrderInfo, agentTierId }:
     const [isDeleting, setIsDeleting] = useState(false);
     const [agentTierPrice, setAgentTierPrice] = useState<number | null>(null);
     const [isLoadingTierPrice, setIsLoadingTierPrice] = useState(false);
+    const [isPreparingPickup, setIsPreparingPickup] = useState(false);
+
+    // Check if item is fulfilled
+    const isFulfilled = item.fulfillment_id || item.order_status === 'SHIPPED' || item.order_status === 'COMPLETED';
+    const hasFulfillment = item.fulfillments && item.fulfillments.length > 0;
 
     // Fetch agent tier price when component mounts
     useEffect(() => {
@@ -112,7 +120,7 @@ export function OrderItemCard({ item, order_id, refetchOrderInfo, agentTierId }:
 
     const handleDelete = async () => {
         // Add Trigger to notify the user that the item is being deleted via email
-        const isDeleted = await DeleteOrderItem(order_id, item.id);
+        const isDeleted = await DeleteOrderItem(order_id, item.id, item.products.name, profile?.first_name + ' ' + profile?.last_name || 'Unknown', item.quantity);
         if (!(isDeleted instanceof Error)) {
             setShowDeleteDialog(false);
             toast.success("Item deleted successfully");
@@ -125,15 +133,52 @@ export function OrderItemCard({ item, order_id, refetchOrderInfo, agentTierId }:
         }
     };
 
+    const handlePrintLabel = (fulfillment: any) => {
+        if (fulfillment.shipments && fulfillment.shipments.length > 0) {
+            const shipment = fulfillment.shipments[0];
+            if (shipment.label_url) {
+                const printWindow = window.open(shipment.label_url, '_blank');
+                if (printWindow) {
+                    printWindow.onload = () => {
+                        printWindow.print();
+                    };
+                }
+                toast.success('Opening shipping label for printing...');
+            } else {
+                toast.error('No label URL available');
+            }
+        }
+    };
+
+    const handlePreparePickup = async () => {
+        setIsPreparingPickup(true);
+        try {
+            const result = await createPickupFulfillment(order_id, [item]);
+            if (result.success && result.data) {
+                toast.success(`Pickup prepared! Code: ${result.data.pickup_code}`);
+                refetchOrderInfo();
+            } else {
+                toast.error(result.error || 'Failed to prepare pickup');
+            }
+        } catch (error) {
+            toast.error('An error occurred while preparing pickup');
+        } finally {
+            setIsPreparingPickup(false);
+        }
+    };
+
     return (
         <>
-            <Card className="mb-4 shadow-sm hover:shadow-md transition-shadow duration-200 animate-in fade-in-0 slide-in-from-bottom-2">
+            <Card className={cn(
+                "mb-4 shadow-sm hover:shadow-md transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-2",
+                isFulfilled && "border-l-4 border-l-green-500 bg-green-50/30",
+                hasFulfillment && "border-l-4 border-l-blue-500 bg-blue-50/30"
+            )}>
                 <CardContent className="flex items-center gap-4 py-4">
                     {item.products?.imageSrc && (
                         <img src={item.products.imageSrc} alt={item.products.name} className="w-14 h-14 object-cover rounded border" />
                     )}
                     <div className="flex-1 flex-row flex">
-
                         <div className="flex flex-col gap-1">
                             <div className="font-semibold text-foreground">{item.products?.name}</div>
                             <div className="text-xs text-muted-foreground mb-1">{item.products?.description.slice(0, 100)}...</div>
@@ -144,33 +189,31 @@ export function OrderItemCard({ item, order_id, refetchOrderInfo, agentTierId }:
                                 <span>Subtotal: ${item.price_at_order * Number(item.quantity)}</span>
                             </div>
                             {/* Price Comparison Display */}
-                            {agentTierId && (
-                                <div className="flex items-center gap-2 mt-1">
+                            {agentTierPrice !== null && (
+                                <div className="mt-2">
                                     {isLoadingTierPrice ? (
                                         <div className="text-xs text-muted-foreground flex items-center gap-1">
                                             <Loader2 className="h-3 w-3 animate-spin" />
                                             Loading tier price...
                                         </div>
-                                    ) : agentTierPrice ? (
+                                    ) : (
                                         <div className="flex items-center gap-2 text-xs">
                                             <span className="text-muted-foreground">Tier Price: ${agentTierPrice}</span>
                                             {priceDifference !== 0 && (
-                                                <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${priceDifference > 0
-                                                    ? 'bg-green-100 text-green-700'
-                                                    : 'bg-red-100 text-red-700'
-                                                    }`}>
+                                                <div className={cn(
+                                                    "flex items-center gap-1",
+                                                    priceDifference > 0 ? "text-red-600" : "text-green-600"
+                                                )}>
                                                     {priceDifference > 0 ? (
                                                         <TrendingUp className="h-3 w-3" />
                                                     ) : (
                                                         <TrendingDown className="h-3 w-3" />
                                                     )}
-                                                    {priceDifference > 0 ? '+' : ''}{priceDifference.toFixed(2)} ({priceDifferencePercentage > 0 ? '+' : ''}{priceDifferencePercentage.toFixed(1)}%)
+                                                    <span className="font-medium">
+                                                        {priceDifference > 0 ? '+' : ''}{priceDifference.toFixed(2)} ({priceDifferencePercentage > 0 ? '+' : ''}{priceDifferencePercentage.toFixed(1)}%)
+                                                    </span>
                                                 </div>
                                             )}
-                                        </div>
-                                    ) : (
-                                        <div className="text-xs text-muted-foreground italic">
-                                            No tier price available
                                         </div>
                                     )}
                                 </div>
@@ -178,25 +221,94 @@ export function OrderItemCard({ item, order_id, refetchOrderInfo, agentTierId }:
                         </div>
                         <div className="w-px bg-border mx-6" />
                         <div className="flex flex-col gap-2">
-                            {item.fulfillment_type && <Badge variant="outline">{item.fulfillment_type}</Badge>}
-                            {item.order_status === "SHIPPED" || item.fulfillment_type === "SHIPPING" && (
-                                <div className="text-xs mt-1 text-muted-foreground">
-                                    Tracking: <span className="font-medium">{item.tracking_number || "-"}</span> | Carrier: <span className="font-medium">{item.carrier || "-"}</span>
+                            {/* Fulfillment Status */}
+                            {hasFulfillment ? (
+                                <div className="space-y-2">
+                                    {item.fulfillments?.map((fulfillment: any) => (
+                                        <div key={fulfillment.id} className="p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <Badge className="bg-blue-100 text-blue-800 text-xs">
+                                                    {fulfillment.fulfillment_type === 'SHIPPING' ? (
+                                                        <Truck className="h-3 w-3 mr-1" />
+                                                    ) : (
+                                                        <Package className="h-3 w-3 mr-1" />
+                                                    )}
+                                                    {fulfillment.fulfillment_type}
+                                                </Badge>
+                                                {fulfillment.shipments && fulfillment.shipments.length > 0 && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        onClick={() => handlePrintLabel(fulfillment)}
+                                                        className="h-6 px-2 text-xs"
+                                                    >
+                                                        <Printer className="h-3 w-3 mr-1" />
+                                                        Print Label
+                                                    </Button>
+                                                )}
+                                            </div>
+                                            {fulfillment.shipments && fulfillment.shipments.length > 0 && (
+                                                <div className="text-xs text-blue-700">
+                                                    <div>Tracking: {fulfillment.shipments[0].tracking_number}</div>
+                                                    <div>Carrier: {fulfillment.shipments[0].carrier}</div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
                                 </div>
-                            )}
-                            {item.fulfillment_type === "PICKUP" && (
-                                <div className="text-xs mt-1 text-muted-foreground">
-                                    Pickup Details: <span className="font-medium">{item.pickup_details || "-"}</span>
-                                </div>
-                            )}
-                            {item.fulfillment_type == null && (
-                                <div className="text-xs italic text-muted-foreground px-2 py-1 rounded bg-muted">
-                                    No fulfillment info assigned yet
-                                </div>
+                            ) : (
+                                <>
+                                    {item.fulfillment_type &&
+                                        <div className="text-left">
+                                            <Badge
+                                                variant={item.fulfillment_type === 'SHIPPING' ? 'default' : 'secondary'}
+                                                className={item.fulfillment_type === 'SHIPPING' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}
+                                            >
+                                                {item.fulfillment_type === 'SHIPPING' ? (
+                                                    <Truck className="h-3 w-3 mr-1" />
+                                                ) : (
+                                                    <Package className="h-3 w-3 mr-1" />
+                                                )}
+                                                {item.fulfillment_type}
+                                            </Badge>
+                                        </div>
+                                    }
+                                    {item.order_status === "SHIPPED" || item.fulfillment_type === "SHIPPING" && (
+                                        <div className="text-xs mt-1 text-muted-foreground">
+                                            Tracking: <span className="font-medium">{item.tracking_number || "-"}</span> | Carrier: <span className="font-medium">{item.carrier || "-"}</span>
+                                        </div>
+                                    )}
+                                    {item.fulfillment_type === "PICKUP" && (
+                                        <div className="text-xs mt-1 text-muted-foreground">
+                                            Pickup Details: <span className="font-medium">{item.pickup_details || "-"}</span>
+                                        </div>
+                                    )}
+                                    {item.fulfillment_type == null && (
+                                        <div className="text-xs italic text-muted-foreground px-2 py-1 rounded bg-muted">
+                                            No fulfillment info assigned yet
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </div>
                     </div>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col items-end gap-2">
+                        {!item.fulfillment_id && item.fulfillment_type === 'PICKUP' && (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handlePreparePickup}
+                                disabled={isPreparingPickup}
+                                className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                            >
+                                {isPreparingPickup ? (
+                                    <Clock className="h-3 w-3 mr-1 animate-spin" />
+                                ) : (
+                                    <Package className="h-3 w-3 mr-1" />
+                                )}
+                                {isPreparingPickup ? 'Preparing...' : 'Mark as Ready for Pickup'}
+                            </Button>
+                        )}
                         <Button size="icon" variant="outline" onClick={() => setEditDialog(true)}>
                             <Pencil className="h-4 w-4" />
                         </Button>
@@ -247,87 +359,79 @@ export function OrderItemCard({ item, order_id, refetchOrderInfo, agentTierId }:
                                         className="pl-8"
                                     />
                                 </div>
-                                {agentTierPrice && (
-                                    <div className="text-xs text-muted-foreground mt-1">
-                                        Tier Price: ${agentTierPrice}
-                                        {editPrice !== agentTierPrice && (
-                                            <span className={`ml-2 ${editPrice > agentTierPrice ? 'text-green-600' : 'text-red-600'
-                                                }`}>
-                                                ({editPrice > agentTierPrice ? '+' : ''}{((editPrice - agentTierPrice) / agentTierPrice * 100).toFixed(1)}%)
-                                            </span>
-                                        )}
-                                    </div>
-                                )}
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium mb-1">Status</label>
-                                <select
-                                    className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                                    value={editStatus}
-                                    onChange={e => setEditStatus(e.target.value as "PENDING" | "READY_FOR_PICKUP" | "SHIPPED" | "COMPLETED")}
-                                    disabled={isSaving}
-                                >
-                                    {statusOptions.map(opt => (
-                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium mb-1">Fulfillment Type</label>
-                                <select
-                                    className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                                    value={editFulfillment}
-                                    onChange={e => setEditFulfillment(e.target.value as any)}
-                                    disabled={isSaving}
-                                >
-                                    <option value="PICKUP">Pickup</option>
-                                    <option value="SHIPPING">Shipping</option>
-                                </select>
-                            </div>
-                            {editFulfillment === "SHIPPING" && (
-                                <>
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1">Tracking Number</label>
-                                        <Input
-                                            value={editTracking}
-                                            onChange={e => setEditTracking(e.target.value)}
-                                            disabled={isSaving}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1">Carrier</label>
-                                        <Input
-                                            value={editCarrier}
-                                            onChange={e => setEditCarrier(e.target.value)}
-                                            disabled={isSaving}
-                                        />
-                                    </div>
-                                </>
-                            )}
-                            {editFulfillment === "PICKUP" && (
-                                <div className="col-span-2">
-                                    <label className="block text-sm font-medium mb-1">Pickup Details</label>
-                                    <Textarea
-                                        value={editPickup}
-                                        onChange={e => setEditPickup(e.target.value)}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Order Status</label>
+                            <select
+                                className="w-full px-3 py-2 border border-border rounded-md bg-background"
+                                value={editStatus}
+                                onChange={e => setEditStatus(e.target.value as any)}
+                                disabled={isSaving}
+                            >
+                                <option value="PENDING">Pending</option>
+                                <option value="READY_FOR_PICKUP">Ready for Pickup</option>
+                                <option value="SHIPPED">Shipped</option>
+                                <option value="COMPLETED">Completed</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Fulfillment Type</label>
+                            <select
+                                className="w-full px-3 py-2 border border-border rounded-md bg-background"
+                                value={editFulfillment}
+                                onChange={e => setEditFulfillment(e.target.value as any)}
+                                disabled={isSaving}
+                            >
+                                <option value="PICKUP">Pickup</option>
+                                <option value="SHIPPING">Shipping</option>
+                            </select>
+                        </div>
+                        {editFulfillment === "SHIPPING" && (
+                            <>
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Tracking Number</label>
+                                    <Input
+                                        value={editTracking}
+                                        onChange={e => setEditTracking(e.target.value)}
                                         disabled={isSaving}
                                     />
                                 </div>
-                            )}
-                        </div>
-                        {error && <div className="text-red-500 text-sm">{error}</div>}
-                        <div className="flex gap-2 justify-end mt-2">
-                            <Button variant="outline" onClick={() => setEditDialog(false)} disabled={isSaving}>
-                                Cancel
-                            </Button>
-                            <Button onClick={handleSave} className="bg-primary text-primary-foreground hover:bg-primary/90" disabled={isSaving}>
-                                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />} Save
-                            </Button>
-                        </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Carrier</label>
+                                    <Input
+                                        value={editCarrier}
+                                        onChange={e => setEditCarrier(e.target.value)}
+                                        disabled={isSaving}
+                                    />
+                                </div>
+                            </>
+                        )}
+                        {editFulfillment === "PICKUP" && (
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Pickup Details</label>
+                                <Textarea
+                                    value={editPickup}
+                                    onChange={e => setEditPickup(e.target.value)}
+                                    disabled={isSaving}
+                                    placeholder="Enter pickup instructions or details..."
+                                />
+                            </div>
+                        )}
+                        {error && (
+                            <div className="text-red-600 text-sm">{error}</div>
+                        )}
                     </div>
+                    <DialogFooter className="flex gap-2 justify-end mt-4">
+                        <Button variant="outline" onClick={() => setEditDialog(false)} disabled={isSaving}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleSave} disabled={isSaving}>
+                            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />} Save
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
-            {/* Delete Confirmation Dialog */}
             <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                 <DialogContent className="max-w-md animate-in fade-in-0 zoom-in-95">
                     <DialogHeader>
