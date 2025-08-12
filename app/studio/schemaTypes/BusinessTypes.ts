@@ -196,7 +196,6 @@ export const BusinessTypes = defineType({
             of: [{
                 type: "image",
             }],
-            validation: (Rule) => Rule.required().min(1),
         }),
 
 
