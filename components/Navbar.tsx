@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState, useEffect } from "react";
 import {
   ChevronDown,
@@ -18,7 +17,8 @@ import { useProfile } from "@/lib/hooks/useProfile";
 import { useQuoteCartStore } from "@/lib/quote-cart-store";
 import { QuoteCart } from "./QuoteCart";
 
-const Navbar = () => {
+
+const Navbar = ({ phoneNumber }: { phoneNumber?: any }) => {
   const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
@@ -232,7 +232,7 @@ const Navbar = () => {
               <div className="max-w-7xl mx-auto flex justify-end items-center">
                 <div className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300">
                   <Phone size={16} />
-                  <Link href="tel:888-411-7583">888-411-7583</Link>
+                  <Link href={`tel:${phoneNumber?.Footer_Contact_Link_Url}`}>{phoneNumber?.Footer_Contact_Link_Name}</Link>
                 </div>
               </div>
             </div>

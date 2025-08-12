@@ -42,7 +42,6 @@ const Collection = async () => {
     query: CollectionQuery,
     ...options,
   });
-  console.log(collection.data[0].cards);
   if (!collection) {
     return null;
   }

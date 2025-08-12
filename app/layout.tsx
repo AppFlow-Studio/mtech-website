@@ -12,6 +12,7 @@ import { VisualEditing } from "next-sanity";
 import { draftMode } from "next/headers";
 import { DisableDraftMode } from "@/components/DisableDraftMode";
 import { SanityLive } from "@/utils/sanity/lib/live";
+import NavBarNumber from "@/components/home/NavBarNumber";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,7 +45,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const initialTheme = await getTheme();
-
+  const phoneNumber = await NavBarNumber();
   return (
     <html lang="en" className={initialTheme} suppressHydrationWarning>
       {/* 
@@ -58,7 +59,7 @@ export default async function RootLayout({
         <ThemeProvider initialTheme={initialTheme}>
           <AuthProvider>
             <TanstackProvider>
-              <Navbar />
+              <Navbar phoneNumber={phoneNumber} />
               {children}
               <SanityLive />
               {(await draftMode()).isEnabled && <VisualEditing />}
