@@ -365,7 +365,7 @@ export default function QuoteRequestDetailPage({ params }: { params: { id: strin
             customerName: `${quoteRequest.customer_name} ${quoteRequest.customer_last_name}`,
             quoteId: quoteRequest.id,
             orderId: quoteRequest.order_confirmation_number,
-            checkoutLink: `https://mtechdistributor.com/quote-requests/${quoteRequest.id}`,
+            checkoutLink: `https://mtechdistributor.com/review-quote`,
             items: quoteRequest.quote_request_items.map((item: QuoteRequestItem) => ({
                 product: item.product,
                 quantity: item.quantity,

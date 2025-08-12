@@ -127,6 +127,18 @@ export default function AgentPage() {
         order_name: "",
         notes: ""
     });
+    const [newOrderShippingAddress, setNewOrderShippingAddress] = useState({
+        country: "United States",
+        first_name: "",
+        last_name: "",
+        company: "",
+        formatted_address: "",
+        apartment_suite: "",
+        city: "",
+        state: "",
+        zip_code: "",
+        phone: ""
+    });
     const [isCreatingOrder, setIsCreatingOrder] = useState(false);
     const { data: agent, isLoading } = useGetAgentById(profile?.id || '')
     const { data: orders, isLoading: ordersLoading, refetch: refetchAgentOrders } = useOrderState(profile?.id || '')
@@ -774,7 +786,7 @@ export default function AgentPage() {
                                                     </>
                                                 )}
                                             </Button>}
-                                        {selectedInquiryForCart &&
+                                        {/* {selectedInquiryForCart &&
                                             // <Button
                                             //     onClick={() => {
                                             //         // Handle checkout logic here
@@ -799,7 +811,7 @@ export default function AgentPage() {
                                                 <Plus className="h-4 w-4 mr-2" />
                                                 Create New Order
                                             </Button>
-                                        }
+                                        } */}
                                     </div>
                                 </div>
                             </div>

@@ -45,7 +45,7 @@ export const QuoteApprovalEmail = ({
                 <Container style={container}>
                     <Section style={box}>
                         <Img
-                            src={`${baseUrl}/logo.png`}
+                            src={`${baseUrl}/MtechDistributorsLogo.png.png`}
                             width="180"
                             height="60"
                             alt="MTech Distributors"

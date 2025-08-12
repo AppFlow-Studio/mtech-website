@@ -18,7 +18,7 @@ interface EmailData {
     from?: string
 }
 
-export async function sendEmail({ to, subject, html, from = 'MTech Distributors <noreply@mtechdistributor.com>' }: EmailData) {
+export async function sendEmail({ to, subject, html, from = 'MTech Distributors <support@mtechdistributor.com>' }: EmailData) {
     try {
         const { data, error } = await resend.emails.send({
             from,
@@ -44,7 +44,7 @@ export async function sendQuoteSubmissionEmail(customerEmail: string, customerNa
 
     try {
         const { data, error } = await resend.emails.send({
-            from: 'MTech Distributors <noreply@mtechdistributor.com>',
+            from: 'MTech Distributors <support@mtechdistributor.com>',
             to: customerEmail,
             subject,
             react: QuoteSubmissionEmail({ customerName, notes, items }),
@@ -82,7 +82,7 @@ export async function sendQuoteApprovalEmail({ customerEmail, customerName, orde
 
     try {
         const { data, error } = await resend.emails.send({
-            from: 'MTech Distributors <noreply@mtechdistributor.com>',
+            from: 'MTech Distributors <support@mtechdistributor.com>',
             to: customerEmail,
             subject,
             react: QuoteApprovalEmail({ customerEmail, customerName, order_confirmation_number: orderId, checkoutLink, items }),
@@ -130,7 +130,7 @@ export async function sendPriceUpdateEmail(emailData: {
 
     try {
         const { data, error } = await resend.emails.send({
-            from: 'MTech Distributors <noreply@mtechdistributor.com>',
+            from: 'MTech Distributors <support@mtechdistributor.com>',
             to: emailData.customerEmail,
             subject,
             react: PriceUpdateEmail({
@@ -185,16 +185,17 @@ export async function sendOrderSubmissionEmail({ customerEmail,
     items,
     agentName,
     agentEmail,
-    totalAmount }: { 
-        customerEmail: string, 
+    totalAmount }: {
+        customerEmail: string,
         customerName: string,
-         orderId: string, 
-         orderName: string, 
-         notes: string, 
-         items: OrderItem[], 
-         agentName: string, 
-         agentEmail: string, 
-         totalAmount: number }) {
+        orderId: string,
+        orderName: string,
+        notes: string,
+        items: OrderItem[],
+        agentName: string,
+        agentEmail: string,
+        totalAmount: number
+    }) {
     const subject = 'Your order has been submitted! - Order:' + orderId
 
     try {
