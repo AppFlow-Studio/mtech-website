@@ -182,7 +182,7 @@ export interface OrderItems {
   shipping_address?: string | null
   custom_shipping_address?: string | null
   fulfillment_id?: string | null
-  fulfillments?: Fulfillment[]
+  fulfillments?: Fulfillment
   updated_at: string
 }
 

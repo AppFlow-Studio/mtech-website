@@ -1,73 +1,65 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
-
+import Link from "next/link";
+const categories = [
+  {
+    name: "POS System",
+    image: "/pos-system.png",
+    title: "POS System",
+    link: `/products?data=${encodeURIComponent(
+      JSON.stringify({ tags: ["pos system"] })
+    )}`,
+  },
+  {
+    name: "ATM Machines",
+    image: "/atm-machines.png",
+    title: "ATM Machines",
+    link: `/products?data=${encodeURIComponent(
+      JSON.stringify({ tags: ["atm machines"] })
+    )}`,
+  },
+  {
+    name: "ATM Parts",
+    image: "/atm-parts.png",
+    title: "ATM Parts & Components",
+    link: `/products?data=${encodeURIComponent(
+      JSON.stringify({ tags: ["atm parts"] })
+    )}`,
+  },
+  {
+    name: "POS Accessories",
+    image: "/pos-accessories.png",
+    title: "POS Accessories",
+    link: `/products?data=${encodeURIComponent(
+      JSON.stringify({ tags: ["pos accessories"] })
+    )}`,
+  },
+  {
+    name: "Scales",
+    image: "/digital-scales.png",
+    title: "Digital Scales",
+    link: `/products?data=${encodeURIComponent(
+      JSON.stringify({ tags: ["scales"] })
+    )}`,
+  },
+  {
+    name: "ATM Signage",
+    image: "/atm-signage.png",
+    title: "ATM Signage Solutions",
+    link: `/products?data=${encodeURIComponent(
+      JSON.stringify({ tags: ["atm signage"] })
+    )}`,
+  },
+  {
+    name: "ATM Cards",
+    image: "/credit-card-terminals.png",
+    title: "ATM Card Terminals",
+    link: `/products?data=${encodeURIComponent(
+      JSON.stringify({ tags: ["credit card terminals"] })
+    )}`,
+  },
+];
 const CategoryPillsScroller = () => {
-  const categories = [
-    {
-      name: "POS System",
-      image: "/pos-system.png",
-      title: "POS System",
-      link: `/products?data=${encodeURIComponent(
-        JSON.stringify({ tags: ["pos system"] })
-      )}`,
-    },
-    {
-      name: "ATM Machines",
-      image: "/atm-machines.png",
-      title: "ATM Machines",
-      link: `/products?data=${encodeURIComponent(
-        JSON.stringify({ tags: ["atm machines"] })
-      )}`,
-    },
-    {
-      name: "ATM Parts",
-      image: "/atm-parts.png",
-      title: "ATM Parts & Components",
-      link: `/products?data=${encodeURIComponent(
-        JSON.stringify({ tags: ["atm parts"] })
-      )}`,
-    },
-    {
-      name: "POS Parts",
-      image: "/pos-parts.png",
-      title: "POS Parts & Accessories",
-      link: `/products?data=${encodeURIComponent(
-        JSON.stringify({ tags: ["pos parts"] })
-      )}`,
-    },
-    {
-      name: "POS Accessories",
-      image: "/pos-accessories.png",
-      title: "POS Accessories",
-      link: `/products?data=${encodeURIComponent(
-        JSON.stringify({ tags: ["pos accessories"] })
-      )}`,
-    },
-    {
-      name: "Scales",
-      image: "/digital-scales.png",
-      title: "Digital Scales",
-      link: `/products?data=${encodeURIComponent(
-        JSON.stringify({ tags: ["scales"] })
-      )}`,
-    },
-    {
-      name: "ATM Signage",
-      image: "/atm-signage.png",
-      title: "ATM Signage Solutions",
-      link: `/products?data=${encodeURIComponent(
-        JSON.stringify({ tags: ["atm signage"] })
-      )}`,
-    },
-    {
-      name: "ATM Cards",
-      image: "/credit-card-terminals.png",
-      title: "ATM Card Terminals",
-      link: `/products?data=${encodeURIComponent(
-        JSON.stringify({ tags: ["credit card terminals"] })
-      )}`,
-    },
-  ];
 
   const expandedDuration = 5000;
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -75,7 +67,7 @@ const CategoryPillsScroller = () => {
   const [maxPills, setMaxPills] = useState(6);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-
+   
   // Variants for the container that holds the pill and the card
   const containerVariants: Variants = {
     collapsed: {
@@ -267,15 +259,15 @@ const CategoryPillsScroller = () => {
                               className="w-full h-auto rounded-md sm:rounded-lg object-contain max-h-16 xs:max-h-20 sm:max-h-24"
                             />
                           </div>
-                          <button
-                            onClick={handleShopNow}
+                          <Link
+                            href={category.link}
                             className="w-full bg-gradient-to-r from-[#662CB2] to-[#2C134C] text-white 
                             text-xs sm:text-sm py-2 sm:py-2.5 px-3 sm:px-4 rounded-full 
                             font-semibold hover:from-purple-700 hover:to-blue-700 
-                            transform hover:scale-105 transition-all duration-200 lg:shadow-md"
+                            transform hover:scale-105 transition-all duration-200 lg:shadow-md text-center"
                           >
                             Shop Now
-                          </button>
+                          </Link>
                         </div>
                       </motion.div>
 

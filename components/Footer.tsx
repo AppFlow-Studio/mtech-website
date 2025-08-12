@@ -1,4 +1,3 @@
-
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -14,6 +13,8 @@ import { defineQuery } from 'next-sanity'
 import { FooterQueryResultProps } from "@/lib/sanity-types";
 import { draftMode } from "next/headers";
 import SanityImage from "./SanityImage";
+import { Button } from "./ui/button";
+import DisableDraftModeButton from "./DisableDraftModeButton";
 
 const productLinks = [
   {
@@ -61,7 +62,7 @@ const Footer_Query = defineQuery(`*[_type == 'Footer']`)
 const options = { next: { revalidate: 30 } };
 
 const Footer = async () => {
-  const { isEnabled } = await draftMode();
+  const { isEnabled, disable } = await draftMode();
   const FooterData: FooterQueryResultProps = await sanityFetch({
     query: Footer_Query,
     ...options,

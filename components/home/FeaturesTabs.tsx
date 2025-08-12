@@ -235,8 +235,8 @@ const FeatureTabs: React.FC<{ features: CardFeature[]}> = ({ features }) => {
                         }}
                         className="flex flex-col justify-between h-full"
                       >
-                        <div className="p-6 sm:p-8 h-full flex flex-col justify-between flex-1">
-                          <div className="flex flex-1 flex-col lg:flex-row gap-2 lg:gap-4">
+                        <div className="p-6 sm:p-8 h-full flex flex-col  flex-1">
+                          <div className="flex flex-1 flex-col lg:flex-row gap-2 justify-between lg:gap-4">
                             {/* Text content */}
                             <motion.div
                               initial={{ opacity: 0, y: 20 }}
@@ -279,7 +279,7 @@ const FeatureTabs: React.FC<{ features: CardFeature[]}> = ({ features }) => {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             // transition={{ delay: 0, duration: 0.3 }}
-                            className="mt-8"
+                            className="mt-4"
                           >
                             <button
                               onClick={handleNext}

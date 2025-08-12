@@ -20,6 +20,9 @@ export async function GetOrderInfo(order_id: string) {
                 *,
                 shipments (
                     *
+                ),
+                pickups (
+                    *
                 )
             )
         ),

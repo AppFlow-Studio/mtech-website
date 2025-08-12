@@ -9,6 +9,8 @@ import { ProductsPages } from './ProductsPages'
 import { ATMSolutions } from './ATMSolutions'
 import { DualPricing } from './DualPricing'
 import { BusinessTypes } from './BusinessTypes'
+import { PartnershipType } from './PartnershipType'
+import { CollectionType } from './CollectionType'
 export const schemaTypes = [
     HomePageType,
     FooterType,
@@ -21,4 +23,6 @@ export const schemaTypes = [
     ATMSolutions,
     DualPricing,
     BusinessTypes,
+    PartnershipType,
+    CollectionType,
 ]

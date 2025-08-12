@@ -62,6 +62,7 @@ export default async function RootLayout({
               {children}
               <SanityLive />
               {(await draftMode()).isEnabled && <VisualEditing />}
+              {(await draftMode()).isEnabled && <DisableDraftMode />}
               <Footer />
             </TanstackProvider>
           </AuthProvider>

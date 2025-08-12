@@ -134,7 +134,7 @@ const FilterSidebar = ({
             />
             <Checkbox
               id="atm-card-terminals"
-              label="ATM Card Terminals"
+              label="Credit Card Terminals"
               count={tagCounts["credit card terminals"]}
               checked={currentTagFilters.includes("credit card terminals")}
               onChange={() => handleTagToggle("credit card terminals")}

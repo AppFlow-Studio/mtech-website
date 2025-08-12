@@ -1,8 +1,13 @@
-"use client";
+"use server";
 
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, Flame } from "lucide-react";
+import { sanityFetch } from '@/utils/sanity/lib/live'
+import { defineQuery } from "next-sanity";
+import { urlFor } from "@/sanity/lib/image";
+const CollectionQuery = `*[_type == "collection"]`;
+const options = { next: { revalidate: 30 } };
 
 // --- Data for the collection cards ---
 const collectionData = [
@@ -32,19 +37,32 @@ const collectionData = [
   },
 ];
 
-const Collection = () => {
+const Collection = async () => {
+  const collection = await sanityFetch({
+    query: CollectionQuery,
+    ...options,
+  });
+  console.log(collection.data[0].cards);
+  if (!collection) {
+    return null;
+  }
   return (
     <section className="py-16 sm:py-24">
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <h2 className="text-4xl md:text-5xl font-bold text-center text-gray-900 dark:text-white">
-          Customer Top Picks
+          {collection.data[0].title}
         </h2>
+        <p className="text-gray-600 dark:text-gray-300">
+          {collection.data[0].description}
+        </p>
 
         {/* Responsive Grid for Cards */}
         <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {collectionData.map((item, index) => (
-            <Link key={index} href={item.link} className="group block">
+          {collection.data[0].cards.map((item: any, index: number) => (
+            <Link key={index} href={`/products?data=${encodeURIComponent(
+              JSON.stringify({ tags: item.linkTags })
+            )}`} className="group block">
               <div
                 className="
                 relative bg-[#E6E6E7] dark:bg-[#231A30]
@@ -61,7 +79,7 @@ const Collection = () => {
                 {/* Image Container */}
                 <div className="p-4 bg-white m-4 rounded-lg ">
                   <Image
-                    src={item.imageSrc}
+                    src={urlFor(item.imageSrc).url()}
                     alt={item.title}
                     width={400}
                     height={300}

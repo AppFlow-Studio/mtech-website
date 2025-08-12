@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, CheckCircle, AlertCircle, ShoppingCart, Mail, Phone, MapPin, Edit } from 'lucide-react';
+import { Loader2, CheckCircle, AlertCircle, ShoppingCart, Mail, Phone, MapPin, Edit, Truck, Package, Calendar, Clock, ExternalLink } from 'lucide-react';
 import { OrderItems } from '@/lib/types';
 import { useState } from 'react';
 import AddressEditModal from '@/components/AddressEditModal';
@@ -200,7 +200,7 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
                         </div>
                     </CardContent>
                 </Card>
-    
+
                 {/* Shipping Address Section */}
                 <Card className="animate-in fade-in-0 slide-in-from-bottom-2">
                     <CardHeader className="flex flex-row items-center justify-between">
@@ -328,52 +328,168 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
                         {OrderInfo.order_items.length === 0 && (
                             <div className="text-center text-muted-foreground py-8">No items in this order.</div>
                         )}
-                        {OrderInfo.order_items.map((item: OrderItems) => (
-                            <Card key={item.id} className="shadow-sm hover:shadow-md transition-shadow duration-200 animate-in fade-in-0 slide-in-from-bottom-2">
-                                <CardContent className="flex items-center gap-4 py-4">
-                                    {item.products?.imageSrc && (
-                                        <img src={item.products.imageSrc} alt={item.products.name} className="w-14 h-14 object-cover rounded border" />
-                                    )}
-                                    <div className="flex-1 flex-row flex">
-                                        <div className="flex flex-col gap-1">
-                                            <div className="font-semibold text-foreground">{item.products?.name}</div>
-                                            <div className="text-xs text-muted-foreground mb-1">{item.products?.description.slice(0, 100)}...</div>
-                                            <div className="flex flex-wrap gap-2 items-center text-xs">
-                                                <Badge>{item.order_status}</Badge>
-                                                <span>Qty: <span className="font-medium">{item.quantity}</span></span>
-                                                <span>Price: ${item.price_at_order}</span>
-                                                <span>Subtotal: ${item.price_at_order * Number(item.quantity)}</span>
+                        {OrderInfo.order_items.map((item: OrderItems) => {
+                            // Get fulfillment information for this item
+                            const itemFulfillment = item.fulfillments;
+                            const shipment = itemFulfillment?.shipments;
+
+                            return (
+                                <Card key={item.id} className="shadow-sm hover:shadow-md transition-shadow duration-200 animate-in fade-in-0 slide-in-from-bottom-2">
+                                    <CardContent className="p-6">
+                                        <div className="flex items-start gap-4">
+                                            {/* Product Image */}
+                                            {item.products?.imageSrc && (
+                                                <img src={item.products.imageSrc} alt={item.products.name} className="w-16 h-16 object-cover rounded-lg border" />
+                                            )}
+
+                                            {/* Product Details */}
+                                            <div className="flex-1">
+                                                <div className="flex items-start justify-between mb-3">
+                                                    <div className="flex-1">
+                                                        <h3 className="font-semibold text-foreground text-lg">{item.products?.name}</h3>
+                                                        <p className="text-sm text-muted-foreground mt-1">
+                                                            {item.products?.description?.slice(0, 120)}...
+                                                        </p>
+                                                    </div>
+                                                    <div className="text-right ml-4">
+                                                        <div className="text-lg font-bold text-green-700">
+                                                            ${(item.price_at_order * Number(item.quantity)).toFixed(2)}
+                                                        </div>
+                                                        <div className="text-sm text-muted-foreground">
+                                                            ${item.price_at_order} × {item.quantity}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Item Status and Fulfillment */}
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    {/* Left Column - Basic Info */}
+                                                    <div className="space-y-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <Badge variant={item.order_status === 'SHIPPED' ? 'default' : 'secondary'}>
+                                                                {item.order_status}
+                                                            </Badge>
+                                                            {itemFulfillment && (
+                                                                <Badge variant="outline">
+                                                                    {itemFulfillment.fulfillment_type}
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Right Column - Fulfillment Details */}
+                                                    <div className="space-y-3">
+                                                        {itemFulfillment ? (
+                                                            <div className="bg-muted/50 rounded-lg p-3">
+                                                                <div className="flex items-center gap-2 mb-2">
+                                                                    {itemFulfillment.fulfillment_type === 'SHIPPING' ? (
+                                                                        <Truck className="h-4 w-4 text-blue-600" />
+                                                                    ) : (
+                                                                        <Package className="h-4 w-4 text-green-600" />
+                                                                    )}
+                                                                    <span className="font-medium text-sm">
+                                                                        {itemFulfillment.fulfillment_type} Fulfillment
+                                                                    </span>
+                                                                </div>
+
+                                                                {shipment && shipment.length > 0 && (
+                                                                    shipment.map((shipment) => (
+                                                                    <div className="space-y-2">
+                                                                        {shipment.tracking_number && (
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="text-xs font-medium">Tracking:</span>
+                                                                                <a
+                                                                                    href={`https://www.fedex.com/fedextrack/?trknbr=${shipment.tracking_number}`}
+                                                                                    target="_blank"
+                                                                                    rel="noopener noreferrer"
+                                                                                    className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                                                                >
+                                                                                    {shipment.tracking_number}
+                                                                                    <ExternalLink className="h-3 w-3" />
+                                                                                </a>
+                                                                            </div>
+                                                                        )}
+
+                                                                        {shipment.carrier && (
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="text-xs font-medium">Carrier:</span>
+                                                                                <span className="text-xs">{shipment.carrier}</span>
+                                                                            </div>
+                                                                        )}
+
+                                                                        {itemFulfillment.additional_fee > 0 && (
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="text-xs font-medium">Shipping Fee:</span>
+                                                                                <span className="text-xs font-bold text-green-700">
+                                                                                    ${itemFulfillment.additional_fee.toFixed(2)}
+                                                                                </span>
+                                                                            </div>
+                                                                        )}
+
+                                                                        {shipment.created_at && (
+                                                                            <div className="flex items-center gap-2">
+                                                                                <Clock className="h-3 w-3 text-muted-foreground" />
+                                                                                <span className="text-xs">
+                                                                                    Created: {new Date(shipment.created_at).toLocaleDateString()}
+                                                                                </span>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    ))
+                                                                )}
+
+                                                                {itemFulfillment.fulfillment_type === 'PICKUP' && itemFulfillment.pickups?.[0] && (
+                                                                    <div className="space-y-2">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="text-xs font-medium">Pickup Code:</span>
+                                                                            <span className="text-xs font-bold">{itemFulfillment.pickups[0].pickup_code}</span>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="text-xs font-medium">Status:</span>
+                                                                            <Badge variant="outline" className="text-xs">
+                                                                                {itemFulfillment.pickups[0].status}
+                                                                            </Badge>
+                                                                        </div>
+                                                                        {itemFulfillment.pickups[0].picked_up_at && (
+                                                                            <div className="flex items-center gap-2">
+                                                                                <Calendar className="h-3 w-3 text-muted-foreground" />
+                                                                                <span className="text-xs">
+                                                                                    Picked up: {new Date(itemFulfillment.pickups[0].picked_up_at).toLocaleDateString()}
+                                                                                </span>
+                                                                            </div>
+                                                                        )}
+                                                                        {itemFulfillment.pickups[0].created_at && (
+                                                                            <div className="flex items-center gap-2">
+                                                                                <Clock className="h-3 w-3 text-muted-foreground" />
+                                                                                <span className="text-xs">
+                                                                                    Created: {new Date(itemFulfillment.pickups[0].created_at).toLocaleDateString()}
+                                                                                </span>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                                                <div className="flex items-center gap-2">
+                                                                    <AlertCircle className="h-4 w-4 text-yellow-600" />
+                                                                    <span className="text-sm font-medium text-yellow-800">
+                                                                        No fulfillment method assigned
+                                                                    </span>
+                                                                </div>
+                                                                <p className="text-xs text-yellow-700 mt-1">
+                                                                    This item needs a fulfillment method to be assigned.
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="w-px bg-border mx-6" />
-                                        <div className="flex flex-col gap-2">
-
-
-                                            {/* Legacy fulfillment info */}
-                                            {item.fulfillment_type && (
-                                                <Badge variant="outline">{item.fulfillment_type}</Badge>
-                                            )}
-
-                                            {(item.order_status === "SHIPPED" || item.fulfillment_type === "SHIPPING") && (
-                                                <div className="text-xs mt-1 text-muted-foreground">
-                                                    Tracking: <span className="font-medium">{item.tracking_number || "-"}</span> | Carrier: <span className="font-medium">{item.carrier || "-"}</span>
-                                                </div>
-                                            )}
-                                            {(item.order_status === "READY_FOR_PICKUP" || item.fulfillment_type === "PICKUP") && (
-                                                <div className="text-xs mt-1 text-muted-foreground">
-                                                    Pickup Details: <span className="font-medium">{item.pickup_details || "-"}</span>
-                                                </div>
-                                            )}
-                                            {!item.fulfillment_type && (
-                                                <div className="text-xs italic text-muted-foreground px-2 py-1 rounded bg-muted">
-                                                    No fulfillment method assigned
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
                     </div>
                 </CardContent>
             </Card>
