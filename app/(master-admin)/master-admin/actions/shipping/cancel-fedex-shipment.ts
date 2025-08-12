@@ -10,8 +10,9 @@ interface FedExCancelResponse {
 
 export async function cancelFedExShipment(trackingNumber: string): Promise<FedExCancelResponse> {
     try {
+        const FEDEX_API_URL = process.env.NEXT_PUBLIC_FEDEX_API_URL;
         // FedEx Ship API endpoint for cancellation
-        const fedexApiUrl = 'https://apis-sandbox.fedex.com/ship/v1/shipments/cancel';
+        const fedexApiUrl = `${FEDEX_API_URL}/ship/v1/shipments/cancel`;
         // Get FedEx access token
         const tokenResponse = await getFedExToken();
 

@@ -70,7 +70,7 @@ export const OrderSubmissionEmail = ({
                     {/* Header */}
                     <Section style={header}>
                         <Img
-                            src={`${baseUrl}/logo.png`}
+                            src={`${baseUrl}/MtechDistributorsLogo.png`}
                             width="180"
                             height="60"
                             alt="MTech Distributors"
@@ -134,7 +134,7 @@ export const OrderSubmissionEmail = ({
                                     <div style={itemImageContainer}>
                                         {item.product?.imageSrc ? (
                                             <Img
-                                                src={item.product.imageSrc}
+                                                src={item.product.imageSrc[0] == '/' ? `${baseUrl}${item.product.imageSrc}` : item.product.imageSrc}
                                                 width="60"
                                                 height="60"
                                                 alt={item.product_name}

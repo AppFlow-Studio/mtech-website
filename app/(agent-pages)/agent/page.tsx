@@ -47,9 +47,6 @@ import {
 import { useProfile } from "@/lib/hooks/useProfile"
 import makeNewOrder from "../actions/make-new-order"
 import { useSignOut } from "@/lib/auth-utils"
-import { useAgentsInquiries } from "@/components/states/inquiries"
-import { useInquiryNotes, useAddInquiryNote } from "@/components/states/notes"
-import { agentUpdateInquiry } from "@/components/actions/agent-update inquirey"
 import { toast } from "sonner"
 import { useGetAgentById } from "@/app/(master-admin)/master-admin/actions/AgentStore"
 import AgentProductsTab from "@/app/(agent-pages)/components/AgentProductsTab"
@@ -68,18 +65,9 @@ import AgentSettingsDialog from "../components/AgentSettingsDialog";
 
 export default function AgentPage() {
     const { profile } = useProfile()
-    const [selectedInquiry, setSelectedInquiry] = useState<any>(null)
-    const [openInquiryDialog, setOpenInquiryDialog] = useState(false)
-    const [openEditDialog, setOpenEditDialog] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
-    const [priorityFilter, setPriorityFilter] = useState("all")
     const signOut = useSignOut()
-    const [editForm, setEditForm] = useState({
-        status: '',
-        priority: ''
-    })
-    const [isUpdating, setIsUpdating] = useState(false)
     const [showSettingsDialog, setShowSettingsDialog] = useState(false)
     const [showSettingsDropdown, setShowSettingsDropdown] = useState(false)
     const router = useRouter();
@@ -141,11 +129,7 @@ export default function AgentPage() {
     });
     const [isCreatingOrder, setIsCreatingOrder] = useState(false);
     const { data: agent, isLoading } = useGetAgentById(profile?.id || '')
-    const { data: inquiries, isLoading: inquiriesLoading, refetch } = useAgentsInquiries(profile?.id || '')
     const { data: orders, isLoading: ordersLoading, refetch: refetchAgentOrders } = useOrderState(profile?.id || '')
-
-    const { data: notes, isLoading: notesLoading } = useInquiryNotes(selectedInquiry?.id || '')
-    const addNoteMutation = useAddInquiryNote()
     // Don't render anything until we have a valid profile ID
     if (!profile?.id) {
         return (
@@ -223,119 +207,6 @@ export default function AgentPage() {
                 </div>
             </div>
         )
-    }
-    const getStatusBadge = (status: string) => {
-        if (!status) return null
-        const statusConfig = {
-            new: { color: "bg-blue-100 text-blue-800", icon: AlertCircle },
-            assigned: { color: "bg-purple-100 text-purple-800", icon: UserCheck },
-            contacted: { color: "bg-cyan-100 text-cyan-800", icon: CheckCircle },
-            follow_up: { color: "bg-orange-100 text-orange-800", icon: Clock },
-            completed: { color: "bg-green-100 text-green-800", icon: CheckCircle }
-        }
-        const config = statusConfig[status as keyof typeof statusConfig]
-        if (!config) return null
-        const Icon = config.icon
-        return (
-            <Badge className={`${config.color} flex items-center gap-1`}>
-                <Icon className="h-3 w-3" />
-                {status.replace('_', ' ').charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
-            </Badge>
-        )
-    }
-
-    const getPriorityBadge = (priority: string) => {
-        const priorityConfig = {
-            high: { color: "bg-red-100 text-red-800" },
-            medium: { color: "bg-yellow-100 text-yellow-800" },
-            low: { color: "bg-green-100 text-green-800" }
-        }
-        const config = priorityConfig[priority as keyof typeof priorityConfig]
-        return (
-            <Badge className={config.color}>
-                {priority.charAt(0).toUpperCase() + priority.slice(1)}
-            </Badge>
-        )
-    }
-
-    const formatDate = (dateString: Date) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        })
-    }
-
-    const filteredInquiries = inquiries?.filter(inquiry => {
-        const matchesSearch = inquiry.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            inquiry.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            inquiry.itemInterested.toLowerCase().includes(searchTerm.toLowerCase())
-        const matchesStatus = statusFilter === "all" || inquiry.status === statusFilter
-        const matchesPriority = priorityFilter === "all" || inquiry.priority === priorityFilter
-        return matchesSearch && matchesStatus && matchesPriority
-    })
-
-    const handleEditInquiry = (inquiry: any) => {
-        setSelectedInquiry(inquiry)
-        setEditForm({
-            status: inquiry.status,
-            priority: inquiry.priority
-        })
-        setOpenEditDialog(true)
-    }
-
-    const handleUpdateInquiry = async () => {
-        setIsUpdating(true)
-        const result = await agentUpdateInquiry(selectedInquiry.id, editForm)
-        if (!result) {
-            toast.success('Inquiry updated successfully')
-            refetch()
-        } else {
-            toast.error('Failed to update inquiry')
-        }
-        setIsUpdating(false)
-        setOpenEditDialog(false)
-    }
-
-    const getStatusOptions = () => [
-        { value: 'new', label: 'New', icon: AlertCircle, color: 'text-blue-600' },
-        { value: 'assigned', label: 'Assigned', icon: UserCheck, color: 'text-purple-600' },
-        { value: 'contacted', label: 'Contacted', icon: UserCheck, color: 'text-yellow-600' },
-        { value: 'follow_up', label: 'Follow Up', icon: Clock, color: 'text-orange-600' },
-        { value: 'completed', label: 'Completed', icon: CheckCircle, color: 'text-green-600' }
-    ]
-
-    const getPriorityOptions = () => [
-        { value: 'high', label: 'High Priority', color: 'text-red-600' },
-        { value: 'medium', label: 'Medium Priority', color: 'text-yellow-600' },
-        { value: 'low', label: 'Low Priority', color: 'text-green-600' }
-    ]
-
-    const handleAddNote = async () => {
-        if (!newNote.trim() || !selectedInquiry?.id || !profile?.id) return
-
-        setIsAddingNote(true)
-        try {
-            await addNoteMutation.mutateAsync({
-                inquiryId: selectedInquiry.id,
-                agentId: profile.id,
-                agent_name: agent.first_name + " " + agent.last_name,
-                note: newNote.trim()
-            })
-            setNewNote("")
-            setShowNoteForm(false)
-            toast.success('Note added successfully')
-        } catch (error) {
-            toast.error('Failed to add note')
-        } finally {
-            setIsAddingNote(false)
-        }
-    }
-
-    const handleCancelNote = () => {
-        setNewNote("")
-        setShowNoteForm(false)
     }
 
     // Cart functions
@@ -635,7 +506,7 @@ export default function AgentPage() {
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            {/* Assigned Inquiries */}
+                            {/* Agent Orders */}
                             <div className="lg:col-span-2">
                                 <Card>
                                     <CardHeader>
@@ -874,27 +745,6 @@ export default function AgentPage() {
                                             )}
                                         </div>
                                     </div>
-
-                                    {cartMode === 'inquiry' && (
-                                        <div className="space-y-3">
-                                            <label className="text-sm font-medium">Select Inquiry:</label>
-                                            <select
-                                                value={selectedInquiryForCart?.id || ''}
-                                                onChange={(e) => {
-                                                    const inquiry = inquiries?.find(i => i.id === parseInt(e.target.value))
-                                                    setSelectedInquiryForCart(inquiry || null)
-                                                }}
-                                                className="w-full px-3 py-2 border border-border rounded-md"
-                                            >
-                                                <option value="">Choose an inquiry...</option>
-                                                {inquiries?.map((inquiry) => (
-                                                    <option key={inquiry.id} value={inquiry.id}>
-                                                        {inquiry.name} - {inquiry.item_interested}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    )}
 
                                     <div className="flex gap-2 pt-4">
                                         <Button

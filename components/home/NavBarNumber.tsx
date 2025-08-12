@@ -6,7 +6,7 @@ import Link from "next/link";
 const Footer_Query = defineQuery(`*[_type == 'Footer']`)
 import { FooterQueryResultProps } from "@/lib/sanity-types";
 
-const options = { next: { revalidate: 30 } };
+const options = { next: { revalidate: 60 } };
 const NavBarNumber = async () => {
     const FooterData = await sanityFetch({
         query: Footer_Query,
@@ -14,7 +14,6 @@ const NavBarNumber = async () => {
     });
     const phoneNumber = FooterData.data[0].Footer_Contact_Links.find((link: any) => link.Footer_Resource_Link_Icon === "phone");
     return phoneNumber;
-    
 };
 
 export default NavBarNumber;

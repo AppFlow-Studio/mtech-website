@@ -517,7 +517,7 @@ export default function OrderAuditLog({ orderId }: OrderAuditLogProps) {
 
             {/* Email View Modal */}
             <Dialog open={emailModalOpen} onOpenChange={setEmailModalOpen}>
-                <DialogContent className="sm:max-w-4xl max-h-[80vh]">
+                <DialogContent className="sm:max-w-4xl max-h-[90vh]">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Mail className="h-5 w-5 text-blue-500" />
