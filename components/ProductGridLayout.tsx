@@ -237,7 +237,6 @@ const ProductGridLayout = ({
       </div>
     )
   }
-  console.log(filteredProducts)
   return (
     <div className="py-8 sm:py-12">
       <div className="container mx-auto px-4">

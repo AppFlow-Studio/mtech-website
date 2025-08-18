@@ -144,31 +144,35 @@ const TESTIMONIALS_QUERY = defineQuery(`*[_type == 'Testimonial']`)
 const options = { next: { revalidate: 30 } };
 
 export default async function Home() {
-  const { isEnabled } = await draftMode();
-  const HomePageData : HomePageQueryResult = await sanityFetch({
+  const HomePageData: HomePageQueryResult = await sanityFetch({
     query: POSTS_QUERY,
     ...options,
   });
 
-  const TestimonialsData : TestimonialQueryResultProps = await sanityFetch({
+  const TestimonialsData: TestimonialQueryResultProps = await sanityFetch({
     query: TESTIMONIALS_QUERY,
     ...options,
   });
 
+  const ComparisonData = await sanityFetch({
+    query: defineQuery('*[_type == "PreferredChoice"]'),
+    ...options,
+  })
+  if (!HomePageData.data || HomePageData.data.length === 0) return null;
   return (
     <div>
-      <Hero hero_header={HomePageData.data[0].Hero_Header} hero_subtext={HomePageData.data[0].Hero_SubText} />
+      <Hero hero_header={HomePageData.data[0].Hero_Header} hero_subtext={HomePageData.data[0].Hero_SubText} hero_cards={HomePageData.data[0].Hero_Cards} />
       <Partners />
       <WhyChooseUs header={HomePageData.data[0].Why_Choose_Us.Why_Choose_Us_Header} subtext={HomePageData.data[0].Why_Choose_Us.Why_Choose_Us_SubText} image={HomePageData.data[0].Why_Choose_Us.Why_Choose_Us_Image} />
       <FeaturesTabs features={HomePageData.data[0].Features_Card} />
       <GrowthSection header={HomePageData.data[0].Growth_Section.Growth_Section_Header} subtext={HomePageData.data[0].Growth_Section.Growth_Section_SubText} image={HomePageData.data[0].Growth_Section.Growth_Section_Image} />
       <FeaturesTabs features={HomePageData.data[0].Features_Business} />
-      <ModernPaymentsIntro header={HomePageData.data[0].Modern_Payments.Modern_Title} subtext={HomePageData.data[0].Modern_Payments.Modern_Description} image={HomePageData.data[0].Modern_Payments.Modern_Image}   />
+      <ModernPaymentsIntro header={HomePageData.data[0].Modern_Payments.Modern_Title} subtext={HomePageData.data[0].Modern_Payments.Modern_Description} image={HomePageData.data[0].Modern_Payments.Modern_Image} />
       <FeaturesTabs features={HomePageData.data[0].Features_Payments} />
       <InsightsSection header={HomePageData.data[0].Insights_Section.Insights_Section_Header} subtext={HomePageData.data[0].Insights_Section.Insights_Section_SubText} cards={HomePageData.data[0].Insights_Section.Insights_Section_Cards} />
-      <PreferredChoice />
-      <MerchantPortal />
-      <Testimonials testimonials={TestimonialsData.data[0].Testimonial_Cards} testimonial_header={TestimonialsData.data[0].Testimonial_Header}/>
+      <PreferredChoice ComparisonData={ComparisonData} />
+      <MerchantPortal MerchantPortalData={HomePageData.data[0].Merchant_Portal} />
+      <Testimonials testimonials={TestimonialsData.data[0].Testimonial_Cards} testimonial_header={TestimonialsData.data[0].Testimonial_Header} />
       <Collection />
       <PosSystems />
     </div>

@@ -1,8 +1,11 @@
-"use client";
-
+'use server'
 import Contact from "@/components/Contact";
 import ImageLinkCard from "@/components/ImageLinkCard";
 import { ImageLinkCardProps } from "@/lib/types";
+import { sanityFetch } from "@/utils/sanity/lib/live";
+import { PortableText } from "@portabletext/react";
+import { defineQuery } from "next-sanity";
+import { defaultPortableTextComponents } from "@/app/atm-solutions/components/AtmSolutionHero";
 const repairCenterCards: ImageLinkCardProps[] = [
   {
     title: "House Of Wings Testimonial",
@@ -16,7 +19,24 @@ const repairCenterCards: ImageLinkCardProps[] = [
   },
 ];
 
-const RepairCenter = () => {
+{/* Responsive Grid for Cards */}
+{/* <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
+{repairCenterCards.map((card) => (
+  // Use the new component here
+  <ImageLinkCard key={card.title} {...card} />
+))}
+</div> */}
+const options = {
+  next: {
+    revalidate: 60,
+  },
+}
+const RepairCenter = async() => {
+  const RepairCenterData = await sanityFetch({
+    query: defineQuery('*[_type == "RepairCenter"]'),
+    ...options,
+  })
+  if (!RepairCenterData.data || RepairCenterData.data.length === 0) return null;
   return (
     <>
       <section className="py-8 sm:py-12">
@@ -24,24 +44,9 @@ const RepairCenter = () => {
           {/* Section Header */}
           <div className="text-center max-w-3xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-medium text-gray-900 dark:text-white">
-              Repair Center
+              {RepairCenterData.data[0].Repair_Center_Header}
             </h2>
-            <p className="mt-4 text-gray-600 dark:text-gray-300">
-              Our Repair Center offers professional, fast, and reliable repair
-              services for a wide range of POS equipment and electronic devices.
-              From barcode scanners and receipt printers to payment terminals,
-              touchscreens, and mini PCs, our certified technicians diagnose and
-              repair hardware issues using quality parts and industry-best
-              practices.
-            </p>
-          </div>
-
-          {/* Responsive Grid for Cards */}
-          <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            {repairCenterCards.map((card) => (
-              // Use the new component here
-              <ImageLinkCard key={card.title} {...card} />
-            ))}
+            <PortableText value={RepairCenterData.data[0].Repair_Center_SubText} components={defaultPortableTextComponents} />
           </div>
         </div>
       </section>

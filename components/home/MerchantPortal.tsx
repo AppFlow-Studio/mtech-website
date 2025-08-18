@@ -1,7 +1,13 @@
 import Image from "next/image";
 import { ChevronRight } from "lucide-react";
-
-const MerchantPortal = () => {
+import { sanityFetch } from "@/utils/sanity/lib/live";
+import { defineQuery } from "next-sanity";
+import { PortableText } from "@portabletext/react";
+import { defaultPortableTextComponents } from "@/app/atm-solutions/components/AtmSolutionHero";
+import Link from "next/link";
+import { urlFor } from "@/utils/sanity/lib/image";
+const MerchantPortal = (MerchantPortalData: any) => {
+  if (!MerchantPortalData) return null;
   return (
     <section className="m-4 md:m-8 py-8 sm:py-12 bg-[conic-gradient(from_200deg_at_75.74%_58.66%,#FFF_0deg,#E4E1F8_90deg,#FFF_180.02deg,#DEE8FA_270.58deg,#FFF_360deg)] dark:bg-[conic-gradient(from_200deg_at_75.74%_58.66%,rgba(255,255,255,0.20)_0deg,rgba(228,225,248,0.20)_90deg,rgba(255,255,255,0.20)_180.02280950546265deg,rgba(222,232,250,0.20)_270.5781555175781deg,rgba(255,255,255,0.20)_360deg)] rounded-2xl">
       <div className="container mx-auto px-4">
@@ -21,33 +27,20 @@ const MerchantPortal = () => {
               text-gray-900 dark:text-white
             "
             >
-              Easy Merchant Cloud based portal, anywhere, anytime
+              {MerchantPortalData.MerchantPortalData.Merchant_Portal_Title}
             </h1>
-            <p
-              className="
-              mt-6 text-base leading-relaxed
-              text-gray-600 dark:text-gray-300
-              max-w-2xl mx-auto lg:mx-0
-            "
-            >
-              Analyze and optimize your business with MTech Distributors.
-              Merchant Portal helps you run your business more efficiently and
-              profitably. It is the central hub for analytical data, reporting
-              services, customer engagement, reconciliation, chargebacks &
-              dispute management services. Create a merchant account with us and
-              track all the metrics at your fingertips. Get approval within
-              48-72 hours and start accepting payments both at your retail
-              locations or online platforms.
-            </p>
+            <PortableText value={MerchantPortalData.MerchantPortalData.Merchant_Portal_SubText} components={defaultPortableTextComponents} />
+
             <div className="mt-8">
-              <button
+              <Link
+                href={MerchantPortalData.MerchantPortalData.Merchant_Portal_Button_Link}
                 className="
                 inline-flex items-center justify-center gap-2 
                 px-8 py-4 rounded-full font-semibold bg-gradient-to-b from-[#662CB2] to-[#2C134C] dark:from-[#662CB2] dark:to-purple-[#2C134C] hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600 text-white transition-colors duration-300 shadow-lg"
               >
-                Get Started
+                {MerchantPortalData.MerchantPortalData.Merchant_Portal_Button_Text}
                 <ChevronRight className="h-5 w-5" />
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -55,7 +48,7 @@ const MerchantPortal = () => {
           {/* On mobile, this will appear at the bottom. */}
           <div>
             <Image
-              src="/merchant-portal-dashboard.png" // IMPORTANT: Update this path to your image
+              src={urlFor(MerchantPortalData.MerchantPortalData.Merchant_Portal_Image).url()}
               alt="MTech Merchant Portal dashboard shown on a laptop screen"
               width={1200}
               height={750}

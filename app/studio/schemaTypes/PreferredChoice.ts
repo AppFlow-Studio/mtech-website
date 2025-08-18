@@ -75,21 +75,26 @@ export const PreferredChoice = defineType({
                         type: 'icon.manager',
                         name: 'icon',
                         title: 'Icon',
+                        validation: (rule) => rule.required(),
+
                     }),
                     defineField({
                         name: 'feature',
                         title: 'Feature',
                         type: 'string',
+                        validation: (rule) => rule.required(),
                     }),
                     defineField({
                         name: 'mtech',
                         title: 'Mtech',
                         type: 'boolean',
+                        validation: (rule) => rule.required(),
                     }),
                     defineField({
                         name: 'others',
                         title: 'Others',
                         type: 'boolean',
+                        validation: (rule) => rule.required(),
                     })
                 ]
             }],

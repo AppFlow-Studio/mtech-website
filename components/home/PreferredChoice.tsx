@@ -1,5 +1,4 @@
-"use client";
-
+'use client'
 import Image from "next/image";
 import {
   FileText,
@@ -15,6 +14,9 @@ import {
   XCircle,
   CheckCircle2,
 } from "lucide-react";
+import { sanityFetch } from "@/utils/sanity/lib/live";
+import { defineQuery, PortableText } from "next-sanity";
+import IconRender from "@/sanity/lib/icon-render";
 
 const comparisonData = [
   { icon: FileText, feature: "Reliable contracts", mtech: true, others: false },
@@ -83,20 +85,21 @@ const PurpleCheckIcon = () => (
 const RedCrossIcon = () => (
   <XCircle className="h-5 w-5 text-red-500" strokeWidth={1.5} />
 );
-
-const PreferredChoice = () => {
+const options = {
+  next: {
+    revalidate: 60,
+  },
+};
+const PreferredChoice = (ComparisonData: any) => {
+  if (!ComparisonData) return null;
   return (
     <div className="m-4 md:m-8 py-8 sm:py-12 bg-[#05070D1A] dark:bg-[#231A30] rounded-2xl">
       <div className="container mx-auto px-4">
-        <div className="text-center max-w-3xl mx-auto mb-12">
+        <div className="text-center max-w-3xl space-y-2 mx-auto mb-12">
           <h2 className="text-4xl md:text-5xl font-medium text-gray-900 dark:text-white">
-            Why We're the Preferred Choice
+            {ComparisonData.ComparisonData.data[0].title}
           </h2>
-          <p className="mt-8 text-lg text-gray-600 dark:text-gray-300">
-            Choosing a partner who truly understands your business is essential.
-            Our solutions streamline payment processing and enhance your
-            financial performance — see how we compare to others.
-          </p>
+          <PortableText value={ComparisonData.ComparisonData.data[0].description} />
         </div>
         <div className="overflow-x-auto no-scrollbar">
           <div className="min-w-[700px] lg:min-w-full">
@@ -120,47 +123,46 @@ const PreferredChoice = () => {
             </div>
 
             {/* B. THE TABLE BODY - This is the container with the shadow and rounded corners */}
-            <div className="shadow-lg rounded-lg overflow-hidden">
+            <div className="rounded-lg overflow-hidden">
               <div className="grid grid-cols-[2fr_1fr_1fr]">
                 {/* Loop generates the data rows INSIDE the shadowed box */}
-                {comparisonData.map((item, index) => (
-                  <>
-                    {/* Data Cell 1: Feature */}
-                    <div
-                      key={item.feature}
-                      className={`p-4 flex items-center gap-3 bg-white  ${
-                        index < comparisonData.length - 1
-                          ? "border-b border-[#EEEEEE]"
-                          : ""
-                      }`}
-                    >
-                      <item.icon className="h-5 w-5 text-purple-600" />
-                      <span className="font-medium text-[#05070D]">
-                        {item.feature}
-                      </span>
-                    </div>
+                {ComparisonData.ComparisonData.data[0].rows
+                  .map((item: any, index: number) => (
+                    <>
+                      {/* Data Cell 1: Feature */}
+                      <div
+                        key={item.feature}
+                        className={`p-4 flex items-center gap-3 bg-white  ${index < comparisonData.length - 1
+                            ? "border-b border-[#EEEEEE]"
+                            : ""
+                          }`}
+                      >
+                        <IconRender icon={item.icon} />
+                        <span className="font-medium text-[#05070D]">
+                          {item.feature}
+                        </span>
+                      </div>
 
-                    {/* Data Cell 2: MTech */}
-                    <div
-                      key={`${item.feature}-mtech`}
-                      className="p-4 flex justify-center items-center bg-purple-500 dark:bg-purple-600"
-                    >
-                      {item.mtech ? <CheckIcon /> : null}
-                    </div>
+                      {/* Data Cell 2: MTech */}
+                      <div
+                        key={`${item.feature}-mtech`}
+                        className="p-4 flex justify-center items-center bg-purple-500 dark:bg-purple-600"
+                      >
+                        {item.mtech ? <CheckIcon /> : null}
+                      </div>
 
-                    {/* Data Cell 3: Others */}
-                    <div
-                      key={`${item.feature}-others`}
-                      className={`p-4 flex justify-center items-center bg-white  ${
-                        index < comparisonData.length - 1
-                          ? "border-b border-[#EEEEEE]"
-                          : ""
-                      }`}
-                    >
-                      {item.others ? <PurpleCheckIcon /> : <RedCrossIcon />}
-                    </div>
-                  </>
-                ))}
+                      {/* Data Cell 3: Others */}
+                      <div
+                        key={`${item.feature}-others`}
+                        className={`p-4 flex justify-center items-center bg-white  ${index < comparisonData.length - 1
+                            ? "border-b border-[#EEEEEE]"
+                            : ""
+                          }`}
+                      >
+                        {item.others ? <PurpleCheckIcon /> : <RedCrossIcon />}
+                      </div>
+                    </>
+                  ))}
               </div>
             </div>
           </div>

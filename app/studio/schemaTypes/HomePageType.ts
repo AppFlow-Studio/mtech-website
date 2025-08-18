@@ -19,6 +19,55 @@ export const HomePageType = defineType({
       validation: (rule) => rule.required(),
     }),
 
+    defineField({
+      name: "Hero_Cards",
+      title: "Hero Cards",
+      type: "array",
+      of: [
+        {
+          type: "object",
+          fields: [
+            defineField({
+              name: "title",
+              title: "Title",
+              type: "string",
+            }),
+            defineField({
+              name: "imageSrc",
+              title: "Image Source",
+              type: "image",
+            }),
+            defineField({
+              name: "CTA_Text",
+              title: "CTA Text",
+              type: "string",
+            }),
+            defineField({
+              title: "Link Tags",
+              name: "linkTags",
+              type: "array",
+              of: [{ type: "string" }],
+              options: {
+                list: [
+                  { title: "POS System", value: "pos system" },
+                  { title: "ATM Machines", value: "atm machines" },
+                  { title: "ATM Parts & Components", value: "atm parts" },
+                  { title: "POS Accessories", value: "pos accessories" },
+                  { title: "Digital Scales", value: "scales" },
+                  { title: "ATM Signage Solutions", value: "atm signage" },
+                  { title: "ATM Card Terminals", value: "credit card terminals" },
+                  { title: "Credit Card Terminals", value: "credit card terminals" },
+                  { title: "Network Devices", value: "network devices" },
+                ],
+                layout: "grid",
+                direction: "horizontal"
+              }
+            }),
+          ],
+        },
+      ],
+    }),
+
     //Why Choose Us
     defineField({
       name: 'Why_Choose_Us',
@@ -259,6 +308,79 @@ export const HomePageType = defineType({
       ]
     }),
 
+    // Merchant Portal
+    defineField({
+      name: 'Merchant_Portal',
+      type: 'object',
+      fields: [
+        defineField({
+          name: 'Merchant_Portal_Title',
+          title: 'Merchant Portal Title',
+          type: 'string',
+          validation: (rule) => rule.required(),
+        }),
+        defineField({
+          name: "Merchant_Portal_SubText",
+          title: "Merchant Portal SubText",
+          type: 'array',
+          of: [
+            {
+              type: 'block',
+              styles: [
+                { title: 'Normal', value: 'normal' },
+                { title: 'H1', value: 'h1' },
+                { title: 'H2', value: 'h2' },
+                { title: 'H3', value: 'h3' },
+                { title: 'H4', value: 'h4' },
+                { title: 'H5', value: 'h5' },
+                { title: 'H6', value: 'h6' },
+              ],
+              lists: [{ title: 'Bullet', value: 'bullet' }],
+              marks: {
+                decorators: [
+                  { title: 'Strong', value: 'strong' },
+                  { title: 'Emphasis', value: 'em' },
+                ],
+
+                annotations: [
+                  {
+                    name: 'link',
+                    type: 'object',
+                    title: 'URL',
+                    fields: [
+                      {
+                        title: 'URL',
+                        name: 'href',
+                        type: 'url',
+                      },
+                    ],
+                  },
+                ],
+              },
+            }
+          ],
+          validation: (rule) => rule.required(),
+        }),
+        defineField({
+          name: 'Merchant_Portal_Image',
+          title: 'Merchant Portal Image',
+          type: 'image',
+          validation: (rule) => rule.required(),
+        }),
+        defineField({
+          name: 'Merchant_Portal_Button_Text',
+          title: 'Merchant Portal Button Text',
+          type: 'string',
+          validation: (rule) => rule.required(),
+        }),
+        defineField({
+          name: 'Merchant_Portal_Button_Link',
+          title: 'Merchant Portal Button Link',
+          type: 'url',
+          validation: (rule) => rule.required(),
+        }),
+      ]
+    })
   ],
 })
 

@@ -8,12 +8,59 @@ interface AtmSolutionHeroProps {
     description?: string | any; // Can be string or PortableText content
     image: string | any; // Can be image path or Sanity image object
     imageAlt?: string;
-    features?: string | any ;
+    features?: string | any;
     useSanityImage?: boolean;
     usePortableText?: boolean;
     portableTextComponents?: PortableTextComponents;
 }
 
+export const defaultPortableTextComponents: PortableTextComponents = {
+    list: {
+        bullet: ({ children }) => (
+            <ul className="space-y-3 sm:space-y-4 flex-grow">
+                {children}
+            </ul>
+        ),
+        number: ({ children }) => (
+            <ol className="space-y-3 sm:space-y-4 flex-grow">
+                {children}
+            </ol>
+        ),
+    },
+    listItem: {
+        bullet: ({ children }) => (
+            <li className="flex items-start gap-2 sm:gap-3">
+                <CheckCircle2 className="h-4 w-4 sm:h-6 sm:w-6 flex-shrink-0 text-white fill-[#662CB2] mt-0.5" />
+                <span className="text-xs sm:text-sm leading-relaxed">
+                    {children}
+                </span>
+            </li>
+        ),
+        number: ({ children }) => (
+            <li className="flex items-start gap-2 sm:gap-3">
+                <CheckCircle2 className="h-4 w-4 sm:h-6 sm:w-6 flex-shrink-0 text-white fill-[#662CB2] mt-0.5" />
+                <span className="text-xs sm:text-sm leading-relaxed">
+                    {children}
+                </span>
+            </li>
+        ),
+    },
+    block: {
+        normal: ({ children }) => (
+            <p className="
+              mt-2 text-base leading-relaxed
+              text-gray-600 dark:text-gray-300
+              max-w-2xl mx-auto lg:mx-0">
+                {children}
+            </p>
+        ),
+        h3: ({ children }) => (
+            <h3 className="text-xl md:text-2xl font-medium leading-tight text-gray-900 dark:text-white mt-6">
+                {children}
+            </h3>
+        ),
+    },
+};
 export default function AtmSolutionHero({
     title,
     description,
@@ -24,50 +71,7 @@ export default function AtmSolutionHero({
     usePortableText = false,
     portableTextComponents
 }: AtmSolutionHeroProps) {
-    const defaultPortableTextComponents: PortableTextComponents = {
-        list: {
-            bullet: ({ children }) => (
-                <ul className="space-y-3 sm:space-y-4 flex-grow">
-                    {children}
-                </ul>
-            ),
-            number: ({ children }) => (
-                <ol className="space-y-3 sm:space-y-4 flex-grow">
-                    {children}
-                </ol>
-            ),
-        },
-        listItem: {
-            bullet: ({ children }) => (
-                <li className="flex items-start gap-2 sm:gap-3">
-                    <CheckCircle2 className="h-4 w-4 sm:h-6 sm:w-6 flex-shrink-0 text-white fill-[#662CB2] mt-0.5" />
-                    <span className="text-xs sm:text-sm leading-relaxed">
-                        {children}
-                    </span>
-                </li>
-            ),
-            number: ({ children }) => (
-                <li className="flex items-start gap-2 sm:gap-3">
-                    <CheckCircle2 className="h-4 w-4 sm:h-6 sm:w-6 flex-shrink-0 text-white fill-[#662CB2] mt-0.5" />
-                    <span className="text-xs sm:text-sm leading-relaxed">
-                        {children}
-                    </span>
-                </li>
-            ),
-        },
-        block: {
-            normal: ({ children }) => (
-                <p className="leading-relaxed mb-2 mt-2">
-                    {children}
-                </p>
-            ),
-            h3: ({ children }) => (
-                <h3 className="text-xl md:text-2xl font-medium leading-tight text-gray-900 dark:text-white mt-6">
-                    {children}
-                </h3>
-            ),
-        },
-    };
+
 
     const components = portableTextComponents || defaultPortableTextComponents;
 
@@ -128,7 +132,7 @@ export default function AtmSolutionHero({
                             </div>
                         ) : null}
 
-                      
+
                     </div>
                 </div>
             </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import Link from "next/link";
+import { urlFor } from "@/utils/sanity/lib/image";
 const categories = [
   {
     name: "POS System",
@@ -59,15 +60,15 @@ const categories = [
     )}`,
   },
 ];
-const CategoryPillsScroller = () => {
-
+const CategoryPillsScroller = ({ hero_cards }: { hero_cards: any }) => {
+  console.log(hero_cards)
   const expandedDuration = 5000;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [previousIndex, setPreviousIndex] = useState<number | null>(null);
   const [maxPills, setMaxPills] = useState(6);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-   
+
   // Variants for the container that holds the pill and the card
   const containerVariants: Variants = {
     collapsed: {
@@ -194,7 +195,7 @@ const CategoryPillsScroller = () => {
   return (
     <div className="w-full mx-auto h-[280px] md:h-[350px] relative overflow-hidden flex items-end justify-center">
       <div className="flex items-end justify-center gap-6 px-4">
-        {visibleCategories.map((category, index) => {
+        {hero_cards.map((category, index) => {
           const isActive = index === currentIndex;
           const isPrevious = isTransitioning && index === previousIndex;
           const shouldShowCard = isActive || isPrevious;
@@ -222,7 +223,7 @@ const CategoryPillsScroller = () => {
                   ${shouldShowCard ? "pointer-events-none" : ""}
                 `}
               >
-                {category.name}
+                {category.title}
               </motion.div>
 
               {/* Card */}
@@ -254,13 +255,17 @@ const CategoryPillsScroller = () => {
                         <div className="rounded-lg bg-[#B4ADB8] p-2 sm:p-3 flex flex-col items-center">
                           <div className="mb-2 sm:mb-3">
                             <img
-                              src={category.image}
+                              src={urlFor(category.imageSrc).url()}
                               alt={category.title}
                               className="w-full h-auto rounded-md sm:rounded-lg object-contain max-h-16 xs:max-h-20 sm:max-h-24"
                             />
                           </div>
                           <Link
-                            href={category.link}
+                            href={
+                              `/products?data=${encodeURIComponent(
+                                JSON.stringify({ tags: category.linkTags })
+                              )}`
+                            }
                             className="w-full bg-gradient-to-r from-[#662CB2] to-[#2C134C] text-white 
                             text-xs sm:text-sm py-2 sm:py-2.5 px-3 sm:px-4 rounded-full 
                             font-semibold hover:from-purple-700 hover:to-blue-700 

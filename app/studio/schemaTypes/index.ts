@@ -13,6 +13,8 @@ import { PartnershipType } from './PartnershipType'
 import { CollectionType } from './CollectionType'
 import { OurPartners } from './OurPartners'
 import { PreferredChoice } from './PreferredChoice'
+import { RepairCenter } from './RepairCenter'
+import { Warranty } from './Warranty'
 export const schemaTypes = [
     HomePageType,
     FooterType,
@@ -29,4 +31,6 @@ export const schemaTypes = [
     CollectionType,
     OurPartners,
     PreferredChoice,
+    RepairCenter,
+    Warranty,
 ]

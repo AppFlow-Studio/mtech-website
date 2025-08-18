@@ -64,7 +64,7 @@ const InsightsSection = ({ header, subtext, cards }: { header: string, subtext: 
     <section className="py-16 sm:py-24">
       <div className="container mx-auto">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto px-4">
+        <div className="text-center space-y-2 max-w-3xl mx-auto px-4">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
             {header}
           </h2>
@@ -92,7 +92,7 @@ const InsightsSection = ({ header, subtext, cards }: { header: string, subtext: 
                   <div className="p-3 sm:p-4 flex-grow">
                     <div className="flex items-start gap-4">
                       <div className="bg-[#F0F3FD] p-3 rounded-full">
-                        {insight.icon && <IconRender icon={insight.icon} metadata={insight.metadata} />}
+                        {insight.icon && <IconRender icon={insight.icon} />}
                       </div>
                       <div>
                         <h3 className="text-2xl font-bold text-slate-800 dark:text-white">

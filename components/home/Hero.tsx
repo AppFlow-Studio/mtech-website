@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import Searchbar from "./Searchbar";
 import CategoryPillsScroller from "./CategoryPillsScroller";
 
-const Hero = ({ hero_header, hero_subtext }: { hero_header: string, hero_subtext: string }) => {
+const Hero = ({ hero_header, hero_subtext, hero_cards }: { hero_header: string, hero_subtext: string, hero_cards: any }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -61,7 +61,7 @@ const Hero = ({ hero_header, hero_subtext }: { hero_header: string, hero_subtext
 
         {/* Bottom Section */}
         <div className="pb-4 sm:pb-6 lg:pb-8 px-2 sm:px-4 lg:px-6 h-[290px] md:h-[370px] lg:h-[370px]">
-          <CategoryPillsScroller />
+          <CategoryPillsScroller hero_cards={hero_cards} />
         </div>
       </div>
     </div>
