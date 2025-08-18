@@ -1,9 +1,9 @@
 import DualPricingKit from "@/components/business-type/DualPricingKit";
 import Contact from "@/components/Contact";
-import DualPricingHero from "../components/DualPricingHero";
 import { client } from "@/sanity/lib/client";
 import { defineQuery } from "next-sanity";
 import { sanityFetch } from '@/utils/sanity/lib/live'
+import DualPricingHero from "@/app/dual-pricing/components/DualPricingHero";
 
 // --- Data for the feature list ---
 const feature = [

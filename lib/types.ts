@@ -36,9 +36,23 @@ export interface FeatureTabsProps {
 }
 
 export interface Insight {
-  icon: React.ElementType;
-  title: string;
-  description: string;
+  icon:{
+    icon : string,
+    metadata : {
+      hFlip : boolean,
+      flip : number,
+      rotate : number,
+      size : {
+        width : number,
+        height : number
+      },
+      color : {
+        hex : string
+      }
+    }
+  };
+  Title: string;
+  Description: string;
   imageSrc: string;
 }
 

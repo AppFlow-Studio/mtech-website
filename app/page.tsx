@@ -165,7 +165,7 @@ export default async function Home() {
       <FeaturesTabs features={HomePageData.data[0].Features_Business} />
       <ModernPaymentsIntro header={HomePageData.data[0].Modern_Payments.Modern_Title} subtext={HomePageData.data[0].Modern_Payments.Modern_Description} image={HomePageData.data[0].Modern_Payments.Modern_Image}   />
       <FeaturesTabs features={HomePageData.data[0].Features_Payments} />
-      <InsightsSection header={HomePageData.data[0].Insights_Section.Insights_Section_Header} subtext={HomePageData.data[0].Insights_Section.Insights_Section_SubText} />
+      <InsightsSection header={HomePageData.data[0].Insights_Section.Insights_Section_Header} subtext={HomePageData.data[0].Insights_Section.Insights_Section_SubText} cards={HomePageData.data[0].Insights_Section.Insights_Section_Cards} />
       <PreferredChoice />
       <MerchantPortal />
       <Testimonials testimonials={TestimonialsData.data[0].Testimonial_Cards} testimonial_header={TestimonialsData.data[0].Testimonial_Header}/>

@@ -11,6 +11,8 @@ import { DualPricing } from './DualPricing'
 import { BusinessTypes } from './BusinessTypes'
 import { PartnershipType } from './PartnershipType'
 import { CollectionType } from './CollectionType'
+import { OurPartners } from './OurPartners'
+import { PreferredChoice } from './PreferredChoice'
 export const schemaTypes = [
     HomePageType,
     FooterType,
@@ -25,4 +27,6 @@ export const schemaTypes = [
     BusinessTypes,
     PartnershipType,
     CollectionType,
+    OurPartners,
+    PreferredChoice,
 ]

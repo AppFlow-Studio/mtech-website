@@ -44,6 +44,7 @@
     "recharts": "^2.15.4",
     "resend": "^4.7.0",
     "sanity": "^3.99.0",
+    "sanity-plugin-icon-manager": "^2.2.3",
     "slick-carousel": "^1.8.1",
     "sonner": "^2.0.6",
     "styled-components": "^6.1.19",
@@ -54,6 +55,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@iconify/react": "^4.1.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

@@ -99,10 +99,6 @@ const Navbar = ({ phoneNumber }: { phoneNumber?: any }) => {
       hasDropdown: true,
       dropdownItems: [
         {
-          name: "Community Bank Partners",
-          href: "/dual-pricing/community-bank-partners",
-        },
-        {
           name: "Credit Card Processing",
           href: "/dual-pricing/credit-card-processing",
         },
@@ -118,7 +114,13 @@ const Navbar = ({ phoneNumber }: { phoneNumber?: any }) => {
     {
       name: "Partnership",
       href: "/partnership",
-      hasDropdown: false,
+      hasDropdown: true,
+      dropdownItems: [
+        {
+          name: "Community Bank Partners",
+          href: "/partnership/community-bank-partners",
+        },
+      ]
     },
     {
       name: "Business Type",
@@ -206,13 +208,13 @@ const Navbar = ({ phoneNumber }: { phoneNumber?: any }) => {
                       onMouseEnter={() => setHoveredItem(index)}
                       onMouseLeave={() => setHoveredItem(null)}
                     >
-                      <div className="py-2">
+                      <div className="py-2 overflow-hidden">
                         {item.dropdownItems?.map(
                           (dropdownItem, dropdownIndex) => (
                             <Link
                               key={dropdownIndex}
                               href={dropdownItem.href}
-                              className={`block px-4 py-2 text-sm ${isActive(dropdownItem.href)
+                              className={`block rounded-3xl overflow-hidden px-4 py-2 text-sm ${isActive(dropdownItem.href)
                                 ? "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/50"
                                 : "text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900 hover:text-purple-600 dark:hover:text-purple-400"
                                 } transition-colors duration-200`}

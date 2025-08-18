@@ -1,4 +1,5 @@
 import { defineField, defineType } from 'sanity'
+import { mediaPreview } from 'sanity-plugin-icon-manager'
 
 export const HomePageType = defineType({
   name: 'Home_Page',
@@ -166,26 +167,90 @@ export const HomePageType = defineType({
       fields: [
         defineField({
           name: 'Insights_Section_Header',
+          title: 'Insights Section Header',
           type: 'string',
           validation: (rule) => rule.required(),
         }),
         defineField({
-          name: 'Insights_Section_SubText',
-          type: 'string',
+          name: "Insights_Section_SubText",
+          title: "Insights Section Subtext",
+          type: 'array',
+          of: [
+            {
+              type: 'block',
+              styles: [
+                { title: 'Normal', value: 'normal' },
+                { title: 'H1', value: 'h1' },
+                { title: 'H2', value: 'h2' },
+                { title: 'H3', value: 'h3' },
+                { title: 'H4', value: 'h4' },
+                { title: 'H5', value: 'h5' },
+                { title: 'H6', value: 'h6' },
+              ],
+              lists: [{ title: 'Bullet', value: 'bullet' }],
+              marks: {
+                decorators: [
+                  { title: 'Strong', value: 'strong' },
+                  { title: 'Emphasis', value: 'em' },
+                ],
+
+                annotations: [
+                  {
+                    name: 'link',
+                    type: 'object',
+                    title: 'URL',
+                    fields: [
+                      {
+                        title: 'URL',
+                        name: 'href',
+                        type: 'url',
+                      },
+                    ],
+                  },
+                ],
+              },
+            }
+          ],
         }),
         defineField({
-          name: 'Insights_Section_Image',
+          name: 'Insights_Section_Cards',
           type: 'array',
           of: [{
-            type: 'object', fields: [
+            type: 'object',
+            preview: {
+              select: {
+                // ...
+                icon: 'icon'
+              },
+              prepare({ icon, ...rest }) {
+                return {
+                  // ...rest
+                  media: mediaPreview(icon)
+                }
+              }
+            },
+            fields: [
               defineField({
-                name: 'Insight_Title',
+                type: 'icon.manager',
+                name: 'icon',
+                title: 'Icon',
+              }),
+              defineField({
+                title: 'Title',
+                name: 'Title',
                 type: 'string',
                 validation: (rule) => rule.required(),
               }),
               defineField({
-                name: 'Insight_Description',
+                title: 'Description',
+                name: 'Description',
                 type: 'string',
+                validation: (rule) => rule.required(),
+              }),
+              defineField({
+                title: 'Image',
+                name: 'imageSrc',
+                type: 'image',
                 validation: (rule) => rule.required(),
               }),
             ]
