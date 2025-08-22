@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -49,10 +49,10 @@ export default function CheckoutDialog({
 
     // Payment form state
     const [paymentData, setPaymentData] = useState({
-        cardNumber: '',
+        ccnumber: '',
         cardHolderName: '',
-        expiryDate: '',
-        cvv: '',
+        ccexpiry: '',
+        cccvv: '',
         billingAddress: {
             street: '',
             city: '',
@@ -61,6 +61,41 @@ export default function CheckoutDialog({
             country: 'United States'
         }
     })
+
+    const [postData, setPostData] = useState(null); // State to hold postData function
+    const title = 'iPosPays Payment Form'; // Title for the payment form
+
+
+    useEffect(() => {
+        loadScript(); // Load the external script on component mount
+    }, []);
+
+    const loadScript = () => {
+        const script = document.createElement('script');
+        script.src = 'https://payment.ipospays.tech/ftd/v1/freedomtodesign.js';
+        script.id = 'ftd';
+        script.setAttribute('security_key', process.env.NEXT_PUBLIC_DEJAVOO_TOKEN || ''); // Replace with your actual security key
+
+
+        script.onload = () => {
+            console.log('Script loaded successfully');
+            // Check if postData is defined after the script loads
+            if (typeof window.postData === 'function') {
+                setPostData(() => window.postData); // Set postData in state
+            } else {
+                console.error('postData function is not defined'); // Log if postData is not available
+            }
+        };
+
+
+        script.onerror = (error) => {
+            console.error('Failed to load script', error);
+            alert('Failed to load payment script. Please check your connection or the script URL.');
+        };
+
+
+        document.body.appendChild(script); // Append the script to the document
+    };
 
     const handleInputChange = (field: string, value: string) => {
         if (field.includes('.')) {
@@ -84,28 +119,28 @@ export default function CheckoutDialog({
 
     const handleCheckout = async () => {
         // TODO: Add payment authorization tab
-        // if (activeTab === 'overview') {
-        //     setActiveTab('payment')
-        //     return
-        // }
-        // if (!paymentData.cardNumber || !paymentData.cardHolderName || !paymentData.expiryDate || !paymentData.cvv) {
-        //     toast.error('Please fill in all payment fields')
-        //     return
-        // }
+        if (activeTab === 'overview') {
+            setActiveTab('payment')
+            return
+        }
+        if (!paymentData.ccnumber || !paymentData.cardHolderName || !paymentData.ccexpiry || !paymentData.cccvv) {
+            toast.error('Please fill in all payment fields')
+            return
+        }
 
         setIsProcessing(true)
-        if(!profile) {
+        if (!profile) {
             toast.error('Profile Error. Please login again.')
             return
         }
         try {
-            // const response = await captureSale(orderInfo.id, calculateTotal(), orderInfo.order_name, {
-            //     cardnumber: paymentData.cardNumber,
-            //     expirydate: paymentData.expiryDate,
-            //     cvv: Number(paymentData.cvv),
-            //     cardholdername: paymentData.cardHolderName
-            // })
-            const response = await submitOrder(orderInfo.id, profile,orderInfo.order_name, orderInfo.notes, orderInfo.order_items, orderInfo.order_confirmation_number)
+            const response = await captureSale(orderInfo.id, calculateTotal(), orderInfo.order_name, {
+                cardnumber: paymentData.ccnumber,
+                expirydate: paymentData.ccexpiry,
+                cvv: Number(paymentData.cccvv),
+                cardholdername: paymentData.cardHolderName
+            })
+            // const response = await submitOrder(orderInfo.id, profile,orderInfo.order_name, orderInfo.notes, orderInfo.order_items, orderInfo.order_confirmation_number)
             if (response instanceof Error) {
                 toast.error('Authorization failed. Please try again.', {
                     description: response.message
@@ -168,6 +203,24 @@ export default function CheckoutDialog({
         return orderInfo.order_items.filter((item: any) => item.fulfillment_type === 'PICKUP').length
     }
 
+    const submitCardFunc = async (event: React.FormEvent) => {
+        event.preventDefault(); // Prevent default form submission
+        if (!postData) {
+            console.error('postData function is not available');
+            return; // Exit if postData is not available
+        }
+        try {
+            const response = await postData({
+                ccnumber: paymentData.ccnumber,
+                ccexpiry: paymentData.ccexpiry,
+                cccvv: paymentData.cccvv,
+            }); // Call postData function
+            console.log('Payment Token:', response.payment_token_id); // Log the payment token
+        } catch (error) {
+            console.error('Error processing payment:', error); // Handle errors
+        }
+    };
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="min-w-4xl max-h-[90vh] overflow-y-auto">
@@ -184,7 +237,7 @@ export default function CheckoutDialog({
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="overview">Order Overview</TabsTrigger>
-                        {/* <TabsTrigger value="payment">Payment Authorization</TabsTrigger> */}
+                        <TabsTrigger value="payment">Payment Authorization</TabsTrigger>
                     </TabsList>
 
                     {/* Order Overview Tab */}
@@ -432,53 +485,35 @@ export default function CheckoutDialog({
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
-                                    <div>
-                                        <Label htmlFor="cardNumber">Card Number</Label>
+                                    <form onSubmit={submitCardFunc} className="space-y-4">
                                         <Input
-                                            id="cardNumber"
-                                            value={paymentData.cardNumber}
-                                            onChange={(e) => handleInputChange('cardNumber', formatCardNumber(e.target.value))}
-                                            placeholder="1234 5678 9012 3456"
+                                            id="ccnumber"
+                                            value={paymentData.ccnumber}
+                                            onChange={(e) => handleInputChange('ccnumber', formatCardNumber(e.target.value))}
+                                            placeholder="Card Number"
                                             maxLength={19}
-                                            className="mt-1"
+                                            className="w-full"
                                         />
-                                    </div>
-
-                                    <div>
-                                        <Label htmlFor="cardHolderName">Cardholder Name</Label>
                                         <Input
-                                            id="cardHolderName"
-                                            value={paymentData.cardHolderName}
-                                            onChange={(e) => handleInputChange('cardHolderName', e.target.value)}
-                                            placeholder="John Doe"
-                                            className="mt-1"
+                                            id="ccexpiry"
+                                            value={paymentData.ccexpiry}
+                                            onChange={(e) => handleInputChange('ccexpiry', formatExpiryDate(e.target.value))}
+                                            placeholder="Expiry Date"
+                                            maxLength={5}
+                                            className="w-full"
                                         />
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <Label htmlFor="expiryDate">Expiry Date</Label>
-                                            <Input
-                                                id="expiryDate"
-                                                value={paymentData.expiryDate}
-                                                onChange={(e) => handleInputChange('expiryDate', formatExpiryDate(e.target.value))}
-                                                placeholder="MM/YY"
-                                                maxLength={5}
-                                                className="mt-1"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="cvv">CVV</Label>
-                                            <Input
-                                                id="cvv"
-                                                value={paymentData.cvv}
-                                                onChange={(e) => handleInputChange('cvv', e.target.value.replace(/\D/g, ''))}
-                                                placeholder="123"
-                                                maxLength={4}
-                                                className="mt-1"
-                                            />
-                                        </div>
-                                    </div>
+                                        <Input
+                                            id="cccvv"
+                                            value={paymentData.cccvv}
+                                            onChange={(e) => handleInputChange('cccvv', e.target.value.replace(/\D/g, ''))}
+                                            placeholder="CVV"
+                                            maxLength={4}
+                                            className="w-full"
+                                        />
+                                        <Button type="submit" id="payButton" className="w-full">
+                                            Pay
+                                        </Button>
+                                    </form>
                                 </CardContent>
                             </Card>
 
