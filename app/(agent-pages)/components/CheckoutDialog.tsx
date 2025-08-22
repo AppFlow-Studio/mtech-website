@@ -71,6 +71,10 @@ export default function CheckoutDialog({
     }, []);
 
     const loadScript = () => {
+        if (!process.env.NEXT_PUBLIC_DEJAVOO_TOKEN) {
+            alert('No Dejavoo token found. Please set the NEXT_PUBLIC_DEJAVOO_TOKEN environment variable.')
+            return
+        }
         const script = document.createElement('script');
         script.src = 'https://payment.ipospays.tech/ftd/v1/freedomtodesign.js';
         script.id = 'ftd';
