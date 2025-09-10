@@ -74,7 +74,7 @@ export async function addPaymentCard(
         const requestPayload = {
             "merchantAuthentication": {
                 "merchantId": process.env.DEJAVOO_MERCHANT_ID,
-                "transactionReferenceId": "dada23123"
+                "transactionReferenceId": "41312331"
             },
             "transactionRequest": {
                 "transactionType": 1, // Sale (using token)

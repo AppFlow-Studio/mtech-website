@@ -208,7 +208,7 @@ export default function FedExRateCalculator({
         country: 'United States'
     });
 
-    const [recipientPostalCode, setRecipientPostalCode] = useState(order_shipping_address.zip_code || '');
+    const [recipientPostalCode, setRecipientPostalCode] = useState(order_shipping_address?.zip_code || '');
     const [recipientCountryCode, setRecipientCountryCode] = useState('US');
     const [pickupType, setPickupType] = useState('DROPOFF_AT_FEDEX_LOCATION');
     const [paymentType, setPaymentType] = useState('SENDER');
