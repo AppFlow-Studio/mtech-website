@@ -9,6 +9,7 @@ export async function updateAgent(body : {
     email?: string
     password?: string
     tier?: number | undefined
+    tier_id?: string | undefined
 }) {
 
        const supabase = await createClient()
@@ -16,10 +17,25 @@ export async function updateAgent(body : {
         first_name: body.first_name,
         last_name: body.last_name,
         email: body.email,
-        tier: body.tier ? Number(body.tier) : null
+        tier: body.tier_id,
        }).eq('id', body.id)
        if (error) {
         throw new Error(error.message)
        }
        return data
+}
+
+export async function setAgentTier({id, tier}: {
+    id: string
+    tier?: number | undefined
+}) {
+    console.log(id, tier)
+    const supabase = await createClient()
+    const { data, error } = await supabase.from('profiles').update({
+        tier: tier
+    }).eq('id', id)
+    if (error) {
+        return new Error(error.message)
+    }
+    return data
 }

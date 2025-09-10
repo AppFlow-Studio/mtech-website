@@ -1,8 +1,9 @@
 'use server'
 import { createClient, PostgrestError } from '@supabase/supabase-js'
-import { updateAgent } from './update-agent'
+import { setAgentTier, updateAgent } from './update-agent'
 const supabase_url = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const service_role_key = process.env.SUPABASE_SERVICE_ROLE_KEY!
+
 export const createUser = async (data: {
   email: string;
   password: string;
@@ -22,7 +23,7 @@ export const createUser = async (data: {
     }
   );
   // Access auth admin api
-  const tier = data.tier ? Number(data.tier) : null
+  const tier = data.tier
   const result = await supabase.auth.admin.createUser({
     email: data.email,
     password: data.password,
@@ -35,6 +36,15 @@ export const createUser = async (data: {
     },
     email_confirm: true,
   });
+  
+
+  if (result.data?.user?.id) {
+      const result2 = await setAgentTier({id: result.data?.user?.id, tier: tier})
+    if (result2 instanceof Error) {
+      throw new Error(result2?.message)
+    }
+  }
+
 
 
   // await supabase.auth.signUp({

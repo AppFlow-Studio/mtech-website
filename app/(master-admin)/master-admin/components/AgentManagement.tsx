@@ -27,7 +27,8 @@ export default function AgentManagement() {
         last_name: '',
         email: '',
         password: '',
-        tier: undefined
+        tier: undefined,
+        tier_id: undefined
     })
 
     // Admin management state
@@ -53,7 +54,11 @@ export default function AgentManagement() {
 
     const handleAgentCreate = (e: React.FormEvent) => {
         e.preventDefault()
-        createUser({ ...formData, tier: formData.tier ? Number(formData.tier) : undefined }, {
+        if(!formData.tier) {
+            toast.error('Please select a tier')
+            return
+        }
+        createUser({ ...formData, tier: formData.tier_id }, {
             onSuccess: () => {
                 toast.success('Agent added successfully')
                 setFormData({
@@ -61,7 +66,8 @@ export default function AgentManagement() {
                     last_name: '',
                     email: '',
                     password: '',
-                    tier: undefined
+                    tier: undefined,
+                    tier_id: undefined
                 })
                 setOpen(false)
                 refetch()
@@ -503,11 +509,11 @@ function AgentForm({ onSubmit, formData, setFormData, tiers }: {
                     onValueChange={(value) => setFormData({ ...formData, tier: value })}
                 >
                     <SelectTrigger>
-                        <SelectValue placeholder="Select a tier" />
+                        <SelectValue placeholder="Select a tier"  />
                     </SelectTrigger>
                     <SelectContent>
                         {tiers?.map((tier: any) => (
-                            <SelectItem key={tier.id} value={tier.name} onClick={() => setFormData({ ...formData, tier: tier.id })}>{tier.name}</SelectItem>
+                            <SelectItem key={tier.id} value={tier.name} onClick={() => setFormData({ ...formData, tier: tier.name, tier_id: tier.id })}>{tier.name}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
