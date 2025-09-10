@@ -1,14 +1,15 @@
 'use server'
 
 import { getFedExToken } from "@/lib/fedex-auth";
-
+import { OrderItem } from "@/lib/types";
+import { createClient } from "@/utils/supabase/server";
 interface FedExCancelResponse {
     success: boolean;
     error?: string;
     message?: string;
 }
 
-export async function cancelFedExShipment(trackingNumber: string): Promise<FedExCancelResponse> {
+export async function cancelFedExShipment({trackingNumber, fulfillmentId, orderId, userName, items}: {trackingNumber: string, fulfillmentId: string, orderId: string, userName: string, items: OrderItem[]}): Promise<FedExCancelResponse> {
     try {
         const FEDEX_API_URL = process.env.NEXT_PUBLIC_FEDEX_API_URL;
         // FedEx Ship API endpoint for cancellation
@@ -39,6 +40,7 @@ export async function cancelFedExShipment(trackingNumber: string): Promise<FedEx
         });
         if (!cancelResponse.ok) {
             const errorData = await cancelResponse.json();
+            console.log(errorData);
             return {
                 success: false,
                 error: `FedEx API Error: ${errorData.message || cancelResponse.statusText}`
@@ -46,6 +48,29 @@ export async function cancelFedExShipment(trackingNumber: string): Promise<FedEx
         }
 
         const cancelData = await cancelResponse.json();
+        // log cancelation and also log to order_audit_log
+        const supabase = await createClient();
+        const { data : LogCancelData, error : LogCancelError } = await supabase.from('fulfillments').update({
+            status: 'CANCELLED',
+            cancelled_at: new Date().toISOString(),
+            cancelled_items: items
+        }).eq('id', fulfillmentId);
+        const { data : LogOrderAuditData, error : LogOrderAuditError } = await supabase.from('order_audit_log').insert({
+            order_id: orderId,
+            event_type: 'SHIPMENT_CANCELLED',
+            user_name: userName,
+            details: {
+                SHIPMENT_CANCELLED: {
+                    tracking_number: trackingNumber
+                }
+            }
+        });
+        if (LogCancelError) {
+            console.error('Error logging cancelation:', LogCancelError.message);
+        }
+        if (LogCancelData) {
+            console.log('Cancelation logged:', LogCancelData);
+        }
 
         return {
             success: true,

@@ -123,14 +123,14 @@ export default function CheckoutDialog({
 
     const handleCheckout = async () => {
         // TODO: Add payment authorization tab
-        if (activeTab === 'overview') {
-            setActiveTab('payment')
-            return
-        }
-        if (!paymentData.ccnumber || !paymentData.cardHolderName || !paymentData.ccexpiry || !paymentData.cccvv) {
-            toast.error('Please fill in all payment fields')
-            return
-        }
+        // if (activeTab === 'overview') {
+        //     setActiveTab('payment')
+        //     return
+        // }
+        // if (!paymentData.ccnumber || !paymentData.cardHolderName || !paymentData.ccexpiry || !paymentData.cccvv) {
+        //     toast.error('Please fill in all payment fields')
+        //     return
+        // }
 
         setIsProcessing(true)
         if (!profile) {
@@ -138,25 +138,38 @@ export default function CheckoutDialog({
             return
         }
         try {
-            const response = await captureSale(orderInfo.id, calculateTotal(), orderInfo.order_name, {
-                cardnumber: paymentData.ccnumber,
-                expirydate: paymentData.ccexpiry,
-                cvv: Number(paymentData.cccvv),
-                cardholdername: paymentData.cardHolderName
-            })
-            // const response = await submitOrder(orderInfo.id, profile,orderInfo.order_name, orderInfo.notes, orderInfo.order_items, orderInfo.order_confirmation_number)
+            // const response = await captureSale(orderInfo.id, calculateTotal(), orderInfo.order_name, {
+            //     cardnumber: paymentData.ccnumber,
+            //     expirydate: paymentData.ccexpiry,
+            //     cvv: Number(paymentData.cccvv),
+            //     cardholdername: paymentData.cardHolderName
+            // })
+            // // const response = await submitOrder(orderInfo.id, profile,orderInfo.order_name, orderInfo.notes, orderInfo.order_items, orderInfo.order_confirmation_number)
+            // if (response instanceof Error) {
+            //     toast.error('Authorization failed. Please try again.', {
+            //         description: response.message
+            //     })
+            // } else {
+            //     toast.success('Payment authorization submitted successfully!')
+            //     console.log(response)
+            //     refetchOrderInfo()
+            //     onOpenChange(false)
+            // }
+            const response = await submitOrder(orderInfo.id, profile, orderInfo.order_name, orderInfo.notes, orderInfo.order_items, orderInfo.order_confirmation_number)
             if (response instanceof Error) {
-                toast.error('Authorization failed. Please try again.', {
+                toast.error('Submission failed. Please try again.', {
                     description: response.message
                 })
             } else {
-                toast.success('Payment authorization submitted successfully!')
+                toast.success('Order Submitted successfully!', {
+                    description :`Order ${orderInfo.order_confirmation_number} has been submitted for approval`
+                })
                 console.log(response)
                 refetchOrderInfo()
                 onOpenChange(false)
             }
         } catch (error) {
-            toast.error('Authorization failed. Please try again.')
+            toast.error('Submission failed. Please try again.')
         } finally {
             setIsProcessing(false)
         }
@@ -214,12 +227,8 @@ export default function CheckoutDialog({
             return; // Exit if postData is not available
         }
         try {
-            const response = await postData({
-                ccnumber: paymentData.ccnumber,
-                ccexpiry: paymentData.ccexpiry,
-                cccvv: paymentData.cccvv,
-            }); // Call postData function
-            console.log('Payment Token:', response.payment_token_id); // Log the payment token
+            const response = await postData(); // Call postData function
+            console.log('Payment Token:', response); // Log the payment token
         } catch (error) {
             console.error('Error processing payment:', error); // Handle errors
         }
@@ -239,23 +248,45 @@ export default function CheckoutDialog({
                 </DialogHeader>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
+                    {/* <TabsList className="grid w-fit grid-cols-1">
                         <TabsTrigger value="overview">Order Overview</TabsTrigger>
                         <TabsTrigger value="payment">Payment Authorization</TabsTrigger>
-                    </TabsList>
+                    </TabsList> */}
 
                     {/* Order Overview Tab */}
                     <TabsContent value="overview" className="space-y-6">
                         {/* Order Items Review */}
                         <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Package className="h-5 w-5" />
-                                    Order Items
-                                </CardTitle>
-                                <CardDescription>
-                                    Review the items in your order
-                                </CardDescription>
+                            <CardHeader className='w-full flex flex-row items-center justify-between gap-4'>
+                                <div className=''>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Package className="h-5 w-5" />
+                                        Order Items
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Review the items in your order
+                                    </CardDescription>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Truck className="h-4 w-4 text-blue-600" />
+                                            <span className="font-semibold text-blue-800">Shipping Items</span>
+                                        </div>
+                                        <div className="text-blue-700">
+                                            {getShippingItemsCount()} item(s) will be shipped
+                                        </div>
+                                    </div>
+                                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Package className="h-4 w-4 text-green-600" />
+                                            <span className="font-semibold text-green-800">Pickup Items</span>
+                                        </div>
+                                        <div className="text-green-700">
+                                            {getPickupItemsCount()} item(s) for pickup
+                                        </div>
+                                    </div>
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
@@ -302,7 +333,7 @@ export default function CheckoutDialog({
 
                         <section className='flex grid-cols-2 gap-4'>
                             {/* Fulfillment Summary */}
-                            <Card className='w-full'>
+                            {/* <Card className='w-full'>
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">
                                         <Truck className="h-5 w-5" />
@@ -327,6 +358,59 @@ export default function CheckoutDialog({
                                             </div>
                                             <div className="text-green-700">
                                                 {getPickupItemsCount()} item(s) for pickup
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card> */}
+                            <Card className="border-amber-200 bg-amber-50 ">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2 text-amber-800">
+                                        <AlertTriangle className="h-5 w-5" />
+                                        Important Information
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-4">
+                                        {/* Shipping Fee Notice */}
+                                        {getShippingItemsCount() > 0 && (
+                                            <div className="space-y-2">
+                                                <div className="font-semibold text-amber-800">Shipping Fees</div>
+                                                <div className="text-sm text-amber-700">
+                                                    <ul className="list-disc list-inside space-y-1">
+                                                        <li>Additional shipping fees will be calculated after admin approval</li>
+                                                        <li>Fees are based on weight, dimensions, and destination</li>
+                                                        <li>You will be notified of the exact shipping cost before processing</li>
+                                                        <li>Pickup items have no additional fees</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Payment Hold Notice */}
+                                        {/* <div className="space-y-2">
+                                        <div className="font-semibold text-amber-800">Payment Authorization</div>
+                                        <div className="text-sm text-amber-700">
+                                            <ul className="list-disc list-inside space-y-1">
+                                                <li>A temporary hold will be placed on your card for the order total</li>
+                                                <li>No charges will be processed until admin approval</li>
+                                                <li>The hold will be released if the order is not approved</li>
+                                                <li>Final charges may include additional shipping fees</li>
+                                            </ul>
+                                        </div>
+                                    </div> */}
+
+                                        {/* Process Timeline */}
+                                        <div className="space-y-2">
+                                            <div className="font-semibold text-amber-800">Next Steps</div>
+                                            <div className="text-sm text-amber-700">
+                                                <ol className="list-decimal list-inside space-y-1">
+                                                    {/* <li>Submit payment authorization (card hold only)</li> */}
+                                                    <li>Admin reviews and approves your order</li>
+                                                    <li>Shipping fees calculated (if applicable)</li>
+                                                    <li>Final payment processed with all fees</li>
+                                                    <li>Order fulfillment begins</li>
+                                                </ol>
                                             </div>
                                         </div>
                                     </div>
@@ -362,59 +446,7 @@ export default function CheckoutDialog({
                         </section>
 
                         {/* Important Disclaimers */}
-                        <Card className="border-amber-200 bg-amber-50">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-amber-800">
-                                    <AlertTriangle className="h-5 w-5" />
-                                    Important Information
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    {/* Shipping Fee Notice */}
-                                    {getShippingItemsCount() > 0 && (
-                                        <div className="space-y-2">
-                                            <div className="font-semibold text-amber-800">Shipping Fees</div>
-                                            <div className="text-sm text-amber-700">
-                                                <ul className="list-disc list-inside space-y-1">
-                                                    <li>Additional shipping fees will be calculated after admin approval</li>
-                                                    <li>Fees are based on weight, dimensions, and destination</li>
-                                                    <li>You will be notified of the exact shipping cost before processing</li>
-                                                    <li>Pickup items have no additional fees</li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    )}
 
-                                    {/* Payment Hold Notice */}
-                                    <div className="space-y-2">
-                                        <div className="font-semibold text-amber-800">Payment Authorization</div>
-                                        <div className="text-sm text-amber-700">
-                                            <ul className="list-disc list-inside space-y-1">
-                                                <li>A temporary hold will be placed on your card for the order total</li>
-                                                <li>No charges will be processed until admin approval</li>
-                                                <li>The hold will be released if the order is not approved</li>
-                                                <li>Final charges may include additional shipping fees</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-
-                                    {/* Process Timeline */}
-                                    <div className="space-y-2">
-                                        <div className="font-semibold text-amber-800">Next Steps</div>
-                                        <div className="text-sm text-amber-700">
-                                            <ol className="list-decimal list-inside space-y-1">
-                                                <li>Submit payment authorization (card hold only)</li>
-                                                <li>Admin reviews and approves your order</li>
-                                                <li>Shipping fees calculated (if applicable)</li>
-                                                <li>Final payment processed with all fees</li>
-                                                <li>Order fulfillment begins</li>
-                                            </ol>
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
 
                         {/* Order Information */}
                         <Card>
@@ -490,7 +522,7 @@ export default function CheckoutDialog({
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <form onSubmit={submitCardFunc} className="space-y-4">
-                                        <Input
+                                        {/* <Input
                                             id="ccnumber"
                                             value={paymentData.ccnumber}
                                             onChange={(e) => handleInputChange('ccnumber', formatCardNumber(e.target.value))}
@@ -513,7 +545,16 @@ export default function CheckoutDialog({
                                             placeholder="CVV"
                                             maxLength={4}
                                             className="w-full"
-                                        />
+                                        /> */}
+                                        <input id="ccnumber" placeholder="Card Number"
+                                            maxLength={19}
+                                            className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive" />
+                                        <input id="ccexpiry" placeholder="Expiry Date"
+                                            maxLength={5}
+                                            className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive" />
+                                        <input id="cccvv" placeholder="CVV"
+                                            maxLength={4}
+                                            className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive" />
                                         <Button type="submit" id="payButton" className="w-full">
                                             Pay
                                         </Button>

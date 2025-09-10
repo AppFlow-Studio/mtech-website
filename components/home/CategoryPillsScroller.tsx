@@ -61,7 +61,6 @@ const categories = [
   },
 ];
 const CategoryPillsScroller = ({ hero_cards }: { hero_cards: any }) => {
-  console.log(hero_cards)
   const expandedDuration = 5000;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [previousIndex, setPreviousIndex] = useState<number | null>(null);

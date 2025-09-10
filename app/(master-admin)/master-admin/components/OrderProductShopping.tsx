@@ -27,7 +27,6 @@ export default function OrderProductShopping({ agent_id, agent_tier, agent_profi
     const { profile } = useProfile()
     const [selectedTags, setSelectedTags] = useState<string[]>([])
     const [cart, setCart] = useState<Record<string, number>>({})
-    const [searchTerm, setSearchTerm] = useState('')
     const [productSearchTerm, setProductSearchTerm] = useState("")
     const [categoryFilter, setCategoryFilter] = useState("all")
     const [selectedProduct, setSelectedProduct] = useState<any>(null)
@@ -167,6 +166,9 @@ export default function OrderProductShopping({ agent_id, agent_tier, agent_profi
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2 hover:cursor-pointer hover:bg-purple-500/50 w-fit px-2 py-1 rounded-md" onClick={() => setShowAddItemDialog(false)}>
+                        <X className="h-4 w-4" />
+                        <p>Close product details</p></div>
                     <h2 className="text-xl font-semibold text-foreground">Product Catalog</h2>
                     <p className="text-sm text-muted-foreground">
                         Select products to add to order for this agent at their <span className="font-medium text-foreground">{agent_tier.name}</span> pricing. Below are the agent's notes:
@@ -352,8 +354,8 @@ export default function OrderProductShopping({ agent_id, agent_tier, agent_profi
                 <Input
                     type="text"
                     placeholder="Search products..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    value={productSearchTerm}
+                    onChange={(e) => setProductSearchTerm(e.target.value)}
                     className="pl-10"
                 />
             </div>
@@ -461,7 +463,7 @@ export default function OrderProductShopping({ agent_id, agent_tier, agent_profi
                 <div className="flex items-center justify-between">
                     <div className="text-sm text-muted-foreground">
                         {filteredProducts?.length} of {AgentProducts?.agent_tiers.agent_product_prices?.length || 0} products
-                        {(searchTerm || selectedTags.length > 0) && (
+                        {(productSearchTerm || selectedTags.length > 0) && (
                             <span className="ml-2 text-xs">
                                 (filtered)
                             </span>
@@ -558,7 +560,7 @@ export default function OrderProductShopping({ agent_id, agent_tier, agent_profi
                         <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                         <h3 className="text-lg font-medium text-foreground mb-2">No products found</h3>
                         <p className="text-muted-foreground">
-                            {searchTerm || selectedTags.length > 0
+                            {productSearchTerm || selectedTags.length > 0
                                 ? "Try adjusting your search or filters"
                                 : "No products available at the moment"
                             }

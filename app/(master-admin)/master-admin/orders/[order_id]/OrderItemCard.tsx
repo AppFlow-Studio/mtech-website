@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Pencil, CheckCircle, DollarSign, TrendingUp, TrendingDown, Package, Truck, ExternalLink, Printer, Clock } from "lucide-react";
 import { OrderItems } from "@/lib/types";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/utils/supabase/client";
 import { UpdateOrderItem } from "@/app/(master-admin)/master-admin/actions/order-actions/update-order-item";
 import { DeleteOrderItem } from "@/app/(master-admin)/master-admin/actions/order-actions/delete-order-item";
 import { GetAgentTierPrice } from "@/app/(master-admin)/master-admin/actions/order-actions/get-agent-tier-price";
@@ -15,6 +15,9 @@ import { createPickupFulfillment } from "@/app/(master-admin)/master-admin/actio
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useProfile } from "@/lib/hooks/useProfile";
+import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import RegisterTrackingNumber from "../../actions/shipping/register-tracking-number";
+import { saveManualTracking } from "../../actions/shipping/save-manual-tracking";
 
 // Types for props
 interface OrderItemCardProps {
@@ -61,7 +64,7 @@ export function OrderItemCard({ item, order_id, refetchOrderInfo, agentTierId }:
 
     // Check if item is fulfilled
     const isFulfilled = item.fulfillment_id || item.order_status === 'SHIPPED' || item.order_status === 'COMPLETED';
-    const hasFulfillment = item.fulfillments && item.fulfillments.length > 0;
+    const hasFulfillment = item.fulfillments && item.fulfillment_id;
 
     // Fetch agent tier price when component mounts
     useEffect(() => {
@@ -90,6 +93,67 @@ export function OrderItemCard({ item, order_id, refetchOrderInfo, agentTierId }:
         setIsSaving(true);
         setError("");
         try {
+            console.log(editCarrier)
+            if (editTracking || editCarrier) {
+                if (!editTracking) {
+                    toast.error(`Please put a tracking number`)
+                    setIsSaving(false)
+                    return
+                }
+                else if (!editCarrier) {
+                    toast.error(`Please assign a carrier for tracking number ${editTracking}`)
+                    setIsSaving(false)
+                    return
+                }
+                else {
+                    const isRegistered = await RegisterTrackingNumber({ carrier: editCarrier, tracking_number: editTracking, metadata: item.id })
+                    if (isRegistered instanceof Error) {
+                        toast.error(`Failed to register tracking number ${editTracking}`)
+                        setIsSaving(false)
+                        return
+                    }
+                    else {
+                        // Save tracking data to shipments table if we have tracking data
+                        if (isRegistered && typeof isRegistered === 'object' && 'trackingHistory' in isRegistered) {
+                            try {
+                                // Find the fulfillment ID for this order item
+                                const supabase = createClient()
+                                const { data: fulfillment } = await supabase
+                                    .from('fulfillments')
+                                    .insert({
+                                        order_id: order_id,
+                                        fulfillment_type: 'SHIPPING',
+                                        status: 'SHIPPED',
+                                    }).select('id').single()
+                                
+                                if (fulfillment) {
+                                    const { data : ItemRegistered } = await supabase.from('order_items').update({
+                                        id: item.id,
+                                        fulfillment_id: fulfillment.id,
+                                        fulfillment_type: 'SHIPPING',
+                                        order_status: 'SHIPPED',
+                                    }).eq('id', item.id)
+                                    
+                                    await saveManualTracking({
+                                        fulfillmentId: fulfillment.id,
+                                        trackingNumber: editTracking,
+                                        carrier: editCarrier,
+                                        serviceType: isRegistered.servicelevel?.name,
+                                        trackingHistory: isRegistered.trackingHistory || [],
+                                        trackingStatus: isRegistered.trackingStatus,
+                                        labelUrl: undefined
+                                    })
+                                    toast.success(`Tracking number ${editTracking} registered successfully`)
+
+                                }
+                            } catch (error) {
+                                console.error('Error saving tracking data:', error)
+                                // Don't fail the whole operation if tracking data save fails
+                            }
+                        }
+                    }
+                }
+            }
             // Add Trigger to notify the user that the item is being updated via email
             const isUpdated = await UpdateOrderItem(order_id, item.id, {
                 quantity: editQty,
@@ -224,22 +288,22 @@ export function OrderItemCard({ item, order_id, refetchOrderInfo, agentTierId }:
                             {/* Fulfillment Status */}
                             {hasFulfillment ? (
                                 <div className="space-y-2">
-                                    {item.fulfillments?.map((fulfillment: any) => (
-                                        <div key={fulfillment.id} className="p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                                    {item.fulfillments && (
+                                        <div className="p-2 bg-blue-50 border border-blue-200 rounded-lg">
                                             <div className="flex items-center justify-between mb-1">
                                                 <Badge className="bg-blue-100 text-blue-800 text-xs">
-                                                    {fulfillment.fulfillment_type === 'SHIPPING' ? (
+                                                    {item.fulfillments.fulfillment_type === 'SHIPPING' ? (
                                                         <Truck className="h-3 w-3 mr-1" />
                                                     ) : (
                                                         <Package className="h-3 w-3 mr-1" />
                                                     )}
-                                                    {fulfillment.fulfillment_type}
+                                                    {item.fulfillments.fulfillment_type}
                                                 </Badge>
-                                                {fulfillment.shipments && fulfillment.shipments.length > 0 && (
+                                                {item.fulfillments.shipments && item.fulfillments.shipments.length > 0 && (
                                                     <Button
                                                         size="sm"
                                                         variant="ghost"
-                                                        onClick={() => handlePrintLabel(fulfillment)}
+                                                        onClick={() => handlePrintLabel(item.fulfillments)}
                                                         className="h-6 px-2 text-xs"
                                                     >
                                                         <Printer className="h-3 w-3 mr-1" />
@@ -247,14 +311,14 @@ export function OrderItemCard({ item, order_id, refetchOrderInfo, agentTierId }:
                                                     </Button>
                                                 )}
                                             </div>
-                                            {fulfillment.shipments && fulfillment.shipments.length > 0 && (
+                                            {item.fulfillments.shipments && item.fulfillments.shipments.length > 0 && (
                                                 <div className="text-xs text-blue-700">
-                                                    <div>Tracking: {fulfillment.shipments[0].tracking_number}</div>
-                                                    <div>Carrier: {fulfillment.shipments[0].carrier}</div>
+                                                    <div>Tracking: {item.fulfillments.shipments[0].tracking_number}</div>
+                                                    <div>Carrier: {item.fulfillments.shipments[0].carrier}</div>
                                                 </div>
                                             )}
                                         </div>
-                                    ))}
+                                    )}
                                 </div>
                             ) : (
                                 <>
@@ -387,6 +451,7 @@ export function OrderItemCard({ item, order_id, refetchOrderInfo, agentTierId }:
                                 <option value="SHIPPING">Shipping</option>
                             </select>
                         </div>
+
                         {editFulfillment === "SHIPPING" && (
                             <>
                                 <div>
@@ -398,15 +463,43 @@ export function OrderItemCard({ item, order_id, refetchOrderInfo, agentTierId }:
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium mb-1">Carrier</label>
-                                    <Input
+                                    {/* <label className="block text-sm font-medium mb-1">Carrier</label> */}
+                                    {/* <Input
                                         value={editCarrier}
                                         onChange={e => setEditCarrier(e.target.value)}
                                         disabled={isSaving}
-                                    />
+                                    /> */}
+                                    <Select onValueChange={(value) => setEditCarrier(value)}>
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Carrier" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {
+                                                [
+                                                    {
+                                                        name: 'FedEx',
+                                                        value: 'fedex'
+                                                    },
+                                                    {
+                                                        name: 'UPS',
+                                                        value: 'ups'
+                                                    },
+                                                    {
+                                                        name: 'USPS',
+                                                        value: 'usps'
+                                                    },
+                                                ].map((item) => (
+                                                    <SelectItem value={item.value}>
+                                                        {item.name}
+                                                    </SelectItem>
+                                                ))
+                                            }
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                             </>
                         )}
+
                         {editFulfillment === "PICKUP" && (
                             <div>
                                 <label className="block text-sm font-medium mb-1">Pickup Details</label>

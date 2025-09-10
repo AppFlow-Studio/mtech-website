@@ -9,6 +9,7 @@ export interface Profile {
   last_name: string | null;
   email: string | null;
   role: string | null;
+  phone_number: string | null;
 }
 
 interface UseProfile {

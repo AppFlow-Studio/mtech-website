@@ -68,6 +68,12 @@ interface PackageLineItem {
     weight: number;
     quantity: number;
     productName: string;
+    dimensions?: {
+        length: number;
+        width: number;
+        height: number;
+        units: 'IN' | 'CM';
+    };
 }
 
 interface FedExRateRequest {
@@ -101,6 +107,12 @@ interface FedExRateRequest {
                 units: string;
                 value: string;
             };
+            dimensions?: {
+                length: number;
+                width: number;
+                height: number;
+                units: 'IN' | 'CM';
+            };
         }>;
     };
 }
@@ -109,7 +121,7 @@ interface FedExRateRequest {
 
 
 interface FedExRateCalculatorProps {
-    customerEmail : string
+    customerEmail: string
     isOpen: boolean;
     onCloseShippingSelector: () => void;
     onClose: () => void;
@@ -204,6 +216,15 @@ export default function FedExRateCalculator({
     // Package line items
     const [packageLineItems, setPackageLineItems] = useState<PackageLineItem[]>([]);
 
+    // Dimensions state
+    const [dimensions, setDimensions] = useState({
+        length: 12,
+        width: 10,
+        height: 8,
+        units: 'IN' as 'IN' | 'CM'
+    });
+    const [isEditingDimensions, setIsEditingDimensions] = useState(false);
+
     // Initialize package line items from selected items - combine all into one package
     useEffect(() => {
         if (selectedItems.length > 0) {
@@ -225,12 +246,34 @@ export default function FedExRateCalculator({
         }
     }, [selectedItems]);
 
+    // Auto-update package dimensions when pickup type changes to scheduled pickup
+    useEffect(() => {
+        if (pickupType === 'USE_SCHEDULED_PICKUP' && packageLineItems.length > 0) {
+            updatePackageDimensions(packageLineItems[0].id, dimensions);
+        }
+    }, [pickupType, dimensions]);
+
     const updatePackageWeight = (id: string, weight: number) => {
         setPackageLineItems(prev =>
             prev.map(item =>
                 item.id === id ? { ...item, weight } : item
             )
         );
+    };
+
+    const updatePackageDimensions = (id: string, dimensions: { length: number; width: number; height: number; units: 'IN' | 'CM' }) => {
+        setPackageLineItems(prev =>
+            prev.map(item =>
+                item.id === id ? { ...item, dimensions } : item
+            )
+        );
+    };
+
+    const updateDimensions = (field: keyof typeof dimensions, value: number | 'IN' | 'CM') => {
+        setDimensions(prev => ({
+            ...prev,
+            [field]: value
+        }));
     };
 
     // get rate quote FedEx API
@@ -266,12 +309,26 @@ export default function FedExRateCalculator({
                         "ACCOUNT",
                         "LIST"
                     ],
-                    requestedPackageLineItems: packageLineItems.map(item => ({
-                        weight: {
-                            units: 'LB',
-                            value: item.weight.toString()
+                    requestedPackageLineItems: packageLineItems.map(item => {
+                        const packageItem: any = {
+                            weight: {
+                                units: 'LB',
+                                value: item.weight.toString()
+                            }
+                        };
+
+                        // Add dimensions if pickup type is USE_SCHEDULED_PICKUP
+                        if (pickupType === 'USE_SCHEDULED_PICKUP' && item.dimensions) {
+                            packageItem.dimensions = {
+                                length: item.dimensions.length,
+                                width: item.dimensions.width,
+                                height: item.dimensions.height,
+                                units: item.dimensions.units
+                            };
                         }
-                    }))
+
+                        return packageItem;
+                    })
                 }
             };
             console.log('requestBody', requestBody)
@@ -381,7 +438,15 @@ export default function FedExRateCalculator({
                         weight: {
                             units: 'LB',
                             value: packageLineItems[0].weight.toString()
-                        }
+                        },
+                        ...(pickupType === 'USE_SCHEDULED_PICKUP' && packageLineItems[0].dimensions ? {
+                            dimensions: {
+                                length: packageLineItems[0].dimensions.length,
+                                width: packageLineItems[0].dimensions.width,
+                                height: packageLineItems[0].dimensions.height,
+                                units: packageLineItems[0].dimensions.units
+                            }
+                        } : {})
                     }]
                 }
             };
@@ -407,11 +472,11 @@ export default function FedExRateCalculator({
 
             // Create new shipments order record
             const saveShippingOrderRecord = await saveShippingOrder(
-                fulfillmentShippingOrder.id, 
-                response.output.transactionShipments[0].masterTrackingNumber, 
-                response.output.transactionShipments[0].pieceResponses[0].packageDocuments[0].url, 
-                selectedRate.serviceType, 
-                response.output.transactionShipments[0].pieceResponses[0].deliveryTimestamp, 
+                fulfillmentShippingOrder.id,
+                response.output.transactionShipments[0].masterTrackingNumber,
+                response.output.transactionShipments[0].pieceResponses[0].packageDocuments[0].url,
+                selectedRate.serviceType,
+                response.output.transactionShipments[0].pieceResponses[0].deliveryTimestamp,
                 response.output.transactionShipments[0].pieceResponses[0].packageDocuments[0].encodedLabel);
 
 
@@ -424,7 +489,7 @@ export default function FedExRateCalculator({
 
             // Add to audit log
             await addShippingAuditLog({
-                user_name : profile?.first_name + ' ' + profile?.last_name || '',
+                user_name: profile?.first_name + ' ' + profile?.last_name || '',
                 fulfillmentId: order_id,
                 profileId: profile?.id || '',
                 carrier: 'FedEx',
@@ -448,7 +513,7 @@ export default function FedExRateCalculator({
                     imageUrl: item.products.imageSrc
                 })),
                 additionalFees: Number(response.output.transactionShipments[0].completedShipmentDetail.shipmentRating.shipmentRateDetails[0].totalNetCharge.toFixed(2)),
-                customerEmail:customerEmail 
+                customerEmail: customerEmail
             });
 
             setShipmentResponse(response);
@@ -595,13 +660,24 @@ export default function FedExRateCalculator({
                                     ))}
                                 </div>
 
+
+
                                 <Button
                                     onClick={() => setCurrentStep(2)}
                                     className="w-full"
-                                    disabled={packageLineItems.length === 0}
+                                    disabled={
+                                        packageLineItems.length === 0 ||
+                                        (pickupType === 'USE_SCHEDULED_PICKUP' && (!dimensions.length || !dimensions.width || !dimensions.height))
+                                    }
                                 >
                                     Continue to Shipping Info
                                 </Button>
+
+                                {pickupType === 'USE_SCHEDULED_PICKUP' && (!dimensions.length || !dimensions.width || !dimensions.height) && (
+                                    <p className="text-sm text-red-600 text-center">
+                                        Please enter package dimensions for scheduled pickup
+                                    </p>
+                                )}
                             </CardContent>
                         </Card>
                     </TabsContent>
@@ -1418,6 +1494,97 @@ export default function FedExRateCalculator({
                                                         <div className="font-medium">{selectedRate.ratedShipmentDetails[0].shipmentRateDetail.rateZone}</div>
                                                     </div>
                                                 </div>
+
+                                                {/* Dimensions Display */}
+                                                {pickupType === 'USE_SCHEDULED_PICKUP' && packageLineItems[0]?.dimensions && (
+                                                    <div className="mt-4 pt-4 border-t">
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <div className="text-sm font-medium text-muted-foreground">Package Dimensions</div>
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => setIsEditingDimensions(!isEditingDimensions)}
+                                                                className="text-xs"
+                                                            >
+                                                                {isEditingDimensions ? 'Done' : 'Edit'}
+                                                            </Button>
+                                                        </div>
+
+                                                        {isEditingDimensions ? (
+                                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                                <div>
+                                                                    <Label className="text-xs">Length</Label>
+                                                                    <Input
+                                                                        type="number"
+                                                                        min="1"
+                                                                        max="999"
+                                                                        value={dimensions.length}
+                                                                        onChange={(e) => updateDimensions('length', parseInt(e.target.value) || 0)}
+                                                                        className="mt-1 h-8"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <Label className="text-xs">Width</Label>
+                                                                    <Input
+                                                                        type="number"
+                                                                        min="1"
+                                                                        max="999"
+                                                                        value={dimensions.width}
+                                                                        onChange={(e) => updateDimensions('width', parseInt(e.target.value) || 0)}
+                                                                        className="mt-1 h-8"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <Label className="text-xs">Height</Label>
+                                                                    <Input
+                                                                        type="number"
+                                                                        min="1"
+                                                                        max="999"
+                                                                        value={dimensions.height}
+                                                                        onChange={(e) => updateDimensions('height', parseInt(e.target.value) || 0)}
+                                                                        className="mt-1 h-8"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <Label className="text-xs">Units</Label>
+                                                                    <Select value={dimensions.units} onValueChange={(value: 'IN' | 'CM') => updateDimensions('units', value)}>
+                                                                        <SelectTrigger className="mt-1 h-8">
+                                                                            <SelectValue />
+                                                                        </SelectTrigger>
+                                                                        <SelectContent>
+                                                                            <SelectItem value="IN">IN</SelectItem>
+                                                                            <SelectItem value="CM">CM</SelectItem>
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="text-lg font-semibold">
+                                                                {packageLineItems[0].dimensions.length} × {packageLineItems[0].dimensions.width} × {packageLineItems[0].dimensions.height} {packageLineItems[0].dimensions.units}
+                                                            </div>
+                                                        )}
+
+                                                        {isEditingDimensions && (
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => {
+                                                                    if (packageLineItems.length > 0) {
+                                                                        updatePackageDimensions(packageLineItems[0].id, dimensions);
+                                                                        toast.success('Package dimensions updated');
+                                                                        setIsEditingDimensions(false);
+                                                                    }
+                                                                }}
+                                                                className="mt-3 w-full"
+                                                            >
+                                                                Update Dimensions
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                )}
+                                                
                                             </CardContent>
                                         </Card>
                                     </CardContent>

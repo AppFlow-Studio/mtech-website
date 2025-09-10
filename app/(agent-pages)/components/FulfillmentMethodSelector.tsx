@@ -391,7 +391,7 @@ export default function FulfillmentMethodSelector({
                         </Button>
                         <Button
                             onClick={handleFulfillmentUpdate}
-                            disabled={fulfillmentMethod === 'SHIPPING' && useCustomAddress && !customShippingAddress}
+                            disabled={fulfillmentMethod === 'SHIPPING' && !shippingAddress}
                             className="flex-1"
                         >
                             <Save className="h-4 w-4 mr-2" />

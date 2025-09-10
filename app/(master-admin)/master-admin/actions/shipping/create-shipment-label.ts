@@ -527,6 +527,7 @@ export async function createShipmentLabel(requestBody: CreateShipmentLabelReques
     });
     const Output = await FedexShipmentLabelApiRequest.json();
     if( Output.errors && Output.errors.length > 0) {
+        console.log(Output.errors)
         console.log(Output.errors[0].parameterList)
     }
     if (FedexShipmentLabelApiRequest.ok) {

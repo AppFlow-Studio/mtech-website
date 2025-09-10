@@ -20,7 +20,7 @@ import { OrderItem } from "@/lib/types";
 interface AuditLogEntry {
     id: string
     quote_request_id: string
-    event_type: 'PAYMENT_PROCESSED' | 'NOTE_ADDED' | 'EMAIL_SENT' | 'SYSTEM_ACTION' | 'SHIPMENT_CREATED' | 'ORDER_UPDATED_ADD' | 'ORDER_UPDATED_DELETE'
+    event_type: 'PAYMENT_PROCESSED' | 'NOTE_ADDED' | 'EMAIL_SENT' | 'SYSTEM_ACTION' | 'SHIPMENT_CREATED' | 'SHIPMENT_CANCELLED' | 'ORDER_UPDATED_ADD' | 'ORDER_UPDATED_DELETE'
     user_id: string
     user_name: string
     message: string
@@ -50,6 +50,9 @@ interface AuditLogEntry {
             items_in_shipment: string
             weight_and_size: string
             cost: string
+        }
+        SHIPMENT_CANCELLED?: {
+            tracking_number: string
         }
         ORDER_UPDATED_ADD?: {
             order_items: OrderItem[]
@@ -107,6 +110,10 @@ export default function OrderAuditLog({ orderId }: OrderAuditLogProps) {
                 return 'processed payment'
             case 'SYSTEM_ACTION':
                 return 'performed system action'
+            case 'SHIPMENT_CREATED':
+                return 'created shipment'
+            case 'SHIPMENT_CANCELLED':
+                return 'cancelled shipment'
             case 'ORDER_UPDATED_DELETE':
                 return 'deleted order items'
             case 'ORDER_UPDATED_ADD':
@@ -439,6 +446,27 @@ export default function OrderAuditLog({ orderId }: OrderAuditLogProps) {
                                                                 <strong>Cost:</strong> ${entry.details.SHIPMENT_CREATED.cost}<br />
                                                                 <strong>Weight &amp; Size:</strong> {entry.details.SHIPMENT_CREATED.weight_and_size}<br />
                                                                 <strong>Items in Shipment:</strong> {entry.details.SHIPMENT_CREATED.items_in_shipment}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {entry.event_type === 'SHIPMENT_CANCELLED' && entry.details.SHIPMENT_CANCELLED && (
+                                                <div className="mt-2">
+                                                    <p className="text-sm text-gray-700">{entry.message}</p>
+
+                                                    <button
+                                                        className="mt-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                                                        onClick={() => toggleLogEntryExpansion(entry.id)}
+                                                    >
+                                                        {isExpanded ? 'Hide Details' : 'View Details'}
+                                                    </button>
+                                                    {hasDetails && isExpanded && (
+                                                        <div className="mt-3 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg">
+                                                            <h4 className="text-xs font-medium text-red-600 dark:text-red-400 mb-2">Cancellation Details</h4>
+                                                            <div className="mt-1 text-sm">
+                                                                <strong>Tracking Number:</strong> {entry.details.SHIPMENT_CANCELLED.tracking_number}
                                                             </div>
                                                         </div>
                                                     )}

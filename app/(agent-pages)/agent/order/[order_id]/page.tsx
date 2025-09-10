@@ -21,6 +21,10 @@ import CheckoutDialog from '../../../components/CheckoutDialog';
 function statusBadge(status: string) {
     const config: Record<string, { color: string; label: string }> = {
         draft: { color: "bg-gray-100 text-gray-800", label: "Draft" },
+        unpaid: { color: "bg-yellow-100 text-yellow-800", label: "Unpaid" },
+        paid: { color: "bg-green-100 text-green-800", label: "Paid" },
+        '30-day-terms-unpaid': { color: "bg-yellow-100 text-yellow-800", label: "30-day Terms Unpaid" },
+        '30-day-terms-paid': { color: "bg-green-100 text-green-800", label: "30-day Terms Paid" },
         submitted: { color: "bg-blue-100 text-blue-800", label: "Submitted" },
         approved: { color: "bg-green-100 text-green-800", label: "Approved" },
         fulfilled: { color: "bg-purple-100 text-purple-800", label: "Fulfilled" },
@@ -171,12 +175,13 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
                             <div className="mt-2 flex items-center gap-2">
                                 <span className="text-xs text-muted-foreground">Created: {formatDate(OrderInfo.created_at)}</span>
                                 {statusBadge(OrderInfo.status)}
+                                {statusBadge(OrderInfo.payment_status)}
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent className="flex flex-col md:flex-row gap-8">
                         {/* Agent Info */}
-                        <div className="w-full md:w-1/3 bg-muted/40 rounded-lg p-4 flex flex-col gap-2 animate-in fade-in-0 slide-in-from-left-2">
+                        <div className="w-full md:w-1/2 bg-muted/40 rounded-lg p-4 flex flex-col gap-2 animate-in fade-in-0 slide-in-from-left-2">
                             <h4 className="font-semibold text-foreground mb-2">Agent Info</h4>
                             <div className="text-sm"><span className="font-medium">Name:</span> {OrderInfo.agent.first_name} {OrderInfo.agent.last_name}</div>
                             <div className="text-sm"><span className="font-medium">Email:</span> {OrderInfo.agent.email}</div>
@@ -188,6 +193,7 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
                             <div className="flex items-center gap-2">
                                 <span className="text-sm font-medium">Status:</span>
                                 {statusBadge(OrderInfo.status)}
+                                {statusBadge(OrderInfo.payment_status)}
                             </div>
                             <div>
                                 <span className="text-sm font-medium">Agent Notes:</span>
@@ -196,6 +202,10 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
                             <div>
                                 <span className="text-sm font-medium">Order Total:</span>
                                 <span className="ml-2 text-lg font-bold text-green-700">${totalWithTax.toFixed(2)}</span>
+                            <div className="text-xs text-muted-foreground mt-1">
+                                Subtotal: ${total.toFixed(2)}<br />
+                                NY Sales Tax (8%): ${tax.toFixed(2)}
+                            </div>
                             </div>
                         </div>
                     </CardContent>
@@ -313,13 +323,16 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
                     <div className="mt-4 flex justify-end">
                         <Button
                             onClick={handleCheckout}
+                            // Disabled unless all items have a fulfillment method
+                            disabled={OrderInfo.order_items.some((item: OrderItems) => !item.fulfillment_type) || OrderInfo.status === 'submitted'}
+ 
                             className={`flex items-center gap-2 ${OrderInfo.status === 'approved'
                                 ? 'bg-green-600 hover:bg-green-700 text-white'
                                 : 'bg-blue-600 hover:bg-blue-700 text-white'
                                 }`}
                         >
                             <ShoppingCart className="h-4 w-4" />
-                            {OrderInfo.status === 'approved' ? 'Proceed to Checkout' : 'Request Checkout'}
+                            {OrderInfo.status === 'approved' ? 'Proceed to Checkout' : OrderInfo.status === 'submitted' ? 'Awaiting Admin Approval...' : 'Submit Order'}
                         </Button>
                     </div>
                 </CardHeader>
@@ -394,47 +407,47 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
 
                                                                 {shipment && shipment.length > 0 && (
                                                                     shipment.map((shipment) => (
-                                                                    <div className="space-y-2">
-                                                                        {shipment.tracking_number && (
-                                                                            <div className="flex items-center gap-2">
-                                                                                <span className="text-xs font-medium">Tracking:</span>
-                                                                                <a
-                                                                                    href={`https://www.fedex.com/fedextrack/?trknbr=${shipment.tracking_number}`}
-                                                                                    target="_blank"
-                                                                                    rel="noopener noreferrer"
-                                                                                    className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                                                                                >
-                                                                                    {shipment.tracking_number}
-                                                                                    <ExternalLink className="h-3 w-3" />
-                                                                                </a>
-                                                                            </div>
-                                                                        )}
+                                                                        <div className="space-y-2">
+                                                                            {shipment.tracking_number && (
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <span className="text-xs font-medium">Tracking:</span>
+                                                                                    <a
+                                                                                        href={`https://www.fedex.com/fedextrack/?trknbr=${shipment.tracking_number}`}
+                                                                                        target="_blank"
+                                                                                        rel="noopener noreferrer"
+                                                                                        className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                                                                    >
+                                                                                        {shipment.tracking_number}
+                                                                                        <ExternalLink className="h-3 w-3" />
+                                                                                    </a>
+                                                                                </div>
+                                                                            )}
 
-                                                                        {shipment.carrier && (
-                                                                            <div className="flex items-center gap-2">
-                                                                                <span className="text-xs font-medium">Carrier:</span>
-                                                                                <span className="text-xs">{shipment.carrier}</span>
-                                                                            </div>
-                                                                        )}
+                                                                            {shipment.carrier && (
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <span className="text-xs font-medium">Carrier:</span>
+                                                                                    <span className="text-xs">{shipment.carrier}</span>
+                                                                                </div>
+                                                                            )}
 
-                                                                        {itemFulfillment.additional_fee > 0 && (
-                                                                            <div className="flex items-center gap-2">
-                                                                                <span className="text-xs font-medium">Shipping Fee:</span>
-                                                                                <span className="text-xs font-bold text-green-700">
-                                                                                    ${itemFulfillment.additional_fee.toFixed(2)}
-                                                                                </span>
-                                                                            </div>
-                                                                        )}
+                                                                            {itemFulfillment.additional_fee > 0 && (
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <span className="text-xs font-medium">Shipping Fee:</span>
+                                                                                    <span className="text-xs font-bold text-green-700">
+                                                                                        ${itemFulfillment.additional_fee.toFixed(2)}
+                                                                                    </span>
+                                                                                </div>
+                                                                            )}
 
-                                                                        {shipment.created_at && (
-                                                                            <div className="flex items-center gap-2">
-                                                                                <Clock className="h-3 w-3 text-muted-foreground" />
-                                                                                <span className="text-xs">
-                                                                                    Created: {new Date(shipment.created_at).toLocaleDateString()}
-                                                                                </span>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
+                                                                            {shipment.created_at && (
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <Clock className="h-3 w-3 text-muted-foreground" />
+                                                                                    <span className="text-xs">
+                                                                                        Created: {new Date(shipment.created_at).toLocaleDateString()}
+                                                                                    </span>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
                                                                     ))
                                                                 )}
 

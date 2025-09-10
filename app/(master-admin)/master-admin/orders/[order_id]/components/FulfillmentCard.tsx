@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 import { completePickup } from '../../../actions/shipping/complete-pickup';
 import { cancelShipment } from '../../../actions/shipping/cancel-shipment';
 import { cancelFedExShipment } from '../../../actions/shipping/cancel-fedex-shipment';
+import { saveManualTracking } from '../../../actions/shipping/save-manual-tracking';
 
 interface Shipment {
     id: string;
@@ -30,6 +31,9 @@ interface Shipment {
     carrier: string;
     service_type: string;
     created_at: string;
+    tracking_history?: any[];
+    tracking_status?: any;
+    is_manual_entry?: boolean;
 }
 
 interface Fulfillment {
@@ -39,6 +43,7 @@ interface Fulfillment {
     status: 'PENDING' | 'SHIPPED' | 'READY_FOR_PICKUP' | 'COMPLETE' | 'CANCELLED';
     additional_fee: number;
     created_at: string;
+    cancelled_at?: string;
     shipments: Shipment[];
     pickups: Pickup[];
     order_items?: OrderItem[];
@@ -77,6 +82,7 @@ export function FulfillmentCard({ fulfillment, profileId }: FulfillmentCardProps
     const [showEditDialog, setShowEditDialog] = useState(false);
     const [showCancelDialog, setShowCancelDialog] = useState(false);
     const [showActionsDropdown, setShowActionsDropdown] = useState(false);
+    const [showTrackingDetails, setShowTrackingDetails] = useState<{ [key: string]: boolean }>({});
     const getStatusConfig = (status: string) => {
         const configs = {
             'PENDING': {
@@ -192,7 +198,7 @@ export function FulfillmentCard({ fulfillment, profileId }: FulfillmentCardProps
                 const shipment = fulfillment.shipments[0];
                 if (shipment.carrier?.toLowerCase().includes('fedex') && shipment.tracking_number) {
                     // Call FedEx cancel API
-                    const fedexResult = await cancelFedExShipment(shipment.tracking_number);
+                    const fedexResult = await cancelFedExShipment({ trackingNumber: shipment.tracking_number, fulfillmentId: fulfillment.id, orderId: fulfillment.order_id, userName: profileId, items: (fulfillment?.order_items || []) as any });
                     if (!fedexResult.success) {
                         toast.error(`FedEx API Error: ${fedexResult.error}`);
                         setIsCancelling(false);
@@ -238,6 +244,58 @@ export function FulfillmentCard({ fulfillment, profileId }: FulfillmentCardProps
         }
     };
 
+    const handleSaveManualTracking = async (trackingData: any) => {
+        try {
+            const result = await saveManualTracking({
+                fulfillmentId: fulfillment.id,
+                trackingNumber: trackingData.trackingNumber,
+                carrier: trackingData.carrier,
+                serviceType: trackingData.servicelevel?.name,
+                trackingHistory: trackingData.trackingHistory || [],
+                trackingStatus: trackingData.trackingStatus,
+                labelUrl: undefined
+            });
+
+            if (result.success) {
+                toast.success('Manual tracking information saved successfully!');
+                window.location.reload();
+            } else {
+                toast.error(result.error || 'Failed to save tracking information');
+            }
+        } catch (error) {
+            toast.error('An error occurred while saving tracking information');
+        }
+    };
+
+    const getTrackingStatusColor = (status: string) => {
+        const statusColors = {
+            'PRE_TRANSIT': 'bg-yellow-100 text-yellow-800',
+            'TRANSIT': 'bg-blue-100 text-blue-800',
+            'DELIVERED': 'bg-green-100 text-green-800',
+            'RETURNED': 'bg-red-100 text-red-800',
+            'FAILURE': 'bg-red-100 text-red-800',
+            'UNKNOWN': 'bg-gray-100 text-gray-800'
+        };
+        return statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800';
+    };
+
+    const formatTrackingDate = (dateString: string) => {
+        return new Date(dateString).toLocaleString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+    };
+
+    const toggleTrackingDetails = (shipmentId: string) => {
+        setShowTrackingDetails(prev => ({
+            ...prev,
+            [shipmentId]: !prev[shipmentId]
+        }));
+    };
+
     const statusConfig = getStatusConfig(fulfillment.status);
     const StatusIcon = statusConfig.icon;
 
@@ -261,6 +319,11 @@ export function FulfillmentCard({ fulfillment, profileId }: FulfillmentCardProps
                                 <CardDescription className="flex items-center gap-2 mt-1">
                                     <Calendar className="h-3 w-3" />
                                     Created {formatDate(fulfillment.created_at)}
+                                    {fulfillment.cancelled_at && (
+                                        <span className="text-sm text-red-500">
+                                            Cancelled {formatDate(fulfillment.cancelled_at)}
+                                        </span>
+                                    )}
                                 </CardDescription>
                             </div>
                         </div>
@@ -457,41 +520,98 @@ export function FulfillmentCard({ fulfillment, profileId }: FulfillmentCardProps
                                         <div className="space-y-1">
                                             <div className="flex items-center gap-2">
                                                 <span className="text-sm font-medium">Tracking:</span>
-                                                <span className="text-sm font-mono bg-white px-2 py-1 rounded border">
+                                                <span className={`text-sm font-mono bg-white px-2 py-1 rounded border ${fulfillment.status === 'CANCELLED' ? 'line-through' : ''}`}>
                                                     {shipment.tracking_number}
                                                 </span>
+                                                {shipment.is_manual_entry && (
+                                                    <Badge variant="secondary" className="text-xs">
+                                                        Manual Entry
+                                                    </Badge>
+                                                )}
                                             </div>
                                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                <span>Carrier: {shipment.carrier}</span>
+                                                <span className={`${fulfillment.status === 'CANCELLED' ? 'line-through' : ''}`}>Carrier: {shipment.carrier}</span>
                                                 <span>•</span>
-                                                <span>Service: {shipment.service_type}</span>
+                                                <span className={`${fulfillment.status === 'CANCELLED' ? 'line-through' : ''}`}>Service: {shipment.service_type}</span>
                                             </div>
+
+                                            {/* Current Tracking Status */}
+                                            {shipment.tracking_status && (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs text-muted-foreground">Status:</span>
+                                                    <Badge className={`text-xs ${getTrackingStatusColor(shipment.tracking_status.status)}`}>
+                                                        {shipment.tracking_status.status.replace('_', ' ')}
+                                                    </Badge>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {formatTrackingDate(shipment.tracking_status.statusDate)}
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="flex gap-2">
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() => handlePrintLabel(shipment)}
-                                                disabled={isPrinting}
-                                                className="bg-white hover:bg-gray-50"
-                                            >
-                                                <Printer className="h-3 w-3 mr-1" />
-                                                Print
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() => handleDownloadLabel(shipment)}
-                                                className="bg-white hover:bg-gray-50"
-                                            >
-                                                <ExternalLink className="h-3 w-3 mr-1" />
-                                                Download
-                                            </Button>
+                                            {shipment.label_url && (
+                                                <>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => handlePrintLabel(shipment)}
+                                                        disabled={isPrinting || fulfillment.status === 'CANCELLED'}
+                                                        className="bg-white hover:bg-gray-50"
+                                                    >
+                                                        <Printer className="h-3 w-3 mr-1" />
+                                                        Print
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        disabled={fulfillment.status === 'CANCELLED'}
+                                                        onClick={() => handleDownloadLabel(shipment)}
+                                                        className="bg-white hover:bg-gray-50"
+                                                    >
+                                                        <ExternalLink className="h-3 w-3 mr-1" />
+                                                        Download
+                                                    </Button>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
 
+                                    {/* Tracking History */}
+                                    {shipment.tracking_history && shipment.tracking_history.length > 0 && (
+                                        <div className="pt-2 border-t border-gray-200">
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => toggleTrackingDetails(shipment.id)}
+                                                className="text-xs text-blue-600 hover:text-blue-800 mb-2"
+                                            >
+                                                {showTrackingDetails[shipment.id] ? 'Hide' : 'Show'} Tracking History
+                                            </Button>
+
+                                            {showTrackingDetails[shipment.id] && (
+                                                <div className="space-y-2 max-h-48 overflow-y-auto">
+                                                    {shipment.tracking_history.map((event, index) => (
+                                                        <div key={index} className="p-2 bg-white border border-gray-100 rounded text-xs">
+                                                            <div className="flex items-center justify-between mb-1">
+                                                                <Badge className={`text-xs ${getTrackingStatusColor(event.status)}`}>
+                                                                    {event.status.replace('_', ' ')}
+                                                                </Badge>
+                                                                <span className="text-muted-foreground">
+                                                                    {formatTrackingDate(event.statusDate)}
+                                                                </span>
+                                                            </div>
+                                                            {event.statusDetails && (
+                                                                <p className="text-muted-foreground">{event.statusDetails}</p>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
                                     {/* Tracking Link */}
-                                    {shipment.tracking_number && (
+                                    {shipment.tracking_number && fulfillment.status !== 'CANCELLED' && (
                                         <div className="pt-2 border-t border-gray-200">
                                             <Button
                                                 size="sm"
@@ -506,6 +626,8 @@ export function FulfillmentCard({ fulfillment, profileId }: FulfillmentCardProps
                                                         trackingUrl = `https://www.ups.com/track?tracknum=${shipment.tracking_number}`;
                                                     } else if (carrier?.includes('usps')) {
                                                         trackingUrl = `https://tools.usps.com/go/TrackConfirmAction?tLabels=${shipment.tracking_number}`;
+                                                    } else if (carrier?.includes('shippo')) {
+                                                        trackingUrl = `https://goshippo.com/tracking/${shipment.tracking_number}`;
                                                     } else {
                                                         trackingUrl = `https://www.google.com/search?q=${shipment.tracking_number}`;
                                                     }
@@ -609,7 +731,7 @@ export function FulfillmentCard({ fulfillment, profileId }: FulfillmentCardProps
                                 <div className="text-sm">
                                     <span className="font-medium">Shipment Details:</span>
                                     <div className="mt-1 text-muted-foreground">
-                                        <div>Tracking: {fulfillment.shipments[0].tracking_number}</div>
+                                        <div >Tracking: {fulfillment.shipments[0].tracking_number}</div>
                                         <div>Carrier: {fulfillment.shipments[0].carrier}</div>
                                         <div>Service: {fulfillment.shipments[0].service_type}</div>
                                     </div>

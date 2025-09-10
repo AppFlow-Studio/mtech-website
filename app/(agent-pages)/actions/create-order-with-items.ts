@@ -9,7 +9,7 @@ type OrderItem = {
     price_at_order: number
 };
 
-export async function createOrderWithItems(agent_id: string, order_name: string, notes: string, shipping_address: any, items: OrderItem[]) {
+export async function createOrderWithItems(agent_id: string, order_name: string, notes: string, items: OrderItem[]) {
     const supabase = await createClient();
 
     // 1. Create the new order
@@ -19,7 +19,6 @@ export async function createOrderWithItems(agent_id: string, order_name: string,
             order_name: order_name,
             notes: notes,
             agent_id: agent_id,
-            shipping_address: shipping_address,
         })
         .select()
         .single();

@@ -20,7 +20,8 @@ import {
     Settings,
     Shield,
     AlertCircle,
-    CheckCircle
+    CheckCircle,
+    CreditCard
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { updateAgentProfile, UpdateAgentProfileData } from '../actions/update-agent-profile'
@@ -263,6 +264,26 @@ export default function AgentSettingsDialog({
                                         </Badge>
                                     </div>
                                 </div> */}
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <CreditCard className="h-5 w-5" />
+                                    Payment Information
+                                </CardTitle>
+                                <CardDescription>
+                                    Manage your payment methods for faster checkout.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex flex-col items-center justify-center py-6">
+                                    <span className="text-muted-foreground mb-2">No payment method added.</span>
+                                    <Button variant="outline" disabled>
+                                        Add a Payment Option
+                                    </Button>
+                                </div>
                             </CardContent>
                         </Card>
                     </TabsContent>

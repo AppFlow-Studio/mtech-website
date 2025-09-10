@@ -60,6 +60,7 @@ import { syncOrderItems } from "../actions/sync-order-items"
 import AgentOrdersScreen from "../components/AgentOrdersScreen"
 import { useRouter, useSearchParams } from "next/navigation";
 import AgentSettingsDialog from "../components/AgentSettingsDialog";
+import Profile from "./Profile"
 
 
 
@@ -419,6 +420,15 @@ export default function AgentPage() {
                                         Orders
                                     </div>
                                 </button>
+                                <button onClick={() => setActiveTab('profile')} className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'profile'
+                                        ? 'border-primary text-primary'
+                                        : 'border-transparent text-muted-foreground hover:text-foreground'
+                                        }`}>
+                                    <div className="flex items-center gap-2">
+                                        <User className="h-4 w-4" />
+                                        Profile
+                                    </div>
+                                </button>
                             </div>
 
                             {/* Shopping Cart Button */}
@@ -527,10 +537,19 @@ export default function AgentPage() {
                                                 <CardTitle>Manage Your Orders</CardTitle>
                                                 <CardDescription>Manage your orders and their status</CardDescription>
                                             </div>
-                                            <Button size="sm" onClick={() => setOpenOrderDialog(true)}>
-                                                <Plus className="h-4 w-4 mr-2" />
-                                                New Order
-                                            </Button>
+                                            <div className="flex gap-x-2">
+                                                <Button size="sm" onClick={() => setOpenOrderDialog(true)}>
+                                                    <Plus className="h-4 w-4 mr-2" />
+                                                    New Order
+                                                </Button>
+                                                <Button size="sm" onClick={() => {
+                                                    refetchAgentOrders()
+                                                    toast.success('Orders refreshed')
+                                                    }}>
+                                                    <RefreshCw className="h-4 w-4 mr-2" />
+                                                    Refresh
+                                                </Button>
+                                            </div>
                                         </div>
                                     </CardHeader>
                                     <CardContent>
@@ -614,6 +633,8 @@ export default function AgentPage() {
                         removeFromCart={removeFromCart}
                         updateQuantity={updateQuantity}
                     />
+                ) : activeTab === 'profile' ? (
+                    <Profile />
                 ) : (
                     <AgentOrdersScreen />
                 )}
@@ -812,6 +833,16 @@ export default function AgentPage() {
                                                 Create New Order
                                             </Button>
                                         } */}
+                                        {
+                                            !selectedInquiryForCart &&
+                                            <Button
+                                                onClick={() => setOpenCreateOrderDialog(true)}
+                                                className="flex-1 bg-green-600 text-white hover:bg-green-700"
+                                            >
+                                                <Plus className="h-4 w-4 mr-2" />
+                                                Create New Order
+                                            </Button>
+                                        }
                                     </div>
                                 </div>
                             </div>
@@ -912,7 +943,7 @@ export default function AgentPage() {
                     agent={agent}
                     onProfileUpdated={() => {
                         // Refresh agent data after profile update
-                        refetch()
+                        refetchAgentOrders()
                     }}
                 />
 
