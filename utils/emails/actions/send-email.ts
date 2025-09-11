@@ -8,6 +8,12 @@ import { createClient } from '@/utils/supabase/server'
 import { PriceUpdateEmail } from '../PriceUpdateEmail'
 import OrderSubmissionEmail, { OrderItem } from '../OrderSubmissionEmail'
 import { OrderItems } from '@/lib/types'
+import { ContactThankYouEmail } from '../ContactThankYouEmail'
+import { ContactFormSubmissionEmail } from '../ContactFormSubmissionEmail'
+import { WarrantyRequestSubmissionEmail } from '../WarrantyRequestSubmissionEmail'
+import { WarrantyRequestThankYouEmail } from '../WarrantyRequestThankYouEmail'
+import { AgentApplicationSubmissionEmail } from '../AgentApplicationSubmissionEmail'
+import { AgentApplicationThankYouEmail } from '../AgentApplicationThankYouEmail'
 
 const resend = new Resend(process.env.RESEND_KEY)
 
@@ -209,5 +215,383 @@ export async function sendOrderSubmissionEmail({ customerEmail,
     } catch (error) {
         console.error('Error sending order submission email:', error)
         return new Error('Failed to send email')
+    }
+}
+
+export async function sendContactFormEmails({
+    firstName,
+    lastName,
+    email,
+    phone,
+    message,
+    submissionId
+}: {
+    firstName: string
+    lastName: string
+    email: string
+    phone: string
+    message: string
+    submissionId?: string
+}) {
+    const submittedAt = new Date().toISOString()
+    const fullName = `${firstName} ${lastName}`
+
+    try {
+        // Send thank you email to customer
+        const thankYouSubject = 'Thank you for contacting MTech Distributors!'
+        const { data: thankYouData, error: thankYouError } = await resend.emails.send({
+            from: 'MTech Distributors <support@mtechdistributor.com>',
+            to: email,
+            subject: thankYouSubject,
+            react: ContactThankYouEmail({
+                firstName,
+                lastName,
+                email,
+                submittedAt,
+            }),
+        })
+
+        if (thankYouError) {
+            console.error('Error sending thank you email:', thankYouError)
+            return { success: false, error: thankYouError.message }
+        }
+
+        // Send notification email to company
+        const notificationSubject = `New Contact Form Submission from ${fullName}`
+        const { data: notificationData, error: notificationError } = await resend.emails.send({
+            from: 'MTech Distributors <support@mtechdistributor.com>',
+            to : 'support@mtechdistributors.com',
+            subject: notificationSubject,
+            react: ContactFormSubmissionEmail({
+                firstName,
+                lastName,
+                email,
+                phone,
+                message,
+                submittedAt,
+                submissionId,
+            }),
+        })
+
+        if (notificationError) {
+            console.error('Error sending notification email:', notificationError)
+            return { success: false, error: notificationError.message }
+        }
+
+        // // Log the contact form submission to database if needed
+        // try {
+        //     const supabase = await createClient()
+        //     const { error: dbError } = await supabase.from('contact_submissions').insert({
+        //         first_name: firstName,
+        //         last_name: lastName,
+        //         email,
+        //         phone,
+        //         message,
+        //         submission_id: submissionId || `CF-${Date.now()}`,
+        //         submitted_at: submittedAt,
+        //         thank_you_email_sent: true,
+        //         notification_email_sent: true,
+        //     })
+
+        //     if (dbError) {
+        //         console.error('Error saving contact submission to database:', dbError)
+        //         // Don't fail the email sending if database logging fails
+        //     }
+        // } catch (dbError) {
+        //     console.error('Error with database logging:', dbError)
+        //     // Don't fail the email sending if database logging fails
+        // }
+
+        return {
+            success: true,
+            data: {
+                thankYouEmailId: thankYouData?.id,
+                notificationEmailId: notificationData?.id
+            }
+        }
+    } catch (error) {
+        console.error('Error sending contact form emails:', error)
+        return { success: false, error: 'Failed to send contact form emails' }
+    }
+}
+
+export async function sendWarrantyRequestEmails({
+    firstName,
+    lastName,
+    email,
+    businessName,
+    customerPO,
+    phoneCode,
+    phoneNumber,
+    hasWarranty,
+    manufacturer,
+    repairTypes,
+    partsSerialNumber,
+    atmSerialNumber,
+    message,
+    issueDescription,
+    files,
+    submissionId
+}: {
+    firstName: string
+    lastName: string
+    email: string
+    businessName: string
+    customerPO: string
+    phoneCode: string
+    phoneNumber: string
+    hasWarranty: string
+    manufacturer: string
+    repairTypes: string[]
+    partsSerialNumber: string
+    atmSerialNumber: string
+    message: string
+    issueDescription: string
+    files?: File[]
+    submissionId?: string
+}) {
+    const submittedAt = new Date().toISOString()
+    const fullName = `${firstName} ${lastName}`
+
+    try {
+        // Send thank you email to customer
+        const thankYouSubject = 'Warranty Request Received - MTech Distributors'
+        const { data: thankYouData, error: thankYouError } = await resend.emails.send({
+            from: 'MTech Distributors <support@mtechdistributor.com>',
+            to: email,
+            subject: thankYouSubject,
+            react: WarrantyRequestThankYouEmail({
+                firstName,
+                lastName,
+                email,
+                businessName,
+                customerPO,
+                manufacturer,
+                submittedAt,
+            }),
+        })
+
+        if (thankYouError) {
+            console.error('Error sending warranty thank you email:', thankYouError)
+            return { success: false, error: thankYouError.message }
+        }
+
+        // Prepare attachments if files are provided
+        const attachments = files && files.length > 0 ? await Promise.all(
+            files.map(async (file) => {
+                const buffer = await file.arrayBuffer();
+                return {
+                    filename: file.name,
+                    content: Buffer.from(buffer),
+                };
+            })
+        ) : undefined;
+
+        // Send notification email to company
+        const notificationSubject = `New Warranty Request from ${fullName} - ${businessName}${files && files.length > 0 ? ` (${files.length} attachment${files.length > 1 ? 's' : ''})` : ''}`
+        const { data: notificationData, error: notificationError } = await resend.emails.send({
+            from: 'MTech Distributors <support@mtechdistributor.com>',
+            to : 'support@mtechdistributors.com',
+            subject: notificationSubject,
+            react: WarrantyRequestSubmissionEmail({
+                firstName,
+                lastName,
+                email,
+                businessName,
+                customerPO,
+                phoneCode,
+                phoneNumber,
+                hasWarranty,
+                manufacturer,
+                repairTypes,
+                partsSerialNumber,
+                atmSerialNumber,
+                message,
+                issueDescription,
+                submittedAt,
+                submissionId,
+                files: files ? files.map(f => f.name) : undefined,
+            }),
+            attachments,
+        })
+
+        if (notificationError) {
+            console.error('Error sending warranty notification email:', notificationError)
+            return { success: false, error: notificationError.message }
+        }
+
+        // Log the warranty request to database if needed
+        try {
+            const supabase = await createClient()
+            const { error: dbError } = await supabase.from('warranty_requests').insert({
+                first_name: firstName,
+                last_name: lastName,
+                email,
+                business_name: businessName,
+                customer_po: customerPO,
+                phone_code: phoneCode,
+                phone_number: phoneNumber,
+                has_warranty: hasWarranty,
+                manufacturer,
+                repair_types: repairTypes,
+                parts_serial_number: partsSerialNumber,
+                atm_serial_number: atmSerialNumber,
+                message,
+                issue_description: issueDescription,
+                files_uploaded: files ? files.map(f => f.name) : [],
+                files_count: files ? files.length : 0,
+                submission_id: submissionId || `WR-${Date.now()}`,
+                submitted_at: submittedAt,
+                thank_you_email_sent: true,
+                notification_email_sent: true,
+            })
+
+            if (dbError) {
+                console.error('Error saving warranty request to database:', dbError)
+                // Don't fail the email sending if database logging fails
+            }
+        } catch (dbError) {
+            console.error('Error with database logging:', dbError)
+            // Don't fail the email sending if database logging fails
+        }
+
+        return {
+            success: true,
+            data: {
+                thankYouEmailId: thankYouData?.id,
+                notificationEmailId: notificationData?.id
+            }
+        }
+    } catch (error) {
+        console.error('Error sending warranty request emails:', error)
+        return { success: false, error: 'Failed to send warranty request emails' }
+    }
+}
+
+export async function sendAgentApplicationEmails({
+    firstName,
+    lastName,
+    email,
+    companyName,
+    phoneCode,
+    phoneNumber,
+    voidCheck,
+    photoId,
+    ein,
+    submissionId
+}: {
+    firstName: string
+    lastName: string
+    email: string
+    companyName: string
+    phoneCode: string
+    phoneNumber: string
+    voidCheck?: File[]
+    photoId?: File[]
+    ein?: File[]
+    submissionId?: string
+}) {
+    const submittedAt = new Date().toISOString()
+    const fullName = `${firstName} ${lastName}`
+
+    try {
+        // Send thank you email to applicant
+        const thankYouSubject = 'Agent Application Received - MTech Distributors'
+        const { data: thankYouData, error: thankYouError } = await resend.emails.send({
+            from: 'MTech Distributors <partnerships@mtechdistributor.com>',
+            to: email,
+            subject: thankYouSubject,
+            react: AgentApplicationThankYouEmail({
+                firstName,
+                lastName,
+                email,
+                companyName,
+                submittedAt,
+            }),
+        })
+
+        if (thankYouError) {
+            console.error('Error sending agent application thank you email:', thankYouError)
+            return { success: false, error: thankYouError.message }
+        }
+
+        // Prepare attachments if files are provided
+        const allFiles = [...(voidCheck || []), ...(photoId || []), ...(ein || [])];
+        const attachments = allFiles.length > 0 ? await Promise.all(
+            allFiles.map(async (file) => {
+                const buffer = await file.arrayBuffer();
+                return {
+                    filename: file.name,
+                    content: Buffer.from(buffer),
+                };
+            })
+        ) : undefined;
+
+        // Send notification email to company
+        const notificationSubject = `New Agent Application from ${fullName} - ${companyName}${allFiles.length > 0 ? ` (${allFiles.length} attachment${allFiles.length > 1 ? 's' : ''})` : ''}`
+        const { data: notificationData, error: notificationError } = await resend.emails.send({
+            from: 'MTech Distributors <partnerships@mtechdistributor.com>',
+            to : 'support@mtechdistributors.com',
+            subject: notificationSubject,
+            react: AgentApplicationSubmissionEmail({
+                firstName,
+                lastName,
+                email,
+                companyName,
+                phoneCode,
+                phoneNumber,
+                submittedAt,
+                submissionId,
+                voidCheck: voidCheck ? voidCheck.map(f => f.name) : undefined,
+                photoId: photoId ? photoId.map(f => f.name) : undefined,
+                ein: ein ? ein.map(f => f.name) : undefined,
+            }),
+            attachments,
+        })
+
+        if (notificationError) {
+            console.error('Error sending agent application notification email:', notificationError)
+            return { success: false, error: notificationError.message }
+        }
+
+        // // Log the agent application to database if needed
+        // try {
+        //     const supabase = await createClient()
+        //     const { error: dbError } = await supabase.from('agent_applications').insert({
+        //         first_name: firstName,
+        //         last_name: lastName,
+        //         email,
+        //         company_name: companyName,
+        //         phone_code: phoneCode,
+        //         phone_number: phoneNumber,
+        //         void_check_files: voidCheck ? voidCheck.map(f => f.name) : [],
+        //         photo_id_files: photoId ? photoId.map(f => f.name) : [],
+        //         ein_files: ein ? ein.map(f => f.name) : [],
+        //         total_files_count: allFiles.length,
+        //         submission_id: submissionId || `AA-${Date.now()}`,
+        //         submitted_at: submittedAt,
+        //         thank_you_email_sent: true,
+        //         notification_email_sent: true,
+        //     })
+
+        //     if (dbError) {
+        //         console.error('Error saving agent application to database:', dbError)
+        //         // Don't fail the email sending if database logging fails
+        //     }
+        // } catch (dbError) {
+        //     console.error('Error with database logging:', dbError)
+        //     // Don't fail the email sending if database logging fails
+        // }
+
+        return {
+            success: true,
+            data: {
+                thankYouEmailId: thankYouData?.id,
+                notificationEmailId: notificationData?.id
+            }
+        }
+    } catch (error) {
+        console.error('Error sending agent application emails:', error)
+        return { success: false, error: 'Failed to send agent application emails' }
     }
 }
