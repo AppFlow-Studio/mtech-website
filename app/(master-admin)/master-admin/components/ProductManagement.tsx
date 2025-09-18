@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import Image from "next/image"
 import { useRef } from "react"
-import { Select } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import { addProduct } from "../product-actions/add-product"
 import { z } from "zod"
 import { useForm, Controller } from "react-hook-form"
@@ -24,15 +24,15 @@ import {
 import { deleteProduct } from "../product-actions/delete-product"
 import { toast } from "sonner"
 import { updateProduct } from "../product-actions/update-product"
-import { useTags } from "./TagContext"
 import { BrochureUploadField } from "./BrochureUploadField"
+import { useTags } from "../actions/hook/useTagHooks"
 
 export default function ProductManagement({ searchTerm, setSearchTerm }: {
     searchTerm: string,
     setSearchTerm: (term: string) => void
 }) {
     const { data: products, isLoading, isError, refetch } = useProducts()
-    const { tags } = useTags()
+    const { data: tags } = useTags()
     const [deleteProductId, setDeleteProductId] = useState<string | null>(null)
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
@@ -159,9 +159,9 @@ export default function ProductManagement({ searchTerm, setSearchTerm }: {
                     )}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    {tags.map((tag) => (
+                    {tags?.map((tag) => (
                         <Badge
-                            key={tag}
+                            key={tag.name}
                             variant={selectedTags.includes(tag) ? "default" : "outline"}
                             className={`cursor-pointer transition-colors hover:bg-primary/10 ${selectedTags.includes(tag)
                                 ? 'bg-primary text-primary-foreground hover:bg-primary/90'
@@ -169,7 +169,7 @@ export default function ProductManagement({ searchTerm, setSearchTerm }: {
                                 }`}
                             onClick={() => handleTagToggle(tag)}
                         >
-                            {tag}
+                            {tag.name}
                             {selectedTags.includes(tag) && (
                                 <span className="ml-1 text-xs">✓</span>
                             )}
@@ -222,9 +222,9 @@ export default function ProductManagement({ searchTerm, setSearchTerm }: {
                                 <h3 className="font-medium text-foreground mb-2 line-clamp-2">{product.name}</h3>
                                 <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{product.description}</p>
                                 <div className="flex flex-wrap gap-1 mb-3">
-                                    {product.tags.map((tag: string) => (
-                                        <Badge key={tag} variant="outline">
-                                            {tag}
+                                    {product.product_tags.map((tag) => (
+                                        <Badge key={tag.tags.name} variant="outline">
+                                            {tag.tags.name}
                                         </Badge>
                                     ))}
                                 </div>
@@ -388,7 +388,7 @@ type EditProductFormType = z.infer<typeof editProductSchema>
 
 // Replace the entire ProductEditForm function
 function ProductEditForm({ product }: { product: any }) {
-    const tagOptions = useTagOptions()
+    const { data: tags } = useTags()
     const form = useForm<EditProductFormType>({
         resolver: zodResolver(editProductSchema),
         defaultValues: {
@@ -439,6 +439,7 @@ function ProductEditForm({ product }: { product: any }) {
             await refetch()
         }
     }
+    console.log(tags)
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -608,10 +609,12 @@ function ProductEditForm({ product }: { product: any }) {
                                                 }
                                             }}
                                         >
-                                            <option value="" disabled>Select a tag</option>
-                                            {tagOptions.filter(option => !field.value.includes(option)).map(option => (
-                                                <option key={option} value={option}>{option}</option>
-                                            ))}
+                                            <SelectTrigger value="" disabled>Select a tag</SelectTrigger>
+                                            <SelectContent>
+                                                {tags?.filter(option => !field.value.includes(option.name)).map((option: any) => (
+                                                    <SelectItem key={option.name} value={option.name}>{option.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
                                         </Select>
                                         <Button type="button" variant="outline" disabled>
                                             Add
@@ -894,7 +897,7 @@ const productSchema = z.object({
 type ProductFormType = z.infer<typeof productSchema>
 
 function ProductAddForm() {
-    const tagOptions = useTagOptions()
+    const { data: tags } = useTags()
     const form = useForm<ProductFormType>({
         resolver: zodResolver(productSchema),
         defaultValues: {
@@ -1152,20 +1155,22 @@ function ProductAddForm() {
                         <FormItem>
                             <FormLabel>Tags</FormLabel>
                             <FormControl>
-                                <>
+                                <div className="flex flex-col gap-2">
                                     <div className="flex gap-2 mb-2">
                                         <Select
                                             value={""}
-                                                onValueChange={tag => {
+                                            onValueChange={tag => {
                                                 if (tag && !field.value.includes(tag)) {
                                                     field.onChange([...field.value, tag])
                                                 }
                                             }}
                                         >
-                                            <option value="" disabled>Select a tag</option>
-                                            {tagOptions.filter(option => !field.value.includes(option)).map(option => (
-                                                <option key={option} value={option}>{option}</option>
-                                            ))}
+                                            <SelectTrigger value="" disabled>Select a tag</SelectTrigger>
+                                            <SelectContent>
+                                                {tags?.filter(option => !field.value.includes(option.name)).map((option: any) => (
+                                                    <SelectItem key={option.name} value={option.name}>{option.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
                                         </Select>
                                         <Button type="button" variant="outline" disabled>
                                             Add
@@ -1185,13 +1190,12 @@ function ProductAddForm() {
                                             </Badge>
                                         ))}
                                     </div>
-                                </>
+                                </div>
                             </FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
-                />
-
+            />
                 {/* Product Modifiers */}
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
@@ -1356,8 +1360,3 @@ function ProductAddForm() {
     )
 }
 
-// Tag options - now using shared context
-function useTagOptions() {
-    const { tags } = useTags()
-    return tags
-}

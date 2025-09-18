@@ -253,11 +253,11 @@ const CategoryPillsScroller = ({ hero_cards }: { hero_cards: any }) => {
                         </h3>
                         <div className="rounded-lg bg-[#B4ADB8] p-2 sm:p-3 flex flex-col items-center">
                           <div className="mb-2 sm:mb-3">
-                            <img
+                            {category.imageSrc && <img
                               src={urlFor(category.imageSrc).url()}
                               alt={category.title}
                               className="w-full h-auto rounded-md sm:rounded-lg object-contain max-h-16 xs:max-h-20 sm:max-h-24"
-                            />
+                            />}
                           </div>
                           <Link
                             href={

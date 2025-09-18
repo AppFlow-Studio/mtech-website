@@ -5,7 +5,11 @@ export async function getProducts() {
     const supabase = await createClient()
 
     // Get products with their modifiers
-    const { data: products, error: productsError } = await supabase.from('products').select('*')
+    const { data: products, error: productsError } = await supabase.from('products').select(`
+        *,
+        product_modifiers( * ),
+        product_tags( *, tags( * ) )
+        `)
     if (productsError) {
         throw new Error(productsError.message)
     }

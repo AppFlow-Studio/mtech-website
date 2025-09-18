@@ -22,7 +22,7 @@ export default function SanityImage({ image, alt, className, width = 800, height
 
   return (
     <Image
-      src={urlFor(image).url()} // Generate the image URL
+      src={urlFor(image)?.url()} // Generate the image URL
       alt={alt}
       // You can define width and height here if you want fixed dimensions,
       // otherwise, let Next.js handle responsiveness via `sizes`
@@ -33,7 +33,7 @@ export default function SanityImage({ image, alt, className, width = 800, height
       height={height}
       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 40vw" // Example sizes, adjust for your layout
       placeholder="blur" // Enable blur placeholder
-      blurDataURL={urlFor(image).width(24).height(24).blur(10).url()} // Low-quality blurred image for placeholder
+      blurDataURL={urlFor(image)?.width(24).height(24).blur(10).url()} // Low-quality blurred image for placeholder
     />
   );
 }

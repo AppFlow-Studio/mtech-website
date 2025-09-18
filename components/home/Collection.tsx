@@ -77,13 +77,13 @@ const Collection = async () => {
 
                 {/* Image Container */}
                 <div className="p-4 bg-white m-4 rounded-lg ">
-                  <Image
+                  {item.imageSrc && <Image
                     src={urlFor(item.imageSrc).url()}
                     alt={item.title}
                     width={400}
                     height={300}
                     className="w-full h-auto object-contain aspect-[4/3]"
-                  />
+                  />}
                 </div>
 
                 {/* Footer Section */}

@@ -16,7 +16,8 @@ import {
     FormControl,
     FormMessage,
 } from "@/components/ui/form"
-import { useTags } from "./TagContext"
+import { useTags } from "../actions/hook/useTagHooks"
+// import { useTags } from "./TagContext"
 
 const tagSchema = z.object({
     name: z.string().min(1, "Tag name is required").max(50, "Tag name must be less than 50 characters"),
@@ -25,7 +26,8 @@ const tagSchema = z.object({
 type TagFormType = z.infer<typeof tagSchema>
 
 export default function TagManagement() {
-    const { tags, addTag, updateTag, deleteTag: deleteTagFromContext } = useTags()
+    // const { tags, addTag, updateTag, deleteTag: deleteTagFromContext } = useTags()
+    const { data: tags } = useTags()
     const [editingTag, setEditingTag] = useState<string | null>(null)
     const [deleteTag, setDeleteTag] = useState<string | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
@@ -47,37 +49,37 @@ export default function TagManagement() {
         },
     })
 
-    const handleAddTag = async (values: TagFormType) => {
-        const newTag = values.name.toLowerCase().trim()
+    // const handleAddTag = async (values: TagFormType) => {
+    //     const newTag = values.name.toLowerCase().trim()
 
-        if (tags.includes(newTag)) {
-            toast.error("Tag already exists")
-            return
-        }
+    //     if (tags.includes(newTag)) {
+    //         toast.error("Tag already exists")
+    //         return
+    //     }
 
-        // Mock API call - replace with actual API
-        addTag(newTag)
-        toast.success("Tag added successfully")
-        setOpenAddDialog(false)
-        addForm.reset()
-    }
+    //     // Mock API call - replace with actual API
+    //     addTag(newTag)
+    //     toast.success("Tag added successfully")
+    //     setOpenAddDialog(false)
+    //     addForm.reset()
+    // }
 
     const handleEditTag = async (values: TagFormType) => {
         if (!editingTag) return
 
         const newTagName = values.name.toLowerCase().trim()
 
-        if (tags.includes(newTagName) && newTagName !== editingTag) {
+        if (tags?.map((tag) => tag.name).includes(newTagName) && newTagName !== editingTag) {
             toast.error("Tag already exists")
             return
         }
 
-        // Mock API call - replace with actual API
-        updateTag(editingTag, newTagName)
-        toast.success("Tag updated successfully")
-        setOpenEditDialog(false)
-        setEditingTag(null)
-        editForm.reset()
+        // // Mock API call - replace with actual API
+        // updateTag(editingTag, newTagName)
+        // toast.success("Tag updated successfully")
+        // setOpenEditDialog(false)
+        // setEditingTag(null)
+        // editForm.reset()
     }
 
     const handleDeleteTag = async () => {
@@ -85,14 +87,14 @@ export default function TagManagement() {
 
         setIsDeleting(true)
 
-        // Mock API call - replace with actual API
-        setTimeout(() => {
-            deleteTagFromContext(deleteTag)
-            toast.success("Tag deleted successfully")
-            setOpenDeleteDialog(false)
-            setDeleteTag(null)
-            setIsDeleting(false)
-        }, 500)
+        // // Mock API call - replace with actual API
+        // setTimeout(() => {
+        //     deleteTagFromContext(deleteTag)
+        //     toast.success("Tag deleted successfully")
+        //     setOpenDeleteDialog(false)
+        //     setDeleteTag(null)
+        //     setIsDeleting(false)
+        // }, 500)
     }
 
     const openEditDialogHandler = (tag: string) => {
@@ -130,7 +132,7 @@ export default function TagManagement() {
                             </DialogDescription>
                         </DialogHeader>
                         <Form {...addForm}>
-                            <form onSubmit={addForm.handleSubmit(handleAddTag)} className="space-y-4">
+                            <form className="space-y-4">
                                 <FormField
                                     control={addForm.control}
                                     name="name"
@@ -174,11 +176,11 @@ export default function TagManagement() {
                 <div className="p-6 border-b border-border">
                     <h3 className="text-lg font-medium text-foreground">Current Tags</h3>
                     <p className="text-sm text-muted-foreground mt-1">
-                        {tags.length} tag{tags.length !== 1 ? 's' : ''} available
+                        {tags?.length} tag{tags?.length !== 1 ? 's' : ''} available
                     </p>
                 </div>
                 <div className="p-6">
-                    {tags.length === 0 ? (
+                    {tags?.length === 0 ? (
                         <div className="text-center py-8">
                             <Tag className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                             <p className="text-muted-foreground">No tags created yet</p>
@@ -188,9 +190,9 @@ export default function TagManagement() {
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {tags.map((tag) => (
+                            {tags?.map((tag) => (
                                 <div
-                                    key={tag}
+                                    key={tag.name}
                                     className="flex items-center justify-between p-4 border border-border rounded-lg bg-background hover:bg-muted/50 transition-colors"
                                 >
                                     <div className="flex items-center gap-3">
@@ -199,10 +201,13 @@ export default function TagManagement() {
                                         </div>
                                         <div>
                                             <p className="font-medium text-foreground capitalize">
-                                                {tag}
+                                                {tag.name}
                                             </p>
                                             <p className="text-xs text-muted-foreground">
-                                                {tag.split(' ').length > 1 ? 'Multi-word tag' : 'Single word tag'}
+                                                Used by {tag.product_tags.length} product{tag.product_tags.length !== 1 ? 's' : ''}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {tag.name.split(' ').length > 1 ? 'Multi-word tag' : 'Single word tag'}
                                             </p>
                                         </div>
                                     </div>
@@ -210,7 +215,7 @@ export default function TagManagement() {
                                         <Button
                                             size="sm"
                                             variant="ghost"
-                                            onClick={() => openEditDialogHandler(tag)}
+                                            onClick={() => openEditDialogHandler(tag.name)}
                                             className="h-8 w-8 p-0"
                                         >
                                             <Edit className="h-3 w-3" />
@@ -218,7 +223,7 @@ export default function TagManagement() {
                                         <Button
                                             size="sm"
                                             variant="ghost"
-                                            onClick={() => openDeleteDialogHandler(tag)}
+                                            onClick={() => openDeleteDialogHandler(tag.name)}
                                             className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                                         >
                                             <Trash2 className="h-3 w-3" />

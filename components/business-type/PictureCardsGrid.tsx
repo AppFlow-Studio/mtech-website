@@ -27,12 +27,12 @@ export default function PictureCardsGrid({ cards, className = "" }: PictureCards
                         >
                             {/* Background Image with Blur */}
                             <div className="">
-                                <Image
+                                {card && <Image
                                     src={urlFor(card).url()}
                                     alt={card.title}
                                     fill
                                     className="object-cover"
-                                />
+                                />}
                             </div>
                         </div>
                     ))}
