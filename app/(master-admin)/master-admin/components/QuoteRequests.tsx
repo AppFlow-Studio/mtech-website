@@ -244,8 +244,8 @@ export function QuoteRequests() {
         </div>
       )}
 
-      <Card>
-        <CardContent className="pt-6">
+      <div>
+        <div className="pt-6">
           <div className="flex flex-col md:flex-row md:items-center gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -298,8 +298,8 @@ export function QuoteRequests() {
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading...</div>
