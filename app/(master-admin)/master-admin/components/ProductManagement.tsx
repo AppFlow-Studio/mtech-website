@@ -1,1362 +1,1582 @@
-import { useProducts } from "../actions/ProductsServerState"
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Plus, Edit, Trash2, Search, Upload, AlertTriangle, Loader2, RefreshCw } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import Image from "next/image"
-import { useRef } from "react"
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
-import { addProduct } from "../product-actions/add-product"
-import { z } from "zod"
-import { useForm, Controller } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { useProducts } from "../actions/ProductsServerState";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
-    Form,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormControl,
-    FormMessage,
-} from "@/components/ui/form"
-import { deleteProduct } from "../product-actions/delete-product"
-import { toast } from "sonner"
-import { updateProduct } from "../product-actions/update-product"
-import { BrochureUploadField } from "./BrochureUploadField"
-import { useTags } from "../actions/hook/useTagHooks"
+  Plus,
+  Edit,
+  Trash2,
+  Search,
+  Upload,
+  AlertTriangle,
+  Loader2,
+  RefreshCw,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import Image from "next/image";
+import { useRef } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
+import { addProduct } from "../product-actions/add-product";
+import { z } from "zod";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import { deleteProduct } from "../product-actions/delete-product";
+import { toast } from "sonner";
+import { updateProduct } from "../product-actions/update-product";
+import { BrochureUploadField } from "./BrochureUploadField";
+import { useTags } from "../actions/hook/useTagHooks";
 
-export default function ProductManagement({ searchTerm, setSearchTerm }: {
-    searchTerm: string,
-    setSearchTerm: (term: string) => void
-}) {
-    const { data: products, isLoading, isError, refetch } = useProducts()
-    const { data: tags } = useTags()
-    const [deleteProductId, setDeleteProductId] = useState<string | null>(null)
-    const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
-    const [isDeleting, setIsDeleting] = useState(false)
-    const [selectedTags, setSelectedTags] = useState<string[]>([])
-    if (isLoading) return (
-        <div className="flex flex-col items-center justify-center h-64 gap-4">
-            <div className="flex items-center gap-2 text-lg text-muted-foreground">
-                <Loader2 className="animate-spin h-5 w-5 text-primary" />
-                Loading products...
-            </div>
-            <Button
-                variant="outline"
-                onClick={() => refetch()}
-                className="mt-2"
-            >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Refresh
-            </Button>
-        </div>
-    )
-
-    if (isError) return (
-        <div className="flex items-center justify-center h-64">
-            <div className="text-lg text-destructive">Error loading products</div>
-        </div>
-    )
-
-    // Filter products based on search term and selected tags
-    const filteredProducts = products?.filter((product: any) => {
-        // Text search filter
-        const matchesSearch = product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            product.description?.toLowerCase().includes(searchTerm.toLowerCase())
-
-        // Tag filter
-        const matchesTags = selectedTags.length === 0 ||
-            selectedTags.some(tag => product.tags?.includes(tag))
-
-        return matchesSearch && matchesTags
-    }) || []
-
-    const handleTagToggle = (tag: string) => {
-        setSelectedTags(prev =>
-            prev.includes(tag)
-                ? prev.filter(t => t !== tag)
-                : [...prev, tag]
-        )
-    }
-
-    const clearAllTags = () => {
-        setSelectedTags([])
-    }
-
-    const handleDeleteProduct = async (product: any) => {
-        setDeleteProductId(product.id)
-        setOpenDeleteDialog(true)
-    }
-
-    const confirmDelete = async () => {
-        if (deleteProductId) {
-            setIsDeleting(true)
-            const result = await deleteProduct(deleteProductId)
-            if (result instanceof Error) {
-                console.error(result)
-                toast.error("Error deleting product")
-            }
-            else {
-                toast.success("Product deleted successfully")
-            }
-            await refetch()
-            setIsDeleting(false)
-        }
-        setOpenDeleteDialog(false)
-        setDeleteProductId(null)
-    }
-
-    return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-foreground">Product Management</h2>
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button className="flex items-center gap-2">
-                            <Plus className="h-4 w-4" />
-                            Add Product
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="w-full max-w-[calc(100%-2rem)] sm:max-w-7xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                            <DialogTitle>Add New Product</DialogTitle>
-                            <DialogDescription>
-                                Fill out the form below to add a new product to the catalog.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <ProductAddForm />
-                    </DialogContent>
-                </Dialog>
-            </div>
-
-            {/* Search */}
-            <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                    type="text"
-                    placeholder="Search products..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                />
-            </div>
-
-            {/* Tag Filters */}
-            <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium text-foreground">Filter by Tags</h3>
-                    {selectedTags.length > 0 && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={clearAllTags}
-                            className="text-xs text-muted-foreground hover:text-foreground"
-                        >
-                            Clear all
-                        </Button>
-                    )}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                    {tags?.map((tag) => (
-                        <Badge
-                            key={tag.name}
-                            variant={selectedTags.includes(tag) ? "default" : "outline"}
-                            className={`cursor-pointer transition-colors hover:bg-primary/10 ${selectedTags.includes(tag)
-                                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                                : 'hover:border-primary/50'
-                                }`}
-                            onClick={() => handleTagToggle(tag)}
-                        >
-                            {tag.name}
-                            {selectedTags.includes(tag) && (
-                                <span className="ml-1 text-xs">✓</span>
-                            )}
-                        </Badge>
-                    ))}
-                </div>
-                {selectedTags.length > 0 && (
-                    <div className="text-xs text-muted-foreground">
-                        Showing products with: {selectedTags.join(', ')}
-                    </div>
-                )}
-            </div>
-
-            {/* Products Grid */}
-            <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                    <div className="text-sm text-muted-foreground">
-                        {filteredProducts.length} of {products?.length || 0} products
-                        {(searchTerm || selectedTags.length > 0) && (
-                            <span className="ml-2 text-xs">
-                                (filtered)
-                            </span>
-                        )}
-                    </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredProducts.map((product: any) => (
-                        <div key={product.id} className="bg-card border border-border rounded-lg overflow-hidden">
-                            <div className="aspect-square bg-muted relative">
-                                <img
-                                    src={product.imageSrc}
-                                    alt={product.name}
-                                    className="w-full h-full object-cover"
-                                />
-                                <div className="absolute top-2 right-2 flex flex-col gap-1">
-                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${product.inStock
-                                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                                        }`}>
-                                        {product.inStock ? 'In Stock' : 'Out of Stock'}
-                                    </span>
-                                    {product.brochureUrl && (
-                                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                                            📄 Brochure
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="p-4">
-                                <h3 className="font-medium text-foreground mb-2 line-clamp-2">{product.name}</h3>
-                                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{product.description}</p>
-                                <div className="flex flex-wrap gap-1 mb-3">
-                                    {product.product_tags.map((tag) => (
-                                        <Badge key={tag.tags.name} variant="outline">
-                                            {tag.tags.name}
-                                        </Badge>
-                                    ))}
-                                </div>
-                                <div className="flex gap-2">
-                                    <Dialog>
-                                        <DialogTrigger asChild>
-                                            <Button size="sm" variant="outline" className="flex-1">
-                                                <Edit className="h-3 w-3 mr-1" />
-                                                Edit
-                                            </Button>
-                                        </DialogTrigger>
-                                        <DialogContent className="w-full max-w-[calc(100%-2rem)] sm:max-w-7xl max-h-[90vh] overflow-y-auto">
-                                            <DialogHeader>
-                                                <DialogTitle>Edit Product: {product.name}</DialogTitle>
-                                                <DialogDescription>
-                                                    Update product information, pricing, and availability.
-                                                </DialogDescription>
-                                            </DialogHeader>
-
-                                            <ProductEditForm product={product} />
-                                        </DialogContent>
-                                    </Dialog>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="text-destructive hover:text-destructive"
-                                        onClick={() => handleDeleteProduct(product)}
-                                    >
-                                        <Trash2 className="h-3 w-3" />
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-                {/* Delete Confirmation Dialog */}
-                <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
-                    <DialogContent className="sm:max-w-md">
-                        <DialogHeader>
-                            <DialogTitle className="flex items-center gap-2">
-                                <AlertTriangle className="h-5 w-5 text-destructive" />
-                                Confirm Delete
-                            </DialogTitle>
-                            <DialogDescription>
-                                Are you sure you want to delete "{deleteProduct?.name}"? This action cannot be undone.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="flex justify-end gap-2">
-                            <Button variant="outline" onClick={() => setOpenDeleteDialog(false)}>
-                                Cancel
-                            </Button>
-                            <Button variant="destructive" onClick={confirmDelete} disabled={isDeleting}>
-                                {isDeleting ? (
-                                    <>
-                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                        Deleting...
-                                    </>
-                                ) : (
-                                    "Delete Product"
-                                )}
-                            </Button>
-                        </div>
-                    </DialogContent>
-                </Dialog>
-            </div>
-        </div>
-    )
+interface Tag {
+  id: string;
+  name: string;
+  product_tags: any[];
 }
 
+interface ProductTag {
+  tags: {
+    name: string;
+  };
+}
+
+interface ProductWithDetails {
+  id: string;
+  name: string;
+  description: string;
+  imageSrc: string;
+  link: string;
+  inStock: boolean;
+  default_price: number;
+  brochureUrl?: string;
+  product_tags: ProductTag[];
+  [key: string]: any; // Allow other properties
+}
+
+export default function ProductManagement({
+  searchTerm,
+  setSearchTerm,
+}: {
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
+}) {
+  const { data: products, isLoading, isError, refetch } = useProducts();
+  const { data: tagsData } = useTags();
+  const [deleteProductId, setDeleteProductId] = useState<string | null>(null);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  if (isLoading)
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <div className="flex items-center gap-2 text-lg text-muted-foreground">
+          <Loader2 className="animate-spin h-5 w-5 text-primary" />
+          Loading products...
+        </div>
+        <Button variant="outline" onClick={() => refetch()} className="mt-2">
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Refresh
+        </Button>
+      </div>
+    );
+
+  if (isError)
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg text-destructive">Error loading products</div>
+      </div>
+    );
+
+  const filteredProducts =
+    products?.filter((product: ProductWithDetails) => {
+      const matchesSearch =
+        product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.description?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const productTags = product.product_tags.map((pt) => pt.tags.name);
+      const matchesTags =
+        selectedTags.length === 0 ||
+        selectedTags.every((st) => productTags.includes(st));
+
+      return matchesSearch && matchesTags;
+    }) || [];
+
+  const handleTagToggle = (tagName: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tagName)
+        ? prev.filter((t) => t !== tagName)
+        : [...prev, tagName]
+    );
+  };
+
+  const clearAllTags = () => {
+    setSelectedTags([]);
+  };
+
+  const handleDeleteProduct = (product: ProductWithDetails) => {
+    setDeleteProductId(product.id);
+    setOpenDeleteDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    if (deleteProductId) {
+      setIsDeleting(true);
+      const result = await deleteProduct(deleteProductId);
+      if (result instanceof Error) {
+        toast.error("Error deleting product");
+      } else {
+        toast.success("Product deleted successfully");
+        await refetch();
+      }
+      setIsDeleting(false);
+    }
+    setOpenDeleteDialog(false);
+    setDeleteProductId(null);
+  };
+
+  const productToDelete = products?.find(
+    (p: ProductWithDetails) => p.id === deleteProductId
+  );
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-foreground">
+          Product Management
+        </h2>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Add Product
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="w-full max-w-[calc(100%-2rem)] sm:max-w-7xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Add New Product</DialogTitle>
+              <DialogDescription>
+                Fill out the form below to add a new product to the catalog.
+              </DialogDescription>
+            </DialogHeader>
+            <ProductAddForm />
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          type="text"
+          placeholder="Search products..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium text-foreground">
+            Filter by Tags
+          </h3>
+          {selectedTags.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearAllTags}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Clear all
+            </Button>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {tagsData?.map((tag: Tag) => (
+            <Badge
+              key={tag.id}
+              variant={selectedTags.includes(tag.name) ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => handleTagToggle(tag.name)}
+            >
+              {tag.name}
+            </Badge>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            {filteredProducts.length} of {products?.length || 0} products
+            {(searchTerm || selectedTags.length > 0) && (
+              <span className="ml-2 text-xs">(filtered)</span>
+            )}
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProducts.map((product: ProductWithDetails) => (
+            <div
+              key={product.id}
+              className="bg-card border border-border rounded-lg overflow-hidden"
+            >
+              <div className="aspect-square bg-muted relative">
+                <img
+                  src={product.imageSrc}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute top-2 right-2 flex flex-col gap-1">
+                  <span
+                    className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${product.inStock ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+                  >
+                    {product.inStock ? "In Stock" : "Out of Stock"}
+                  </span>
+                  {product.brochureUrl && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      📄 Brochure
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="p-4">
+                <h3 className="font-medium text-foreground mb-2 line-clamp-2">
+                  {product.name}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                  {product.description}
+                </p>
+                <div className="flex flex-wrap gap-1 mb-3">
+                  {product.product_tags.map((tag: ProductTag) => (
+                    <Badge key={tag.tags.name} variant="outline">
+                      {tag.tags.name}
+                    </Badge>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button size="sm" variant="outline" className="flex-1">
+                        <Edit className="h-3 w-3 mr-1" />
+                        Edit
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="w-full max-w-[calc(100%-2rem)] sm:max-w-7xl max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Edit Product: {product.name}</DialogTitle>
+                        <DialogDescription>
+                          Update product information, pricing, and availability.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <ProductEditForm product={product} />
+                    </DialogContent>
+                  </Dialog>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => handleDeleteProduct(product)}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                Confirm Delete
+              </DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete "{productToDelete?.name}"? This
+                action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setOpenDeleteDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={confirmDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  "Delete Product"
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </div>
+  );
+}
 
 function ImageDropField({
-    value,
-    onChange,
-    previewUrl,
-    setPreviewUrl,
+  value,
+  onChange,
+  previewUrl,
+  setPreviewUrl,
 }: {
-    value: File | null
-    onChange: (file: File | null) => void
-    previewUrl: string
-    setPreviewUrl: (url: string) => void
+  value: File | null;
+  onChange: (file: File | null) => void;
+  previewUrl: string;
+  setPreviewUrl: (url: string) => void;
 }) {
-    const fileInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault()
-        const file = e.dataTransfer.files[0]
-        if (file && (file.type === "image/png" || file.type === "image/jpeg")) {
-            onChange(file)
-            setPreviewUrl(URL.createObjectURL(file))
-        }
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && (file.type === "image/png" || file.type === "image/jpeg")) {
+      onChange(file);
+      setPreviewUrl(URL.createObjectURL(file));
     }
+  };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0]
-        if (file && (file.type === "image/png" || file.type === "image/jpeg")) {
-            onChange(file)
-            setPreviewUrl(URL.createObjectURL(file))
-        }
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && (file.type === "image/png" || file.type === "image/jpeg")) {
+      onChange(file);
+      setPreviewUrl(URL.createObjectURL(file));
     }
+  };
 
-    return (
-        <div
-            className="w-full h-32 border-2 border-dashed border-muted rounded-lg flex flex-col items-center justify-center cursor-pointer bg-muted/30 hover:bg-muted/50 transition"
-            onClick={() => fileInputRef.current?.click()}
-            onDrop={handleDrop}
-            onDragOver={e => e.preventDefault()}
-            onDragEnter={e => e.preventDefault()}
-        >
-            {previewUrl ? (
-                <img
-                    src={previewUrl}
-                    alt="Preview"
-                    className="w-full h-full object-cover rounded-lg"
-                />
-            ) : (
-                <div className="flex flex-col items-center justify-center w-full h-full p-2 border-2 border-dashed border-muted rounded-lg bg-background/60">
-                    <div className="flex items-center border justify-center w-10 h-10 mb-2 rounded-full bg-muted">
-                        <Upload className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                    <span className="text-xs text-muted-foreground text-center px-2 font-medium">
-                        <span className="block">Drag &amp; drop PNG/JPG here</span>
-                        <span className="block">or <span className="underline text-primary">click to select</span></span>
-                    </span>
-                </div>
-            )}
-            <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/png,image/jpeg"
-                className="hidden"
-                onChange={handleFileChange}
-            />
+  return (
+    <div
+      className="w-full h-32 border-2 border-dashed border-muted rounded-lg flex flex-col items-center justify-center cursor-pointer bg-muted/30 hover:bg-muted/50 transition"
+      onClick={() => fileInputRef.current?.click()}
+      onDrop={handleDrop}
+      onDragOver={(e) => e.preventDefault()}
+      onDragEnter={(e) => e.preventDefault()}
+    >
+      {previewUrl ? (
+        <img
+          src={previewUrl}
+          alt="Preview"
+          className="w-full h-full object-cover rounded-lg"
+        />
+      ) : (
+        <div className="flex flex-col items-center justify-center w-full h-full p-2 border-2 border-dashed border-muted rounded-lg bg-background/60">
+          <div className="flex items-center border justify-center w-10 h-10 mb-2 rounded-full bg-muted">
+            <Upload className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <span className="text-xs text-muted-foreground text-center px-2 font-medium">
+            <span className="block">Drag &amp; drop PNG/JPG here</span>
+            <span className="block">
+              or <span className="underline text-primary">click to select</span>
+            </span>
+          </span>
         </div>
-    )
+      )}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/png,image/jpeg"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+    </div>
+  );
 }
 
 // Add edit product schema after the existing productSchema
 const editProductSchema = z.object({
-    name: z.string().min(1, "Product name is required"),
-    description: z.string().min(1, "Description is required"),
-    link: z.string().min(1, "Product link is required").regex(/^\S+$/, "No spaces allowed in product link"),
-    inStock: z.boolean(),
-    weight: z.coerce.number().min(0, "Weight is required (lbs)"),
-    tags: z.array(z.string()).min(1, "At least one tag is required"),
-    default_price: z.coerce.number().min(0.01, "Price is required"),
-    imageSrc: z.instanceof(File).or(z.string()).optional(),
-    isSubscription: z.boolean(),
-    subscriptionInterval: z.string().optional(),
-    subscriptionPrice: z.coerce.number().min(0).optional(),
-    modifiers: z.array(z.object({
-        name: z.string().min(1, "Modifier name is required"),
-        description: z.string().min(1, "Modifier description is required"),
-        additional_cost: z.coerce.number().min(0, "Additional cost must be 0 or greater"),
-        weight: z.coerce.number().min(0, "Weight is required (lbs)")
-    })),
-    brochure: z.instanceof(File).optional(),
-    brochureUrl: z.string().optional()
-})
+  name: z.string().min(1, "Product name is required"),
+  description: z.string().min(1, "Description is required"),
+  link: z
+    .string()
+    .min(1, "Product link is required")
+    .regex(/^\S+$/, "No spaces allowed in product link"),
+  inStock: z.boolean(),
+  weight: z.coerce.number().min(0, "Weight is required (lbs)"),
+  tags: z.array(z.string()).min(1, "At least one tag is required"),
+  default_price: z.coerce.number().min(0.01, "Price is required"),
+  imageSrc: z.instanceof(File).or(z.string()).optional(),
+  isSubscription: z.boolean(),
+  subscriptionInterval: z.string().optional(),
+  subscriptionPrice: z.coerce.number().min(0).optional(),
+  modifiers: z.array(
+    z.object({
+      name: z.string().min(1, "Modifier name is required"),
+      description: z.string().min(1, "Modifier description is required"),
+      additional_cost: z.coerce
+        .number()
+        .min(0, "Additional cost must be 0 or greater"),
+      weight: z.coerce.number().min(0, "Weight is required (lbs)"),
+    })
+  ),
+  brochure: z.instanceof(File).optional(),
+  brochureUrl: z.string().optional(),
+});
 
-type EditProductFormType = z.infer<typeof editProductSchema>
+type EditProductFormType = z.infer<typeof editProductSchema>;
 
 // Replace the entire ProductEditForm function
 function ProductEditForm({ product }: { product: any }) {
-    const { data: tags } = useTags()
-    const form = useForm<EditProductFormType>({
-        resolver: zodResolver(editProductSchema),
-        defaultValues: {
-            name: product.name || '',
-            description: product.description || '',
-            link: product.link || '',
-            inStock: product.inStock || false,
-            tags: product.tags || [],
-            weight: product.weight || 0,
-            default_price: product.default_price || 0,
-            imageSrc: product.imageSrc || '',
-            isSubscription: product.is_subscription || product.subscription || false,
-            subscriptionInterval: product.subscription_interval || '',
-            subscriptionPrice: product.subscription_price || 0,
-            modifiers: product.modifiers || [],
-            brochure: undefined,
-            brochureUrl: product.brochureUrl || '',
-        },
-        mode: "onTouched"
-    })
-    const [previewUrl, setPreviewUrl] = useState<string>(product.imageSrc || "")
-    const { refetch } = useProducts()
+  const { data: tags } = useTags();
+  const form = useForm<EditProductFormType>({
+    resolver: zodResolver(editProductSchema),
+    defaultValues: {
+      name: product.name || "",
+      description: product.description || "",
+      link: product.link || "",
+      inStock: product.inStock || false,
+      tags: product.product_tags.map((pt: any) => pt.tags.name) || [],
+      weight: product.weight || 0,
+      default_price: product.default_price || 0,
+      imageSrc: product.imageSrc || "",
+      isSubscription: product.is_subscription || product.subscription || false,
+      subscriptionInterval: product.subscription_interval || "",
+      subscriptionPrice: product.subscription_price || 0,
+      modifiers: product.modifiers || [],
+      brochure: undefined,
+      brochureUrl: product.brochureUrl || "",
+    },
+    mode: "onTouched",
+  });
+  const [previewUrl, setPreviewUrl] = useState<string>(product.imageSrc || "");
+  const { refetch } = useProducts();
 
-    const onSubmit = async (values: EditProductFormType) => {
-        // TODO: Call editProduct function
-        const result = await updateProduct(product.id, {
-            name: values.name,
-            description: values.description,
-            link: values.link,
-            inStock: values.inStock,
-            tags: values.tags,
-            weight: values.weight,
-            default_price: values.default_price,
-            imageSrc: values.imageSrc || product.imageSrc,
-            isSubscription: values.isSubscription,
-            subscriptionInterval: values.subscriptionInterval,
-            subscriptionPrice: values.subscriptionPrice,
-            modifiers: values.modifiers,
-            brochure: values.brochure,
-            brochureUrl: values.brochureUrl,
-        }, product.imageSrc)
-        if (result instanceof Error) {
-            console.error(result)
-            toast.error("Error updating product")
-        }
-        else {
-            toast.success("Product updated successfully")
-            await refetch()
-        }
+  const onSubmit = async (values: EditProductFormType) => {
+    const result = await updateProduct(product.id, values);
+    if (result instanceof Error) {
+      toast.error("Error updating product", { description: result.message });
+    } else {
+      toast.success("Product updated successfully");
+      await refetch();
     }
-    console.log(tags)
-    return (
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                    control={form.control}
-                    name="imageSrc"
-                    render={({ field, fieldState }) => (
-                        <FormItem>
-                            <FormLabel>Product Image</FormLabel>
-                            <FormControl>
-                                <ImageDropField
-                                    value={field.value instanceof File ? field.value : null}
-                                    onChange={file => {
-                                        field.onChange(file)
-                                        setPreviewUrl(file ? URL.createObjectURL(file) : product.imageSrc || "")
-                                    }}
-                                    previewUrl={previewUrl}
-                                    setPreviewUrl={setPreviewUrl}
-                                />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="imageSrc"
+          render={({ field, fieldState }) => (
+            <FormItem>
+              <FormLabel>Product Image</FormLabel>
+              <FormControl>
+                <ImageDropField
+                  value={field.value instanceof File ? field.value : null}
+                  onChange={(file) => {
+                    field.onChange(file);
+                    setPreviewUrl(
+                      file ? URL.createObjectURL(file) : product.imageSrc || ""
+                    );
+                  }}
+                  previewUrl={previewUrl}
+                  setPreviewUrl={setPreviewUrl}
                 />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-                {/* Brochure Upload */}
-                <FormField
-                    control={form.control}
-                    name="brochure"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Product Brochure (PDF)</FormLabel>
-                            <FormControl>
-                                <BrochureUploadField
-                                    value={field.value || null}
-                                    onChange={field.onChange}
-                                    existingBrochureUrl={form.watch("brochureUrl")}
-                                    onRemoveExisting={() => {
-                                        form.setValue("brochureUrl", "")
-                                        field.onChange(null)
-                                    }}
-                                />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
+        {/* Brochure Upload */}
+        <FormField
+          control={form.control}
+          name="brochure"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Product Brochure (PDF)</FormLabel>
+              <FormControl>
+                <BrochureUploadField
+                  value={field.value || null}
+                  onChange={field.onChange}
+                  existingBrochureUrl={form.watch("brochureUrl")}
+                  onRemoveExisting={() => {
+                    form.setValue("brochureUrl", "");
+                    field.onChange(null);
+                  }}
                 />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Product Name</FormLabel>
-                                <FormControl>
-                                    <Input {...field} placeholder="Enter product name" onChange={e => {
-                                        field.onChange(e)
-                                        // auto-generate link
-                                        form.setValue("link", e.target.value.toLowerCase().replace(/ /g, '-'))
-                                    }} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="link"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Product Link <span className="text-xs">(Auto generated)</span></FormLabel>
-                                <FormControl>
-                                    <Input {...field} placeholder="product-slug" />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
-                <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Description</FormLabel>
-                            <FormControl>
-                                <Textarea {...field} placeholder="Enter product description" rows={4} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Product Name</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="Enter product name"
+                    onChange={(e) => {
+                      field.onChange(e);
+                      // auto-generate link
+                      form.setValue(
+                        "link",
+                        e.target.value.toLowerCase().replace(/ /g, "-")
+                      );
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="link"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  Product Link <span className="text-xs">(Auto generated)</span>
+                </FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="product-slug" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Textarea
+                  {...field}
+                  placeholder="Enter product description"
+                  rows={4}
                 />
-                <FormField
-                    control={form.control}
-                    name="weight"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Weight (lbs)</FormLabel>
-                            <FormControl>
-                                <Input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    {...field}
-                                    value={field.value ?? ""}
-                                    placeholder="Enter weight in pounds"
-                                />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="weight"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Weight (lbs)</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  {...field}
+                  value={field.value ?? ""}
+                  placeholder="Enter weight in pounds"
                 />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                        control={form.control}
-                        name="default_price"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Default Price ($)</FormLabel>
-                                <FormControl>
-                                    <Input type="number" min="0" step="0.01" {...field} value={field.value} placeholder="0.00" />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="default_price"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Default Price ($)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    {...field}
+                    value={field.value}
+                    placeholder="0.00"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="inStock"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Stock Status</FormLabel>
+                <FormControl>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="inStock"
+                      checked={field.value}
+                      onChange={(e) => field.onChange(e.target.checked)}
+                      className="rounded border-gray-300"
                     />
-                    <FormField
-                        control={form.control}
-                        name="inStock"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Stock Status</FormLabel>
-                                <FormControl>
-                                    <div className="flex items-center space-x-2">
-                                        <input
-                                            type="checkbox"
-                                            id="inStock"
-                                            checked={field.value}
-                                            onChange={e => field.onChange(e.target.checked)}
-                                            className="rounded border-gray-300"
-                                        />
-                                        <label htmlFor="inStock" className="text-sm text-foreground">
-                                            In Stock
-                                        </label>
-                                    </div>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
-                <FormField
-                    control={form.control}
-                    name="tags"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Tags</FormLabel>
-                            <FormControl>
-                                <div className="flex flex-col gap-2">
-                                    <div className="flex gap-2 mb-2">
-                                        <Select
-                                            value={""}
-                                            onValueChange={tag => {
-                                                if (tag && !field.value.includes(tag)) {
-                                                    field.onChange([...field.value, tag])
-                                                }
-                                            }}
-                                        >
-                                            <SelectTrigger value="" disabled>Select a tag</SelectTrigger>
-                                            <SelectContent>
-                                                {tags?.filter(option => !field.value.includes(option.name)).map((option: any) => (
-                                                    <SelectItem key={option.name} value={option.name}>{option.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <Button type="button" variant="outline" disabled>
-                                            Add
-                                        </Button>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {field.value.map((tag: any) => (
-                                            <Badge key={tag} variant="secondary" className="flex items-center gap-1">
-                                                {tag}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => field.onChange(field.value.filter((t: string) => t !== tag))}
-                                                    className="ml-1 hover:text-destructive"
-                                                >
-                                                    ×
-                                                </button>
-                                            </Badge>
-                                        ))}
-                                    </div>
-                                </div>
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-
-                {/* Subscription Settings */}
-                <div className="space-y-4">
-                    <FormField
-                        control={form.control}
-                        name="isSubscription"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Subscription Product</FormLabel>
-                                <FormControl>
-                                    <div className="flex items-center space-x-2">
-                                        <input
-                                            type="checkbox"
-                                            id="isSubscription"
-                                            checked={field.value}
-                                            onChange={e => field.onChange(e.target.checked)}
-                                            className="rounded border-gray-300"
-                                        />
-                                        <label htmlFor="isSubscription" className="text-sm text-foreground">
-                                            This is a subscription-based product
-                                        </label>
-                                    </div>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    {form.watch("isSubscription") && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="subscriptionInterval"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Subscription Interval</FormLabel>
-                                        <FormControl>
-                                            <Select
-                                                value={field.value}
-                                                onValueChange={field.onChange}
-                                            >
-                                                <option value="">Select interval</option>
-                                                <option value="monthly">Monthly</option>
-                                                <option value="quarterly">Quarterly</option>
-                                                <option value="yearly">Yearly</option>
-                                            </Select>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="subscriptionPrice"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Subscription Price ($)</FormLabel>
-                                        <FormControl>
-                                            <Input type="number" min="0" step="0.01" {...field} placeholder="0.00" />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                    )}
-                </div>
-
-                {/* Product Modifiers */}
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <FormLabel>Product Modifiers</FormLabel>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                                const currentModifiers = form.getValues("modifiers")
-                                form.setValue("modifiers", [
-                                    ...currentModifiers,
-                                    { name: "", description: "", additional_cost: 0, weight: 0 }
-                                ])
-                            }}
-                        >
-                            <Plus className="h-4 w-4 mr-1" />
-                            Add Modifier
-                        </Button>
-                    </div>
-
-                    {form.watch("modifiers").map((modifier, index) => (
-                        <div key={index} className="border border-border rounded-lg p-4 space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h4 className="font-medium">Modifier {index + 1}</h4>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                        const currentModifiers = form.getValues("modifiers")
-                                        form.setValue("modifiers", currentModifiers.filter((_, i) => i !== index))
-                                    }}
-                                    className="text-destructive hover:text-destructive"
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="text-sm font-medium text-foreground">Name</label>
-                                    <Input
-                                        value={modifier.name}
-                                        onChange={e => {
-                                            const currentModifiers = form.getValues("modifiers")
-                                            const updatedModifiers = [...currentModifiers]
-                                            updatedModifiers[index] = { ...updatedModifiers[index], name: e.target.value }
-                                            form.setValue("modifiers", updatedModifiers)
-                                        }}
-                                        placeholder="e.g., 3 Year Warranty"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-foreground">Additional Cost ($)</label>
-                                    <Input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        value={modifier.additional_cost}
-                                        onChange={e => {
-                                            const currentModifiers = form.getValues("modifiers")
-                                            const updatedModifiers = [...currentModifiers]
-                                            updatedModifiers[index] = { ...updatedModifiers[index], additional_cost: parseFloat(e.target.value) || 0 }
-                                            form.setValue("modifiers", updatedModifiers)
-                                        }}
-                                        placeholder="0.00"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-foreground">Weight (lbs)</label>
-                                    <Input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        value={modifier.weight}
-                                        onChange={e => {
-                                            const currentModifiers = form.getValues("modifiers")
-                                            const updatedModifiers = [...currentModifiers]
-                                            updatedModifiers[index] = { ...updatedModifiers[index], weight: parseFloat(e.target.value) || 0 }
-                                            form.setValue("modifiers", updatedModifiers)
-                                        }}
-                                        placeholder="0.00"
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="text-sm font-medium text-foreground">Description</label>
-                                <Textarea
-                                    value={modifier.description}
-                                    onChange={e => {
-                                        const currentModifiers = form.getValues("modifiers")
-                                        const updatedModifiers = [...currentModifiers]
-                                        updatedModifiers[index] = { ...updatedModifiers[index], description: e.target.value }
-                                        form.setValue("modifiers", updatedModifiers)
-                                    }}
-                                    placeholder="Describe what this modifier does..."
-                                    rows={2}
-                                />
-                            </div>
-                        </div>
-                    ))}
-
-                    {form.watch("modifiers").length === 0 && (
-                        <div className="text-center py-8 text-muted-foreground">
-                            <p>No modifiers added yet.</p>
-                            <p className="text-sm">Click "Add Modifier" to create custom options for this product.</p>
-                        </div>
-                    )}
-                </div>
-
-                {/* Product Preview */}
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Preview</label>
-                    <div className="border border-border rounded-lg p-4 bg-muted/20">
-                        <div className="flex items-center space-x-4">
-                            <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
-                                {previewUrl ? (
-                                    <img
-                                        src={previewUrl}
-                                        alt={form.watch("name")}
-                                        className="w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <span className="text-xs text-muted-foreground">No image</span>
-                                )}
-                            </div>
-                            <div className="flex-1">
-                                <h4 className="font-medium text-foreground">{form.watch("name") || 'Product Name'}</h4>
-                                <p className="text-sm text-muted-foreground line-clamp-2">
-                                    {form.watch("description") || 'Product description will appear here...'}
-                                </p>
-                                <div className="flex items-center justify-between mt-2">
-                                    <span className="text-sm font-medium text-foreground">
-                                        ${Number(form.watch("default_price")).toFixed(2)}
-                                    </span>
-                                    <Badge variant={form.watch("inStock") ? "default" : "secondary"}>
-                                        {form.watch("inStock") ? "In Stock" : "Out of Stock"}
-                                    </Badge>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div className="flex justify-end gap-2 pt-4 border-t border-border">
-                    <DialogClose asChild>
-                        <Button variant="outline">Cancel</Button>
-                    </DialogClose>
-                    <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90" disabled={form.formState.isSubmitting}>
-                        {form.formState.isSubmitting ? (
-                            <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Updating Product...
-                            </>
-                        ) : (
-                            "Save Changes"
-                        )}
+                    <label
+                      htmlFor="inStock"
+                      className="text-sm text-foreground"
+                    >
+                      In Stock
+                    </label>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <FormField
+          control={form.control}
+          name="tags"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tags</FormLabel>
+              <FormControl>
+                <div className="flex flex-col gap-2">
+                  <div className="flex gap-2 mb-2">
+                    <Select
+                      value={""}
+                      onValueChange={(tag) => {
+                        if (tag && !field.value.includes(tag)) {
+                          field.onChange([...field.value, tag]);
+                        }
+                      }}
+                    >
+                      <SelectTrigger value="" disabled>
+                        Select a tag
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tags
+                          ?.filter(
+                            (option) => !field.value.includes(option.name)
+                          )
+                          .map((option: any) => (
+                            <SelectItem key={option.name} value={option.name}>
+                              {option.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <Button type="button" variant="outline" disabled>
+                      Add
                     </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {field.value.map((tag: any) => (
+                      <Badge
+                        key={tag}
+                        variant="secondary"
+                        className="flex items-center gap-1"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            field.onChange(
+                              field.value.filter((t: string) => t !== tag)
+                            )
+                          }
+                          className="ml-1 hover:text-destructive"
+                        >
+                          ×
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
-            </form>
-        </Form>
-    )
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Subscription Settings */}
+        <div className="space-y-4">
+          <FormField
+            control={form.control}
+            name="isSubscription"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Subscription Product</FormLabel>
+                <FormControl>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="isSubscription"
+                      checked={field.value}
+                      onChange={(e) => field.onChange(e.target.checked)}
+                      className="rounded border-gray-300"
+                    />
+                    <label
+                      htmlFor="isSubscription"
+                      className="text-sm text-foreground"
+                    >
+                      This is a subscription-based product
+                    </label>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {form.watch("isSubscription") && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="subscriptionInterval"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subscription Interval</FormLabel>
+                    <FormControl>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <option value="">Select interval</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="quarterly">Quarterly</option>
+                        <option value="yearly">Yearly</option>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="subscriptionPrice"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subscription Price ($)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        {...field}
+                        placeholder="0.00"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Product Modifiers */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <FormLabel>Product Modifiers</FormLabel>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const currentModifiers = form.getValues("modifiers");
+                form.setValue("modifiers", [
+                  ...currentModifiers,
+                  { name: "", description: "", additional_cost: 0, weight: 0 },
+                ]);
+              }}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Add Modifier
+            </Button>
+          </div>
+
+          {form.watch("modifiers").map((modifier, index) => (
+            <div
+              key={index}
+              className="border border-border rounded-lg p-4 space-y-4"
+            >
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium">Modifier {index + 1}</h4>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const currentModifiers = form.getValues("modifiers");
+                    form.setValue(
+                      "modifiers",
+                      currentModifiers.filter((_, i) => i !== index)
+                    );
+                  }}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-foreground">
+                    Name
+                  </label>
+                  <Input
+                    value={modifier.name}
+                    onChange={(e) => {
+                      const currentModifiers = form.getValues("modifiers");
+                      const updatedModifiers = [...currentModifiers];
+                      updatedModifiers[index] = {
+                        ...updatedModifiers[index],
+                        name: e.target.value,
+                      };
+                      form.setValue("modifiers", updatedModifiers);
+                    }}
+                    placeholder="e.g., 3 Year Warranty"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground">
+                    Additional Cost ($)
+                  </label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={modifier.additional_cost}
+                    onChange={(e) => {
+                      const currentModifiers = form.getValues("modifiers");
+                      const updatedModifiers = [...currentModifiers];
+                      updatedModifiers[index] = {
+                        ...updatedModifiers[index],
+                        additional_cost: parseFloat(e.target.value) || 0,
+                      };
+                      form.setValue("modifiers", updatedModifiers);
+                    }}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground">
+                    Weight (lbs)
+                  </label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={modifier.weight}
+                    onChange={(e) => {
+                      const currentModifiers = form.getValues("modifiers");
+                      const updatedModifiers = [...currentModifiers];
+                      updatedModifiers[index] = {
+                        ...updatedModifiers[index],
+                        weight: parseFloat(e.target.value) || 0,
+                      };
+                      form.setValue("modifiers", updatedModifiers);
+                    }}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Description
+                </label>
+                <Textarea
+                  value={modifier.description}
+                  onChange={(e) => {
+                    const currentModifiers = form.getValues("modifiers");
+                    const updatedModifiers = [...currentModifiers];
+                    updatedModifiers[index] = {
+                      ...updatedModifiers[index],
+                      description: e.target.value,
+                    };
+                    form.setValue("modifiers", updatedModifiers);
+                  }}
+                  placeholder="Describe what this modifier does..."
+                  rows={2}
+                />
+              </div>
+            </div>
+          ))}
+
+          {form.watch("modifiers").length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No modifiers added yet.</p>
+              <p className="text-sm">
+                Click "Add Modifier" to create custom options for this product.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Product Preview */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">Preview</label>
+          <div className="border border-border rounded-lg p-4 bg-muted/20">
+            <div className="flex items-center space-x-4">
+              <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
+                {previewUrl ? (
+                  <img
+                    src={previewUrl}
+                    alt={form.watch("name")}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-xs text-muted-foreground">
+                    No image
+                  </span>
+                )}
+              </div>
+              <div className="flex-1">
+                <h4 className="font-medium text-foreground">
+                  {form.watch("name") || "Product Name"}
+                </h4>
+                <p className="text-sm text-muted-foreground line-clamp-2">
+                  {form.watch("description") ||
+                    "Product description will appear here..."}
+                </p>
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-sm font-medium text-foreground">
+                    ${Number(form.watch("default_price")).toFixed(2)}
+                  </span>
+                  <Badge
+                    variant={form.watch("inStock") ? "default" : "secondary"}
+                  >
+                    {form.watch("inStock") ? "In Stock" : "Out of Stock"}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 pt-4 border-t border-border">
+          <DialogClose asChild>
+            <Button variant="outline">Cancel</Button>
+          </DialogClose>
+          <Button
+            type="submit"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+            disabled={form.formState.isSubmitting}
+          >
+            {form.formState.isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Updating Product...
+              </>
+            ) : (
+              "Save Changes"
+            )}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
 }
 
 const productSchema = z.object({
-    name: z.string().min(1, "Product name is required"),
-    description: z.string().min(1, "Description is required"),
-    link: z.string().min(1, "Product link is required").regex(/^\S+$/, "No spaces allowed in product link"),
-    inStock: z.boolean(),
-    weight: z.coerce.number().min(0, "Weight is required (lbs)"),
-    tags: z.array(z.string()).min(1, "At least one tag is required"),
-    default_price: z.coerce.number().min(0.01, "Price is required"),
-    imageSrc: z.instanceof(File, { message: "Product image is required" }),
-    isSubscription: z.boolean(),
-    subscriptionInterval: z.string().optional(),
-    subscriptionPrice: z.coerce.number().min(0).optional(),
-    modifiers: z.array(z.object({
-        name: z.string().min(1, "Modifier name is required"),
-        description: z.string().min(1, "Modifier description is required"),
-        additional_cost: z.coerce.number().min(0, "Additional cost must be 0 or greater"),
-        weight: z.coerce.number().min(0, "Weight is required (lbs)")
-    })),
-    brochure: z.instanceof(File).optional()
-})
+  name: z.string().min(1, "Product name is required"),
+  description: z.string().min(1, "Description is required"),
+  link: z
+    .string()
+    .min(1, "Product link is required")
+    .regex(/^\S+$/, "No spaces allowed in product link"),
+  inStock: z.boolean(),
+  weight: z.coerce.number().min(0, "Weight is required (lbs)"),
+  tags: z.array(z.string()).min(1, "At least one tag is required"),
+  default_price: z.coerce.number().min(0.01, "Price is required"),
+  imageSrc: z.instanceof(File, { message: "Product image is required" }),
+  isSubscription: z.boolean(),
+  subscriptionInterval: z.string().optional(),
+  subscriptionPrice: z.coerce.number().min(0).optional(),
+  modifiers: z.array(
+    z.object({
+      name: z.string().min(1, "Modifier name is required"),
+      description: z.string().min(1, "Modifier description is required"),
+      additional_cost: z.coerce
+        .number()
+        .min(0, "Additional cost must be 0 or greater"),
+      weight: z.coerce.number().min(0, "Weight is required (lbs)"),
+    })
+  ),
+  brochure: z.instanceof(File).optional(),
+});
 
-type ProductFormType = z.infer<typeof productSchema>
+type ProductFormType = z.infer<typeof productSchema>;
 
 function ProductAddForm() {
-    const { data: tags } = useTags()
-    const form = useForm<ProductFormType>({
-        resolver: zodResolver(productSchema),
-        defaultValues: {
-            name: '',
-            description: '',
-            link: '',
-            inStock: false,
-            weight: 0,
-            tags: [],
-            default_price: 0,
-            imageSrc: undefined as any,
-            isSubscription: false,
-            subscriptionInterval: '',
-            subscriptionPrice: 0,
-            modifiers: [],
-            brochure: undefined
-        },
-        mode: "onTouched"
-    })
-    const [isLoading, setIsLoading] = useState(false)
-    const [previewUrl, setPreviewUrl] = useState<string>("")
-    const { refetch } = useProducts()
-    const onSubmit = async (values: ProductFormType) => {
-        setIsLoading(true)
-        const result = await addProduct(values)
-        if (result instanceof Error) {
-            setIsLoading(false)
-            console.error(result)
-            toast.error("Error adding product", {
-                description: result.message
-            })
-        }
-        else {
-            //console.log(result)
-            form.reset()
-            setPreviewUrl("")
-            await refetch()
-            toast.success("Product added successfully")
-            setIsLoading(false)
-        }
-        // Optionally reset form or close dialog
+  const { data: tags } = useTags();
+  const form = useForm<ProductFormType>({
+    resolver: zodResolver(productSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      link: "",
+      inStock: false,
+      weight: 0,
+      tags: [],
+      default_price: 0,
+      imageSrc: undefined as any,
+      isSubscription: false,
+      subscriptionInterval: "",
+      subscriptionPrice: 0,
+      modifiers: [],
+      brochure: undefined,
+    },
+    mode: "onTouched",
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
+  const { refetch } = useProducts();
+  const onSubmit = async (values: ProductFormType) => {
+    setIsLoading(true);
+    const result = await addProduct(values);
+    if (result instanceof Error) {
+      setIsLoading(false);
+      toast.error("Error adding product", { description: result.message });
+    } else {
+      form.reset();
+      setPreviewUrl("");
+      await refetch();
+      toast.success("Product added successfully");
+      setIsLoading(false);
     }
+  };
 
-    return (
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                    control={form.control}
-                    name="imageSrc"
-                    render={({ field, fieldState }) => (
-                        <FormItem>
-                            <FormLabel>Product Image</FormLabel>
-                            <FormControl>
-                                <ImageDropField
-                                    value={field.value || null}
-                                    onChange={file => {
-                                        field.onChange(file)
-                                        setPreviewUrl(file ? URL.createObjectURL(file) : "")
-                                    }}
-                                    previewUrl={previewUrl}
-                                    setPreviewUrl={setPreviewUrl}
-                                />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="imageSrc"
+          render={({ field, fieldState }) => (
+            <FormItem>
+              <FormLabel>Product Image</FormLabel>
+              <FormControl>
+                <ImageDropField
+                  value={field.value || null}
+                  onChange={(file) => {
+                    field.onChange(file);
+                    setPreviewUrl(file ? URL.createObjectURL(file) : "");
+                  }}
+                  previewUrl={previewUrl}
+                  setPreviewUrl={setPreviewUrl}
                 />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-                {/* Brochure Upload */}
-                <FormField
-                    control={form.control}
-                    name="brochure"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Product Brochure (PDF)</FormLabel>
-                            <FormControl>
-                                <BrochureUploadField
-                                    value={field.value || null}
-                                    onChange={field.onChange}
-                                />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
+        {/* Brochure Upload */}
+        <FormField
+          control={form.control}
+          name="brochure"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Product Brochure (PDF)</FormLabel>
+              <FormControl>
+                <BrochureUploadField
+                  value={field.value || null}
+                  onChange={field.onChange}
                 />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Product Name</FormLabel>
-                                <FormControl>
-                                    <Input {...field} placeholder="Enter product name" onChange={e => {
-                                        field.onChange(e)
-                                        // auto-generate link
-                                        form.setValue("link", e.target.value.toLowerCase().replace(/ /g, '-'))
-                                    }} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="link"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Product Link <span className="text-xs">(Auto generated)</span></FormLabel>
-                                <FormControl>
-                                    <Input {...field} placeholder="product-slug" />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
-                <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Description</FormLabel>
-                            <FormControl>
-                                <Textarea {...field} placeholder="Enter product description" rows={4} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Product Name</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="Enter product name"
+                    onChange={(e) => {
+                      field.onChange(e);
+                      // auto-generate link
+                      form.setValue(
+                        "link",
+                        e.target.value.toLowerCase().replace(/ /g, "-")
+                      );
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="link"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  Product Link <span className="text-xs">(Auto generated)</span>
+                </FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="product-slug" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Textarea
+                  {...field}
+                  placeholder="Enter product description"
+                  rows={4}
                 />
-                <FormField
-                    control={form.control}
-                    name="weight"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Weight (lbs)</FormLabel>
-                            <FormControl>
-                                <Input type="number" min="0" step="0.01" {...field} placeholder="0.00" />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="weight"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Weight (lbs)</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  {...field}
+                  placeholder="0.00"
                 />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                        control={form.control}
-                        name="default_price"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Default Price ($)</FormLabel>
-                                <FormControl>
-                                    <Input type="number" min="0" step="0.01" {...field} placeholder="0.00" />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="default_price"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Default Price ($)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    {...field}
+                    placeholder="0.00"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="inStock"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Stock Status</FormLabel>
+                <FormControl>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="inStock"
+                      checked={field.value}
+                      onChange={(e) => field.onChange(e.target.checked)}
+                      className="rounded border-gray-300"
                     />
-                    <FormField
-                        control={form.control}
-                        name="inStock"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Stock Status</FormLabel>
-                                <FormControl>
-                                    <div className="flex items-center space-x-2">
-                                        <input
-                                            type="checkbox"
-                                            id="inStock"
-                                            checked={field.value}
-                                            onChange={e => field.onChange(e.target.checked)}
-                                            className="rounded border-gray-300"
-                                        />
-                                        <label htmlFor="inStock" className="text-sm text-foreground">
-                                            In Stock
-                                        </label>
-                                    </div>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
+                    <label
+                      htmlFor="inStock"
+                      className="text-sm text-foreground"
+                    >
+                      In Stock
+                    </label>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* Subscription Settings */}
+        <div className="space-y-4">
+          <FormField
+            control={form.control}
+            name="isSubscription"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Subscription Product</FormLabel>
+                <FormControl>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="isSubscription"
+                      checked={field.value}
+                      onChange={(e) => field.onChange(e.target.checked)}
+                      className="rounded border-gray-300"
                     />
-                </div>
+                    <label
+                      htmlFor="isSubscription"
+                      className="text-sm text-foreground"
+                    >
+                      This is a subscription-based product
+                    </label>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-                {/* Subscription Settings */}
-                <div className="space-y-4">
-                    <FormField
-                        control={form.control}
-                        name="isSubscription"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Subscription Product</FormLabel>
-                                <FormControl>
-                                    <div className="flex items-center space-x-2">
-                                        <input
-                                            type="checkbox"
-                                            id="isSubscription"
-                                            checked={field.value}
-                                            onChange={e => field.onChange(e.target.checked)}
-                                            className="rounded border-gray-300"
-                                        />
-                                        <label htmlFor="isSubscription" className="text-sm text-foreground">
-                                            This is a subscription-based product
-                                        </label>
-                                    </div>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    {form.watch("isSubscription") && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="subscriptionInterval"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Subscription Interval</FormLabel>
-                                        <FormControl>
-                                            <Select
-                                                value={field.value}
-                                                onValueChange={field.onChange}
-                                            >
-                                                <option value="">Select interval</option>
-                                                <option value="monthly">Monthly</option>
-                                                <option value="quarterly">Quarterly</option>
-                                                <option value="yearly">Yearly</option>
-                                            </Select>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="subscriptionPrice"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Subscription Price ($)</FormLabel>
-                                        <FormControl>
-                                            <Input type="number" min="0" step="0.01" {...field} placeholder="0.00" />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                    )}
-                </div>
-                <FormField
-                    control={form.control}
-                    name="tags"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Tags</FormLabel>
-                            <FormControl>
-                                <div className="flex flex-col gap-2">
-                                    <div className="flex gap-2 mb-2">
-                                        <Select
-                                            value={""}
-                                            onValueChange={tag => {
-                                                if (tag && !field.value.includes(tag)) {
-                                                    field.onChange([...field.value, tag])
-                                                }
-                                            }}
-                                        >
-                                            <SelectTrigger value="" disabled>Select a tag</SelectTrigger>
-                                            <SelectContent>
-                                                {tags?.filter(option => !field.value.includes(option.name)).map((option: any) => (
-                                                    <SelectItem key={option.name} value={option.name}>{option.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <Button type="button" variant="outline" disabled>
-                                            Add
-                                        </Button>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {field.value.map((tag: any) => (
-                                            <Badge key={tag} variant="secondary" className="flex items-center gap-1">
-                                                {tag}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => field.onChange(field.value.filter((t: string) => t !== tag))}
-                                                    className="ml-1 hover:text-destructive"
-                                                >
-                                                    ×
-                                                </button>
-                                            </Badge>
-                                        ))}
-                                    </div>
-                                </div>
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-            />
-                {/* Product Modifiers */}
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <FormLabel>Product Modifiers</FormLabel>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                                const currentModifiers = form.getValues("modifiers")
-                                form.setValue("modifiers", [
-                                    ...currentModifiers,
-                                    { name: "", description: "", additional_cost: 0, weight: 0 }
-                                ])
-                            }}
-                        >
-                            <Plus className="h-4 w-4 mr-1" />
-                            Add Modifier
-                        </Button>
-                    </div>
-
-                    {form.watch("modifiers").map((modifier, index) => (
-                        <div key={index} className="border border-border rounded-lg p-4 space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h4 className="font-medium">Modifier {index + 1}</h4>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                        const currentModifiers = form.getValues("modifiers")
-                                        form.setValue("modifiers", currentModifiers.filter((_, i) => i !== index))
-                                    }}
-                                    className="text-destructive hover:text-destructive"
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label className="text-sm font-medium text-foreground">Name</label>
-                                    <Input
-                                        value={modifier.name}
-                                        onChange={e => {
-                                            const currentModifiers = form.getValues("modifiers")
-                                            const updatedModifiers = [...currentModifiers]
-                                            updatedModifiers[index] = { ...updatedModifiers[index], name: e.target.value }
-                                            form.setValue("modifiers", updatedModifiers)
-                                        }}
-                                        placeholder="e.g., 3 Year Warranty"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-foreground">Additional Cost ($)</label>
-                                    <Input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        value={modifier.additional_cost}
-                                        onChange={e => {
-                                            const currentModifiers = form.getValues("modifiers")
-                                            const updatedModifiers = [...currentModifiers]
-                                            updatedModifiers[index] = { ...updatedModifiers[index], additional_cost: parseFloat(e.target.value) || 0 }
-                                            form.setValue("modifiers", updatedModifiers)
-                                        }}
-                                        placeholder="0.00"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-foreground">Weight (lbs)</label>
-                                    <Input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        value={modifier.weight}
-                                        onChange={e => {
-                                            const currentModifiers = form.getValues("modifiers")
-                                            const updatedModifiers = [...currentModifiers]
-                                            updatedModifiers[index] = { ...updatedModifiers[index], weight: parseFloat(e.target.value) || 0 }
-                                            form.setValue("modifiers", updatedModifiers)
-                                        }}
-                                        placeholder="0.00"
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="text-sm font-medium text-foreground">Description</label>
-                                <Textarea
-                                    value={modifier.description}
-                                    onChange={e => {
-                                        const currentModifiers = form.getValues("modifiers")
-                                        const updatedModifiers = [...currentModifiers]
-                                        updatedModifiers[index] = { ...updatedModifiers[index], description: e.target.value }
-                                        form.setValue("modifiers", updatedModifiers)
-                                    }}
-                                    placeholder="Describe what this modifier does..."
-                                    rows={2}
-                                />
-                            </div>
-                        </div>
-                    ))}
-
-                    {form.watch("modifiers").length === 0 && (
-                        <div className="text-center py-8 text-muted-foreground">
-                            <p>No modifiers added yet.</p>
-                            <p className="text-sm">Click "Add Modifier" to create custom options for this product.</p>
-                        </div>
-                    )}
-                </div>
-                {/* Product Preview */}
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Preview</label>
-                    <div className="border border-border rounded-lg p-4 bg-muted/20">
-                        <div className="flex items-center space-x-4">
-                            <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
-                                {previewUrl ? (
-                                    <img
-                                        src={previewUrl}
-                                        alt={form.watch("name")}
-                                        className="w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <span className="text-xs text-muted-foreground">No image</span>
-                                )}
-                            </div>
-                            <div className="flex-1">
-                                <h4 className="font-medium text-foreground">{form.watch("name") || 'Product Name'}</h4>
-                                <p className="text-sm text-muted-foreground line-clamp-2">
-                                    {form.watch("description") || 'Product description will appear here...'}
-                                </p>
-                                <div className="flex items-center justify-between mt-2">
-                                    <span className="text-sm font-medium text-foreground">
-                                        ${Number(form.watch("default_price")).toFixed(2)}
-                                    </span>
-                                    <Badge variant={form.watch("inStock") ? "default" : "secondary"}>
-                                        {form.watch("inStock") ? "In Stock" : "Out of Stock"}
-                                    </Badge>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div className="flex justify-end gap-2 pt-4 border-t border-border">
-                    <DialogClose asChild>
-                        <Button variant="outline">Cancel</Button>
-                    </DialogClose>
-                    <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90" disabled={isLoading}>
-                        {isLoading ? (
-                            <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Adding Product...
-                            </>
-                        ) : (
-                            "Add Product"
-                        )}
+          {form.watch("isSubscription") && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="subscriptionInterval"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subscription Interval</FormLabel>
+                    <FormControl>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <option value="">Select interval</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="quarterly">Quarterly</option>
+                        <option value="yearly">Yearly</option>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="subscriptionPrice"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subscription Price ($)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        {...field}
+                        placeholder="0.00"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          )}
+        </div>
+        <FormField
+          control={form.control}
+          name="tags"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tags</FormLabel>
+              <FormControl>
+                <div className="flex flex-col gap-2">
+                  <div className="flex gap-2 mb-2">
+                    <Select
+                      value={""}
+                      onValueChange={(tag) => {
+                        if (tag && !field.value.includes(tag)) {
+                          field.onChange([...field.value, tag]);
+                        }
+                      }}
+                    >
+                      <SelectTrigger value="" disabled>
+                        Select a tag
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tags
+                          ?.filter(
+                            (option) => !field.value.includes(option.name)
+                          )
+                          .map((option: any) => (
+                            <SelectItem key={option.name} value={option.name}>
+                              {option.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <Button type="button" variant="outline" disabled>
+                      Add
                     </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {field.value.map((tag: any) => (
+                      <Badge
+                        key={tag}
+                        variant="secondary"
+                        className="flex items-center gap-1"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            field.onChange(
+                              field.value.filter((t: string) => t !== tag)
+                            )
+                          }
+                          className="ml-1 hover:text-destructive"
+                        >
+                          ×
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
-            </form>
-        </Form>
-    )
-}
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        {/* Product Modifiers */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <FormLabel>Product Modifiers</FormLabel>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const currentModifiers = form.getValues("modifiers");
+                form.setValue("modifiers", [
+                  ...currentModifiers,
+                  { name: "", description: "", additional_cost: 0, weight: 0 },
+                ]);
+              }}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Add Modifier
+            </Button>
+          </div>
 
+          {form.watch("modifiers").map((modifier, index) => (
+            <div
+              key={index}
+              className="border border-border rounded-lg p-4 space-y-4"
+            >
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium">Modifier {index + 1}</h4>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const currentModifiers = form.getValues("modifiers");
+                    form.setValue(
+                      "modifiers",
+                      currentModifiers.filter((_, i) => i !== index)
+                    );
+                  }}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-foreground">
+                    Name
+                  </label>
+                  <Input
+                    value={modifier.name}
+                    onChange={(e) => {
+                      const currentModifiers = form.getValues("modifiers");
+                      const updatedModifiers = [...currentModifiers];
+                      updatedModifiers[index] = {
+                        ...updatedModifiers[index],
+                        name: e.target.value,
+                      };
+                      form.setValue("modifiers", updatedModifiers);
+                    }}
+                    placeholder="e.g., 3 Year Warranty"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground">
+                    Additional Cost ($)
+                  </label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={modifier.additional_cost}
+                    onChange={(e) => {
+                      const currentModifiers = form.getValues("modifiers");
+                      const updatedModifiers = [...currentModifiers];
+                      updatedModifiers[index] = {
+                        ...updatedModifiers[index],
+                        additional_cost: parseFloat(e.target.value) || 0,
+                      };
+                      form.setValue("modifiers", updatedModifiers);
+                    }}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground">
+                    Weight (lbs)
+                  </label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={modifier.weight}
+                    onChange={(e) => {
+                      const currentModifiers = form.getValues("modifiers");
+                      const updatedModifiers = [...currentModifiers];
+                      updatedModifiers[index] = {
+                        ...updatedModifiers[index],
+                        weight: parseFloat(e.target.value) || 0,
+                      };
+                      form.setValue("modifiers", updatedModifiers);
+                    }}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Description
+                </label>
+                <Textarea
+                  value={modifier.description}
+                  onChange={(e) => {
+                    const currentModifiers = form.getValues("modifiers");
+                    const updatedModifiers = [...currentModifiers];
+                    updatedModifiers[index] = {
+                      ...updatedModifiers[index],
+                      description: e.target.value,
+                    };
+                    form.setValue("modifiers", updatedModifiers);
+                  }}
+                  placeholder="Describe what this modifier does..."
+                  rows={2}
+                />
+              </div>
+            </div>
+          ))}
+
+          {form.watch("modifiers").length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No modifiers added yet.</p>
+              <p className="text-sm">
+                Click "Add Modifier" to create custom options for this product.
+              </p>
+            </div>
+          )}
+        </div>
+        {/* Product Preview */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">Preview</label>
+          <div className="border border-border rounded-lg p-4 bg-muted/20">
+            <div className="flex items-center space-x-4">
+              <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
+                {previewUrl ? (
+                  <img
+                    src={previewUrl}
+                    alt={form.watch("name")}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-xs text-muted-foreground">
+                    No image
+                  </span>
+                )}
+              </div>
+              <div className="flex-1">
+                <h4 className="font-medium text-foreground">
+                  {form.watch("name") || "Product Name"}
+                </h4>
+                <p className="text-sm text-muted-foreground line-clamp-2">
+                  {form.watch("description") ||
+                    "Product description will appear here..."}
+                </p>
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-sm font-medium text-foreground">
+                    ${Number(form.watch("default_price")).toFixed(2)}
+                  </span>
+                  <Badge
+                    variant={form.watch("inStock") ? "default" : "secondary"}
+                  >
+                    {form.watch("inStock") ? "In Stock" : "Out of Stock"}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 pt-4 border-t border-border">
+          <DialogClose asChild>
+            <Button variant="outline">Cancel</Button>
+          </DialogClose>
+          <Button
+            type="submit"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Adding Product...
+              </>
+            ) : (
+              "Add Product"
+            )}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
+}

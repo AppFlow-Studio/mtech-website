@@ -2,6 +2,7 @@
 
 import { Product } from "@/lib/types";
 import { SlidersHorizontal, X } from "lucide-react";
+import { useTags } from "@/app/(master-admin)/master-admin/actions/hook/useTagHooks";
 
 interface CheckboxProps {
   id: string;
@@ -60,6 +61,8 @@ const FilterSidebar = ({
   outOfStockCount,
   products,
 }: FilterSidebarProps) => {
+  const { data: tagsData, isLoading: tagsLoading } = useTags();
+
   const handleStockToggle = (value: boolean) => {
     if (currentStockFilter === value) {
       onStockFilterChange(null); // Uncheck if already checked
@@ -118,34 +121,22 @@ const FilterSidebar = ({
             Product Type
           </h3>
           <div className="mt-3 space-y-2">
-            <Checkbox
-              id="atm-machines"
-              label="ATM Machines"
-              count={tagCounts["atm machines"]}
-              checked={currentTagFilters.includes("atm machines")}
-              onChange={() => handleTagToggle("atm machines")}
-            />
-            <Checkbox
-              id="pos-system"
-              label="POS System"
-              count={tagCounts["pos system"]}
-              checked={currentTagFilters.includes("pos system")}
-              onChange={() => handleTagToggle("pos system")}
-            />
-            <Checkbox
-              id="atm-card-terminals"
-              label="Credit Card Terminals"
-              count={tagCounts["credit card terminals"]}
-              checked={currentTagFilters.includes("credit card terminals")}
-              onChange={() => handleTagToggle("credit card terminals")}
-            />
-            <Checkbox
-              id="network-devices"
-              label="Network Devices"
-              count={tagCounts["network devices"]}
-              checked={currentTagFilters.includes("network devices")}
-              onChange={() => handleTagToggle("network devices")}
-            />
+            {tagsLoading ? (
+              <p>Loading tags...</p>
+            ) : (
+              tagsData?.map((tag: any) => (
+                <Checkbox
+                  key={tag.id}
+                  id={tag.id}
+                  label={tag.name}
+                  count={
+                    products.filter((p) => p.tags?.includes(tag.name)).length
+                  }
+                  checked={currentTagFilters.includes(tag.name)}
+                  onChange={() => handleTagToggle(tag.name)}
+                />
+              ))
+            )}
           </div>
         </div>
 
