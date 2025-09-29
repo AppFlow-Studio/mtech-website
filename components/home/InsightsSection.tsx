@@ -105,13 +105,13 @@ const InsightsSection = ({ header, subtext, cards }: { header: string, subtext: 
                     </div>
                   </div>
                   <div className="w-full h-56">
-                    <Image
-                      src={urlFor(insight.imageSrc).url()}
-                      alt={insight.Title}
-                      width={500}
-                      height={300}
-                      className="w-full h-full object-cover rounded-2xl"
-                    />
+                      {insight.imageSrc && <Image
+                        src={urlFor(insight.imageSrc).url()}
+                        alt={insight.Title}
+                        width={500}
+                        height={300}
+                        className="w-full h-full object-cover rounded-2xl"
+                      />  }
                   </div>
                 </div>
                 {index < cards.length - 1 && (

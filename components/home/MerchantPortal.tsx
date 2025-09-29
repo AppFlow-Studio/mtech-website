@@ -27,18 +27,18 @@ const MerchantPortal = (MerchantPortalData: any) => {
               text-gray-900 dark:text-white
             "
             >
-              {MerchantPortalData.MerchantPortalData.Merchant_Portal_Title}
+              {MerchantPortalData?.MerchantPortalData?.Merchant_Portal_Title}
             </h1>
             <PortableText value={MerchantPortalData.MerchantPortalData.Merchant_Portal_SubText} components={defaultPortableTextComponents} />
 
             <div className="mt-8">
               <Link
-                href={MerchantPortalData.MerchantPortalData.Merchant_Portal_Button_Link}
+                href={MerchantPortalData?.MerchantPortalData?.Merchant_Portal_Button_Link}
                 className="
                 inline-flex items-center justify-center gap-2 
                 px-8 py-4 rounded-full font-semibold bg-gradient-to-b from-[#662CB2] to-[#2C134C] dark:from-[#662CB2] dark:to-purple-[#2C134C] hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600 text-white transition-colors duration-300 shadow-lg"
               >
-                {MerchantPortalData.MerchantPortalData.Merchant_Portal_Button_Text}
+                {MerchantPortalData?.MerchantPortalData?.Merchant_Portal_Button_Text}
                 <ChevronRight className="h-5 w-5" />
               </Link>
             </div>
@@ -47,13 +47,13 @@ const MerchantPortal = (MerchantPortalData: any) => {
           {/* Column 2: Image */}
           {/* On mobile, this will appear at the bottom. */}
           <div>
-            <Image
-              src={urlFor(MerchantPortalData.MerchantPortalData.Merchant_Portal_Image).url()}
+            {MerchantPortalData?.MerchantPortalData?.Merchant_Portal_Image && <Image
+              src={urlFor(MerchantPortalData?.MerchantPortalData?.Merchant_Portal_Image)?.url()}
               alt="MTech Merchant Portal dashboard shown on a laptop screen"
               width={1200}
               height={750}
               className="w-full h-auto"
-            />
+            />}
           </div>
         </div>
       </div>

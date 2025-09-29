@@ -60,14 +60,14 @@ const PartnerLogo = ({ partner }: { partner: (typeof partners)[0] }) => {
         "flex-shrink-0 px-8 py-4",
       )}
     >
-      <Image
-        src={urlFor(partner.logo).url()}
+      {partner?.logo && <Image
+        src={urlFor(partner?.logo)?.url()}
         alt={`${partner.name} logo`}
         width={partner.width}
         height={partner.height}
         className="object-contain"
         draggable={false}
-      />
+      />}
     </div>
   );
 };
