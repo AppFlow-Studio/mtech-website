@@ -10,8 +10,10 @@ import {
   AlertTriangle,
   Loader2,
   RefreshCw,
+  X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import AddProductModiferGroupBottomSheet from "./AddProductModiferGroupBottomSheet";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -30,6 +32,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { addProduct } from "../product-actions/add-product";
 import { z } from "zod";
@@ -48,9 +51,13 @@ import { toast } from "sonner";
 import { updateProduct } from "../product-actions/update-product";
 import { BrochureUploadField } from "./BrochureUploadField";
 import { useTags } from "../actions/hook/useTagHooks";
-
+import ModifierGroupsBottomSheet from "./ModifierGroupsBottomSheet";
+import { useModifierGroups } from "../actions/hook/useModifiersGroups";
+import EditProductModifierGroupsBottomSheet from "./EditProductModifierGroupsBottomSheet";
+import { ProductModifier } from "@/lib/types";
+import { Product } from "../actions/api/get-products";
 interface Tag {
-  id: string;
+  id: number;
   name: string;
   product_tags: any[];
 }
@@ -58,21 +65,24 @@ interface Tag {
 interface ProductTag {
   tags: {
     name: string;
+    description: string;
+    id: number;
   };
 }
 
-interface ProductWithDetails {
-  id: string;
-  name: string;
-  description: string;
-  imageSrc: string;
-  link: string;
-  inStock: boolean;
-  default_price: number;
-  brochureUrl?: string;
-  product_tags: ProductTag[];
-  [key: string]: any; // Allow other properties
-}
+// interface Product {
+//   id: string;
+//   name: string;
+//   description: string;
+//   imageSrc: string;
+//   link: string;
+//   inStock: boolean;
+//   default_price: number;
+//   brochureUrl?: string;
+//   product_tags: ProductTag[];
+//   products_modifiers: ProductModifier[];
+//   [key: string]: any; // Allow other properties
+// }
 
 export default function ProductManagement({
   searchTerm,
@@ -86,8 +96,8 @@ export default function ProductManagement({
   const [deleteProductId, setDeleteProductId] = useState<string | null>(null);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-
+  const [selectedTags, setSelectedTags] = useState<number[]>([]);
+  const [openModifierGroups, setOpenModifierGroups] = useState(false);
   if (isLoading)
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
@@ -110,20 +120,21 @@ export default function ProductManagement({
     );
 
   const filteredProducts =
-    products?.filter((product: ProductWithDetails) => {
+    products?.filter((product: any) => {
       const matchesSearch =
         product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.description?.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const productTags = product.product_tags.map((pt) => pt.tags.name);
+      const productTags = product?.product_tags?.map((pt: any) => pt.tags.id);
       const matchesTags =
         selectedTags.length === 0 ||
-        selectedTags.every((st) => productTags.includes(st));
+        selectedTags.some((st: number) => productTags?.includes(st));
 
       return matchesSearch && matchesTags;
     }) || [];
 
-  const handleTagToggle = (tagName: string) => {
+
+  const handleTagToggle = (tagName: number) => {
     setSelectedTags((prev) =>
       prev.includes(tagName)
         ? prev.filter((t) => t !== tagName)
@@ -135,7 +146,7 @@ export default function ProductManagement({
     setSelectedTags([]);
   };
 
-  const handleDeleteProduct = (product: ProductWithDetails) => {
+  const handleDeleteProduct = (product: Product) => {
     setDeleteProductId(product.id);
     setOpenDeleteDialog(true);
   };
@@ -157,7 +168,7 @@ export default function ProductManagement({
   };
 
   const productToDelete = products?.find(
-    (p: ProductWithDetails) => p.id === deleteProductId
+    (p: any) => p.id === deleteProductId
   );
 
   return (
@@ -185,15 +196,26 @@ export default function ProductManagement({
         </Dialog>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          type="text"
-          placeholder="Search products..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
+      <div className="flex flex-row items-center w-full justify-between gap-4">
+        <div className="relative w-[80%]">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search products..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <div>
+          <Button
+            onClick={() => setOpenModifierGroups(true)}
+            className="flex items-center gap-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:cursor-pointer"
+            type="button"
+          >
+            Modifier Groups
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -216,9 +238,9 @@ export default function ProductManagement({
           {tagsData?.map((tag: Tag) => (
             <Badge
               key={tag.id}
-              variant={selectedTags.includes(tag.name) ? "default" : "outline"}
+              variant={selectedTags.includes(tag.id) ? "default" : "outline"}
               className="cursor-pointer"
-              onClick={() => handleTagToggle(tag.name)}
+              onClick={() => handleTagToggle(tag.id)}
             >
               {tag.name}
             </Badge>
@@ -236,7 +258,7 @@ export default function ProductManagement({
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProducts.map((product: ProductWithDetails) => (
+          {filteredProducts.map((product: any) => (
             <div
               key={product.id}
               className="bg-card border border-border rounded-lg overflow-hidden"
@@ -268,8 +290,8 @@ export default function ProductManagement({
                   {product.description}
                 </p>
                 <div className="flex flex-wrap gap-1 mb-3">
-                  {product.product_tags.map((tag: ProductTag) => (
-                    <Badge key={tag.tags.name} variant="outline">
+                  {product?.product_tags?.map((tag: ProductTag) => (
+                    <Badge key={tag.tags.id} variant="outline">
                       {tag.tags.name}
                     </Badge>
                   ))}
@@ -313,7 +335,7 @@ export default function ProductManagement({
                 Confirm Delete
               </DialogTitle>
               <DialogDescription>
-                Are you sure you want to delete "{productToDelete?.name}"? This
+                Are you sure you want to delete "{(productToDelete as any)?.name || 'this product'}"? This
                 action cannot be undone.
               </DialogDescription>
             </DialogHeader>
@@ -339,6 +361,7 @@ export default function ProductManagement({
           </DialogContent>
         </Dialog>
       </div>
+      <ModifierGroupsBottomSheet open={openModifierGroups} setOpen={setOpenModifierGroups} />
     </div>
   );
 }
@@ -420,32 +443,24 @@ const editProductSchema = z.object({
     .min(1, "Product link is required")
     .regex(/^\S+$/, "No spaces allowed in product link"),
   inStock: z.boolean(),
-  weight: z.coerce.number().min(0, "Weight is required (lbs)"),
-  tags: z.array(z.string()).min(1, "At least one tag is required"),
-  default_price: z.coerce.number().min(0.01, "Price is required"),
+  weight: z.coerce.number().min(0, "Weight is required (lbs)").nonnegative("Weight must be 0 or greater (lbs)"),
+  tags: z.array(z.number()).min(1, "At least one tag is required"),
+  default_price: z.coerce.number().min(0.01, "Price is required").positive("Price must be greater than $0.00"),
   imageSrc: z.instanceof(File).or(z.string()).optional(),
   isSubscription: z.boolean(),
   subscriptionInterval: z.string().optional(),
   subscriptionPrice: z.coerce.number().min(0).optional(),
-  modifiers: z.array(
-    z.object({
-      name: z.string().min(1, "Modifier name is required"),
-      description: z.string().min(1, "Modifier description is required"),
-      additional_cost: z.coerce
-        .number()
-        .min(0, "Additional cost must be 0 or greater"),
-      weight: z.coerce.number().min(0, "Weight is required (lbs)"),
-    })
-  ),
+  modifiers: z.array(z.number()),
   brochure: z.instanceof(File).optional(),
   brochureUrl: z.string().optional(),
 });
-
 type EditProductFormType = z.infer<typeof editProductSchema>;
 
 // Replace the entire ProductEditForm function
 function ProductEditForm({ product }: { product: any }) {
   const { data: tags } = useTags();
+  const { data: modifierGroups } = useModifierGroups();
+  const [openModifierGroups, setOpenModifierGroups] = useState(false);
   const form = useForm<EditProductFormType>({
     resolver: zodResolver(editProductSchema),
     defaultValues: {
@@ -453,23 +468,27 @@ function ProductEditForm({ product }: { product: any }) {
       description: product.description || "",
       link: product.link || "",
       inStock: product.inStock || false,
-      tags: product.product_tags.map((pt: any) => pt.tags.name) || [],
+      tags: product?.product_tags?.map((pt: any) => pt.tags.id) || [],
       weight: product.weight || 0,
       default_price: product.default_price || 0,
       imageSrc: product.imageSrc || "",
-      isSubscription: product.is_subscription || product.subscription || false,
+      isSubscription: product.subscription || false,
       subscriptionInterval: product.subscription_interval || "",
       subscriptionPrice: product.subscription_price || 0,
-      modifiers: product.modifiers || [],
+      modifiers: product.products_modifiers?.map((pm: any) => pm.modifier_group_id) || [],
       brochure: undefined,
       brochureUrl: product.brochureUrl || "",
     },
     mode: "onTouched",
   });
+  console.log(form.getValues())
   const [previewUrl, setPreviewUrl] = useState<string>(product.imageSrc || "");
   const { refetch } = useProducts();
 
   const onSubmit = async (values: EditProductFormType) => {
+    // Include selected modifier group IDs in the submission
+   
+
     const result = await updateProduct(product.id, values);
     if (result instanceof Error) {
       toast.error("Error updating product", { description: result.message });
@@ -663,57 +682,28 @@ function ProductEditForm({ product }: { product: any }) {
             <FormItem>
               <FormLabel>Tags</FormLabel>
               <FormControl>
-                <div className="flex flex-col gap-2">
-                  <div className="flex gap-2 mb-2">
-                    <Select
-                      value={""}
-                      onValueChange={(tag) => {
-                        if (tag && !field.value.includes(tag)) {
-                          field.onChange([...field.value, tag]);
-                        }
-                      }}
-                    >
-                      <SelectTrigger value="" disabled>
-                        Select a tag
-                      </SelectTrigger>
-                      <SelectContent>
-                        {tags
-                          ?.filter(
-                            (option) => !field.value.includes(option.name)
-                          )
-                          .map((option: any) => (
-                            <SelectItem key={option.name} value={option.name}>
-                              {option.name}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                    <Button type="button" variant="outline" disabled>
-                      Add
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {field.value.map((tag: any) => (
+                <div className="flex flex-wrap gap-2">
+                  {tags?.map((tag: ProductTag["tags"]) => {
+                    const isSelected = field.value?.includes(tag.id);
+                    return (
                       <Badge
-                        key={tag}
-                        variant="secondary"
-                        className="flex items-center gap-1"
-                      >
-                        {tag}
-                        <button
-                          type="button"
-                          onClick={() =>
+                        key={tag.id}
+                        variant={isSelected ? "default" : "outline"}
+                        className="cursor-pointer"
+                        onClick={() => {
+                          if (isSelected) {
                             field.onChange(
-                              field.value.filter((t: string) => t !== tag)
-                            )
+                              field.value?.filter((t: number) => t !== tag.id)
+                            );
+                          } else if (field.value) {
+                            field.onChange([...field.value, tag.id]);
                           }
-                          className="ml-1 hover:text-destructive"
-                        >
-                          ×
-                        </button>
+                        }}
+                      >
+                        {tag.name}
                       </Badge>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
               </FormControl>
               <FormMessage />
@@ -764,10 +754,14 @@ function ProductEditForm({ product }: { product: any }) {
                         value={field.value}
                         onValueChange={field.onChange}
                       >
-                        <option value="">Select interval</option>
-                        <option value="monthly">Monthly</option>
-                        <option value="quarterly">Quarterly</option>
-                        <option value="yearly">Yearly</option>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select interval" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="monthly">Monthly</SelectItem>
+                          <SelectItem value="quarterly">Quarterly</SelectItem>
+                          <SelectItem value="yearly">Yearly</SelectItem>
+                        </SelectContent>
                       </Select>
                     </FormControl>
                     <FormMessage />
@@ -797,144 +791,59 @@ function ProductEditForm({ product }: { product: any }) {
           )}
         </div>
 
-        {/* Product Modifiers */}
+        {/* Product Modifier Groups */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <FormLabel>Product Modifiers</FormLabel>
+            <FormLabel>Modifier Groups</FormLabel>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => {
-                const currentModifiers = form.getValues("modifiers");
-                form.setValue("modifiers", [
-                  ...currentModifiers,
-                  { name: "", description: "", additional_cost: 0, weight: 0 },
-                ]);
-              }}
+              onClick={() => setOpenModifierGroups(true)}
             >
               <Plus className="h-4 w-4 mr-1" />
-              Add Modifier
+              Select Modifier Groups
             </Button>
           </div>
 
-          {form.watch("modifiers").map((modifier, index) => (
-            <div
-              key={index}
-              className="border border-border rounded-lg p-4 space-y-4"
-            >
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium">Modifier {index + 1}</h4>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const currentModifiers = form.getValues("modifiers");
-                    form.setValue(
-                      "modifiers",
-                      currentModifiers.filter((_, i) => i !== index)
-                    );
-                  }}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-foreground">
-                    Name
-                  </label>
-                  <Input
-                    value={modifier.name}
-                    onChange={(e) => {
-                      const currentModifiers = form.getValues("modifiers");
-                      const updatedModifiers = [...currentModifiers];
-                      updatedModifiers[index] = {
-                        ...updatedModifiers[index],
-                        name: e.target.value,
-                      };
-                      form.setValue("modifiers", updatedModifiers);
-                    }}
-                    placeholder="e.g., 3 Year Warranty"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground">
-                    Additional Cost ($)
-                  </label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={modifier.additional_cost}
-                    onChange={(e) => {
-                      const currentModifiers = form.getValues("modifiers");
-                      const updatedModifiers = [...currentModifiers];
-                      updatedModifiers[index] = {
-                        ...updatedModifiers[index],
-                        additional_cost: parseFloat(e.target.value) || 0,
-                      };
-                      form.setValue("modifiers", updatedModifiers);
-                    }}
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground">
-                    Weight (lbs)
-                  </label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={modifier.weight}
-                    onChange={(e) => {
-                      const currentModifiers = form.getValues("modifiers");
-                      const updatedModifiers = [...currentModifiers];
-                      updatedModifiers[index] = {
-                        ...updatedModifiers[index],
-                        weight: parseFloat(e.target.value) || 0,
-                      };
-                      form.setValue("modifiers", updatedModifiers);
-                    }}
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-foreground">
-                  Description
-                </label>
-                <Textarea
-                  value={modifier.description}
-                  onChange={(e) => {
-                    const currentModifiers = form.getValues("modifiers");
-                    const updatedModifiers = [...currentModifiers];
-                    updatedModifiers[index] = {
-                      ...updatedModifiers[index],
-                      description: e.target.value,
-                    };
-                    form.setValue("modifiers", updatedModifiers);
-                  }}
-                  placeholder="Describe what this modifier does..."
-                  rows={2}
-                />
+          {/* Selected Modifier Groups Display */}
+          {form?.watch('modifiers')?.length > 0 ? (
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Selected {form.watch('modifiers').length} modifier group{form.watch('modifiers').length !== 1 ? 's' : ''}:
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {form.watch('modifiers').map((groupId) => {
+                  const group = modifierGroups?.find(g => g.id === groupId);
+                  return group ? (
+                    <div key={groupId} className="flex items-center gap-2 px-3 py-1 bg-primary/10 border border-primary/20 rounded-full">
+                      <span className="text-sm font-medium text-primary">{group.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        ({group.modifiers.length} variants)
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newSelection = form.watch('modifiers').filter(id => id !== groupId);
+                          form.setValue('modifiers', newSelection);
+                        }}
+                        className="text-muted-foreground hover:text-destructive"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : null;
+                })}
               </div>
             </div>
-          ))}
-
-          {form.watch("modifiers").length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>No modifiers added yet.</p>
-              <p className="text-sm">
-                Click "Add Modifier" to create custom options for this product.
-              </p>
+          ) : (
+            <div className="text-center py-4 text-muted-foreground border border-dashed border-border rounded-lg">
+              <p className="text-sm">No modifier groups selected</p>
+              <p className="text-xs">Click "Select Modifier Groups" to add them</p>
             </div>
           )}
+
+
         </div>
 
         {/* Product Preview */}
@@ -984,7 +893,7 @@ function ProductEditForm({ product }: { product: any }) {
           <Button
             type="submit"
             className="bg-primary text-primary-foreground hover:bg-primary/90"
-            disabled={form.formState.isSubmitting}
+            disabled={form.formState.isSubmitting || form.formState.isValid === false}
           >
             {form.formState.isSubmitting ? (
               <>
@@ -997,6 +906,15 @@ function ProductEditForm({ product }: { product: any }) {
           </Button>
         </div>
       </form>
+      <EditProductModifierGroupsBottomSheet
+        open={openModifierGroups}
+        setOpen={setOpenModifierGroups}
+        product={product}
+        selectedModifierGroupIds={form.watch('modifiers')}
+        onSelectionChange={(ids: number[]) =>
+          form.setValue('modifiers', ids, { shouldDirty: true, shouldTouch: true, shouldValidate: true })
+        }
+      />
     </Form>
   );
 }
@@ -1009,23 +927,14 @@ const productSchema = z.object({
     .min(1, "Product link is required")
     .regex(/^\S+$/, "No spaces allowed in product link"),
   inStock: z.boolean(),
-  weight: z.coerce.number().min(0, "Weight is required (lbs)"),
-  tags: z.array(z.string()).min(1, "At least one tag is required"),
-  default_price: z.coerce.number().min(0.01, "Price is required"),
+  weight: z.coerce.number().min(0, "Weight is required (lbs)").nonnegative("Weight must be 0 or greater (lbs)"),
+  tags: z.array(z.number()),
+  default_price: z.coerce.number().min(0.01, "Price is required").positive("Price must be greater than $0.00"),
   imageSrc: z.instanceof(File, { message: "Product image is required" }),
   isSubscription: z.boolean(),
   subscriptionInterval: z.string().optional(),
   subscriptionPrice: z.coerce.number().min(0).optional(),
-  modifiers: z.array(
-    z.object({
-      name: z.string().min(1, "Modifier name is required"),
-      description: z.string().min(1, "Modifier description is required"),
-      additional_cost: z.coerce
-        .number()
-        .min(0, "Additional cost must be 0 or greater"),
-      weight: z.coerce.number().min(0, "Weight is required (lbs)"),
-    })
-  ),
+  modifiers: z.array(z.number()),
   brochure: z.instanceof(File).optional(),
 });
 
@@ -1033,6 +942,8 @@ type ProductFormType = z.infer<typeof productSchema>;
 
 function ProductAddForm() {
   const { data: tags } = useTags();
+  const { data: modifierGroups } = useModifierGroups();
+  const [openModifierGroups, setOpenModifierGroups] = useState(false);
   const form = useForm<ProductFormType>({
     resolver: zodResolver(productSchema),
     defaultValues: {
@@ -1055,6 +966,7 @@ function ProductAddForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const { refetch } = useProducts();
+  console.log(form.getValues())
   const onSubmit = async (values: ProductFormType) => {
     setIsLoading(true);
     const result = await addProduct(values);
@@ -1282,10 +1194,14 @@ function ProductAddForm() {
                         value={field.value}
                         onValueChange={field.onChange}
                       >
-                        <option value="">Select interval</option>
-                        <option value="monthly">Monthly</option>
-                        <option value="quarterly">Quarterly</option>
-                        <option value="yearly">Yearly</option>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select interval" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="monthly">Monthly</SelectItem>
+                          <SelectItem value="quarterly">Quarterly</SelectItem>
+                          <SelectItem value="yearly">Yearly</SelectItem>
+                        </SelectContent>
                       </Select>
                     </FormControl>
                     <FormMessage />
@@ -1314,6 +1230,54 @@ function ProductAddForm() {
             </div>
           )}
         </div>
+
+        {/* Product Modifiers */}
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <FormLabel>Modifier Groups</FormLabel>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setOpenModifierGroups(true)}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Select Modifier Groups
+            </Button>
+          </div>
+
+          {form.watch('modifiers')?.length > 0 ? (
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Selected {form.watch('modifiers')?.length} modifier group{form.watch('modifiers')?.length !== 1 ? 's' : ''}:
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {form.watch('modifiers')?.map((groupId: number) => {
+                  const group = modifierGroups?.find((g: any) => g.id === groupId);
+                  return group ? (
+                    <div key={groupId} className="flex items-center gap-2 px-3 py-1 bg-primary/10 border border-primary/20 rounded-full">
+                      <span className="text-sm font-medium text-primary">{group.name}</span>
+                      <span className="text-xs text-muted-foreground">({group.modifiers?.length || 0} variants)</span>
+                      <button
+                        type="button"
+                        onClick={() => form.setValue('modifiers', form.watch('modifiers')?.filter((id: number) => id !== groupId))}
+                        className="text-muted-foreground hover:text-destructive"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : null;
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-4 text-muted-foreground border border-dashed border-border rounded-lg">
+              <p className="text-sm">No modifier groups selected</p>
+              <p className="text-xs">Click "Select Modifier Groups" to add them</p>
+            </div>
+          )}
+        </div>
         <FormField
           control={form.control}
           name="tags"
@@ -1321,202 +1285,35 @@ function ProductAddForm() {
             <FormItem>
               <FormLabel>Tags</FormLabel>
               <FormControl>
-                <div className="flex flex-col gap-2">
-                  <div className="flex gap-2 mb-2">
-                    <Select
-                      value={""}
-                      onValueChange={(tag) => {
-                        if (tag && !field.value.includes(tag)) {
-                          field.onChange([...field.value, tag]);
-                        }
-                      }}
-                    >
-                      <SelectTrigger value="" disabled>
-                        Select a tag
-                      </SelectTrigger>
-                      <SelectContent>
-                        {tags
-                          ?.filter(
-                            (option) => !field.value.includes(option.name)
-                          )
-                          .map((option: any) => (
-                            <SelectItem key={option.name} value={option.name}>
-                              {option.name}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                    <Button type="button" variant="outline" disabled>
-                      Add
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {field.value.map((tag: any) => (
+                <div className="flex flex-wrap gap-2">
+                  {tags?.map((option: any) => {
+                    const isSelected = field.value.includes(option.id);
+                    return (
                       <Badge
-                        key={tag}
-                        variant="secondary"
-                        className="flex items-center gap-1"
-                      >
-                        {tag}
-                        <button
-                          type="button"
-                          onClick={() =>
+                        key={option.id}
+                        variant={isSelected ? "default" : "outline"}
+                        className="cursor-pointer"
+                        onClick={() => {
+                          if (isSelected) {
                             field.onChange(
-                              field.value.filter((t: string) => t !== tag)
-                            )
+                              field.value.filter((t: number) => t !== option.id)
+                            );
+                          } else {
+                            field.onChange([...field.value, option.id]);
                           }
-                          className="ml-1 hover:text-destructive"
-                        >
-                          ×
-                        </button>
+                        }}
+                      >
+                        {option.name}
                       </Badge>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        {/* Product Modifiers */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <FormLabel>Product Modifiers</FormLabel>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const currentModifiers = form.getValues("modifiers");
-                form.setValue("modifiers", [
-                  ...currentModifiers,
-                  { name: "", description: "", additional_cost: 0, weight: 0 },
-                ]);
-              }}
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              Add Modifier
-            </Button>
-          </div>
 
-          {form.watch("modifiers").map((modifier, index) => (
-            <div
-              key={index}
-              className="border border-border rounded-lg p-4 space-y-4"
-            >
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium">Modifier {index + 1}</h4>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const currentModifiers = form.getValues("modifiers");
-                    form.setValue(
-                      "modifiers",
-                      currentModifiers.filter((_, i) => i !== index)
-                    );
-                  }}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-foreground">
-                    Name
-                  </label>
-                  <Input
-                    value={modifier.name}
-                    onChange={(e) => {
-                      const currentModifiers = form.getValues("modifiers");
-                      const updatedModifiers = [...currentModifiers];
-                      updatedModifiers[index] = {
-                        ...updatedModifiers[index],
-                        name: e.target.value,
-                      };
-                      form.setValue("modifiers", updatedModifiers);
-                    }}
-                    placeholder="e.g., 3 Year Warranty"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground">
-                    Additional Cost ($)
-                  </label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={modifier.additional_cost}
-                    onChange={(e) => {
-                      const currentModifiers = form.getValues("modifiers");
-                      const updatedModifiers = [...currentModifiers];
-                      updatedModifiers[index] = {
-                        ...updatedModifiers[index],
-                        additional_cost: parseFloat(e.target.value) || 0,
-                      };
-                      form.setValue("modifiers", updatedModifiers);
-                    }}
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground">
-                    Weight (lbs)
-                  </label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={modifier.weight}
-                    onChange={(e) => {
-                      const currentModifiers = form.getValues("modifiers");
-                      const updatedModifiers = [...currentModifiers];
-                      updatedModifiers[index] = {
-                        ...updatedModifiers[index],
-                        weight: parseFloat(e.target.value) || 0,
-                      };
-                      form.setValue("modifiers", updatedModifiers);
-                    }}
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-foreground">
-                  Description
-                </label>
-                <Textarea
-                  value={modifier.description}
-                  onChange={(e) => {
-                    const currentModifiers = form.getValues("modifiers");
-                    const updatedModifiers = [...currentModifiers];
-                    updatedModifiers[index] = {
-                      ...updatedModifiers[index],
-                      description: e.target.value,
-                    };
-                    form.setValue("modifiers", updatedModifiers);
-                  }}
-                  placeholder="Describe what this modifier does..."
-                  rows={2}
-                />
-              </div>
-            </div>
-          ))}
-
-          {form.watch("modifiers").length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>No modifiers added yet.</p>
-              <p className="text-sm">
-                Click "Add Modifier" to create custom options for this product.
-              </p>
-            </div>
-          )}
-        </div>
         {/* Product Preview */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">Preview</label>
@@ -1576,6 +1373,12 @@ function ProductAddForm() {
             )}
           </Button>
         </div>
+        <AddProductModiferGroupBottomSheet
+          open={openModifierGroups}
+          setOpen={setOpenModifierGroups}
+          selectedModifierGroupIds={form.watch('modifiers')}
+          onSelectionChange={(ids: number[]) => form.setValue('modifiers', ids)}
+        />
       </form>
     </Form>
   );

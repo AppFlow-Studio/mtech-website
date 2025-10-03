@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
-import { CheckCircle, Loader2, Pencil, Plus, Trash2, UserCheck, Users, AlertTriangle, Truck } from 'lucide-react';
+import { CheckCircle, Loader2, Pencil, Plus, Trash2, UserCheck, Users, AlertTriangle, Truck, CalendarCog } from 'lucide-react';
 import OrderItemCard from '@/app/(master-admin)/master-admin/orders/[order_id]/OrderItemCard';
 import { OrderItems } from '@/lib/types';
 import { UpdateOrderItem } from '@/app/(master-admin)/master-admin/actions/order-actions/update-order-item';
@@ -364,6 +364,9 @@ export default function OrderIDManagerPage({ params }: { params: { order_id: str
                         ))}
                     </div>
                     <div className="flex justify-end gap-2 mt-6">
+                        <Button variant="outline" className='' >
+                            <CalendarCog className="h-4 w-4 mr-1" /> Schedule Items to Pickup 
+                        </Button>
                         <Button variant="outline" onClick={() => setShowShippingSelector(true)}>
                             <Truck className="h-4 w-4 mr-1" /> Get Shipping Rates
                         </Button>

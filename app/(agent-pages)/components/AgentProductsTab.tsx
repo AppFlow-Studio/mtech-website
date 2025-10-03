@@ -22,7 +22,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { useGetAgentById, useGetAgentProducts } from "@/app/(master-admin)/master-admin/actions/AgentStore"
@@ -34,17 +33,10 @@ import { syncOrderItems } from "../actions/sync-order-items"
 import { createOrderWithItems } from "../actions/create-order-with-items"
 import { useProfile } from "@/lib/hooks/useProfile"
 import CreateOrderWithCartDialog from "./CreateOrderWithCartDialog"
-const tags = [
-    "atm parts",
-    "pos parts",
-    "network devices",
-    "atm signage",
-    "credit card terminals",
-    "pos system",
-    "pos accessories",
-    "atm machines",
-    "scales",
-]
+import { useTags } from "@/app/(master-admin)/master-admin/actions/hook/useTagHooks"
+import { Product } from "@/lib/types"
+
+
 export default function AgentProductsTab({
     agent_id,
     addToCart,
@@ -63,9 +55,11 @@ export default function AgentProductsTab({
     updateQuantity?: (productId: string, quantity: number) => void
 }) {
     const { data: agent, isLoading: isAgentLoading } = useGetAgentProducts(agent_id)
+    const { data: tags } = useTags()
     const [productSearchTerm, setProductSearchTerm] = useState("")
     const [categoryFilter, setCategoryFilter] = useState("all")
     const [selectedTags, setSelectedTags] = useState<string[]>([])
+
     // Using header cart as single source of truth instead of global cart store
     const { profile } = useProfile()
     const [isStickyCartVisible, setIsStickyCartVisible] = useState(false)
@@ -154,16 +148,6 @@ export default function AgentProductsTab({
         )
     }
 
-    const categories = [
-        { id: 'all', name: 'All Products' },
-        { id: 'pos', name: 'POS Systems' },
-        { id: 'atm', name: 'ATM Machines' },
-        { id: 'accessories', name: 'Accessories' },
-        { id: 'wireless', name: 'Wireless' },
-        { id: 'printers', name: 'Printers' },
-        { id: 'scales', name: 'Scales' }
-    ]
-
     const handleTagToggle = (tag: string) => {
         setSelectedTags(prev =>
             prev.includes(tag)
@@ -217,40 +201,29 @@ export default function AgentProductsTab({
         }
     }
 
-    // Removed removeFromCartLocal - now using header cart removeFromCart function
-
-
-
     const filteredProducts = agent?.agent_tiers?.agent_product_prices?.filter((agent_product: any) => {
         // Text search filter
         const matchesSearch = agent_product.products.name.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
             agent_product.products.description.toLowerCase().includes(productSearchTerm.toLowerCase())
 
-        // Category filter
-        const matchesCategory = categoryFilter === 'all' || agent_product.products.category.toLowerCase().includes(categoryFilter)
 
         // Tag filter
         const matchesTags = selectedTags.length === 0 ||
-            selectedTags.some(tag => agent_product.products.tags?.includes(tag))
+            selectedTags.some(tag => agent_product.products.product_tags?.some((pt: Product["product_tags"][number]) => pt.tag_id === tag))
 
-        return matchesSearch && matchesCategory && matchesTags
+        return matchesSearch && matchesTags
     })
-
-    const handleAddToCart = (agent_product: any) => {
-        // Add to header cart (single source of truth)
-        addToCartLocal(agent_product.products.id, agent_product.products.name)
-    }
 
     const handleViewProductDetails = (agent_product: any) => {
         const productForDialog = {
             ...agent_product.products,
             price: agent_product.price,
-            tier_name: agent.agent_tiers?.agent_tiers?.name || 'Standard Tier'
+            tier_name: agent.agent_tiers?.name || 'Standard Tier'
         };
         setSelectedProduct(productForDialog);
         setShowProductDialog(true);
     };
-
+    console.log(selectedProduct)
 
     return (
         <div className="space-y-6">
@@ -497,7 +470,7 @@ export default function AgentProductsTab({
                         className="pl-10"
                     />
                 </div>
-                <select
+                {/* <select
                     value={categoryFilter}
                     onChange={(e) => setCategoryFilter(e.target.value)}
                     className="px-3 py-2 border border-border rounded-md"
@@ -505,7 +478,7 @@ export default function AgentProductsTab({
                     {categories.map(category => (
                         <option key={category.id} value={category.id}>{category.name}</option>
                     ))}
-                </select>
+                </select> */}
             </div>
 
             {/* Tag Filters */}
@@ -524,18 +497,18 @@ export default function AgentProductsTab({
                     )}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    {tags.map((tag) => (
+                    {tags?.map((tag) => (
                         <Badge
-                            key={tag}
-                            variant={selectedTags.includes(tag) ? "default" : "outline"}
-                            className={`cursor-pointer transition-colors hover:bg-primary/10 ${selectedTags.includes(tag)
+                            key={tag.id}
+                            variant={selectedTags.includes(tag.id) ? "default" : "outline"}
+                            className={`cursor-pointer transition-colors hover:bg-primary/10 ${selectedTags.includes(tag.id)
                                 ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                                 : 'hover:border-primary/50'
                                 }`}
-                            onClick={() => handleTagToggle(tag)}
+                            onClick={() => handleTagToggle(tag.id)}
                         >
-                            {tag}
-                            {selectedTags.includes(tag) && (
+                            {tag.name}
+                            {selectedTags.includes(tag.id) && (
                                 <span className="ml-1 text-xs">✓</span>
                             )}
                         </Badge>
@@ -553,7 +526,7 @@ export default function AgentProductsTab({
                 <div className="flex items-center justify-between">
                     <div className="text-sm text-muted-foreground">
                         {filteredProducts?.length || 0} of {agent?.agent_tiers?.agent_product_prices?.length || 0} products
-                        {(productSearchTerm || selectedTags.length > 0 || categoryFilter !== 'all') && (
+                        {(productSearchTerm || selectedTags.length > 0) && (
                             <span className="ml-2 text-xs">
                                 (filtered)
                             </span>
@@ -584,9 +557,9 @@ export default function AgentProductsTab({
                                     <h3 className="font-medium text-foreground mb-2 line-clamp-2">{agent_product.products.name}</h3>
                                     <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{agent_product.products.description}</p>
                                     <div className="flex flex-wrap gap-1 mb-3">
-                                        {agent_product.products.tags.map((tag: string) => (
-                                            <Badge key={tag} variant="outline" className="text-xs">
-                                                {tag}
+                                        {agent_product.products.product_tags.map((tag: any) => (
+                                            <Badge key={tag.tag_id} variant="outline" className="text-xs">
+                                                {tag.tags.name}
                                             </Badge>
                                         ))}
                                     </div>
@@ -729,8 +702,8 @@ export default function AgentProductsTab({
                                             </CardTitle>
                                         </CardHeader>
                                         <CardContent className="space-y-4">
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                <div className="col-span-2">
                                                     <Label className="text-sm font-medium text-muted-foreground">Product Name</Label>
                                                     <div className="mt-1 text-lg font-semibold">{selectedProduct.name}</div>
                                                 </div>
@@ -752,6 +725,7 @@ export default function AgentProductsTab({
                                                         </Badge>
                                                     </div>
                                                 </div>
+
                                             </div>
 
                                             {selectedProduct.description && (
@@ -759,6 +733,40 @@ export default function AgentProductsTab({
                                                     <Label className="text-sm font-medium text-muted-foreground">Description</Label>
                                                     <div className="mt-1 p-3 bg-muted/30 rounded-lg text-sm">
                                                         {selectedProduct.description}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {selectedProduct.products_modifiers && selectedProduct.products_modifiers.length > 0 && (
+                                                <div>
+                                                    <Label className="text-sm font-medium text-muted-foreground">Modifier Options</Label>
+                                                    <div className="mt-2 space-y-3">
+                                                        {selectedProduct.products_modifiers.map((modifierGroup: any) => (
+                                                            <div key={modifierGroup.id} className="p-3 rounded-lg bg-muted/20 border">
+                                                                <div className="font-semibold text-primary mb-1">
+                                                                    {modifierGroup.modifier_groups?.name || "Modifier Group"} ({modifierGroup.modifier_groups.modifiers.length} variants)
+                                                                </div>
+                                                                {modifierGroup.modifier_groups.modifiers && modifierGroup.modifier_groups.modifiers.length > 0 ? (
+                                                                    <ul className="space-y-1">
+                                                                        {modifierGroup.modifier_groups.modifiers.map((mod: any) => (
+                                                                            <li key={mod.id} className="flex items-center justify-between">
+                                                                                <span>
+                                                                                    {mod.name}
+                                                                                    {mod.desc && (
+                                                                                        <span className="ml-2 text-xs text-muted-foreground">({mod.desc})</span>
+                                                                                    )}
+                                                                                </span>
+                                                                                <p className={`ml-4 text-xs text-muted-foreground ${mod.price_adjustment > 0 ? 'text-green-500' : 'text-gray-500'}`}>
+                                                                                    $ {mod.price_adjustment.toFixed(2)}
+                                                                                </p>
+                                                                            </li>
+                                                                        ))}
+                                                                    </ul>
+                                                                ) : (
+                                                                    <div className="text-xs text-muted-foreground">No modifiers available.</div>
+                                                                )}
+                                                            </div>
+                                                        ))}
                                                     </div>
                                                 </div>
                                             )}

@@ -23,18 +23,13 @@ export async function addProduct(product: {
     description: string
     link: string,
     inStock: boolean,
-    tags: string[],
+    tags: number[],
     default_price: number,
     imageSrc: File,
     isSubscription: boolean,
     subscriptionInterval?: string,
     subscriptionPrice?: number,
-    modifiers: Array<{
-        name: string,
-        description: string,
-        additional_cost: number,
-        weight: number
-    }>,
+    modifiers: number[],
     brochure?: File
 }) {
     const supabase = await createClient();
@@ -91,19 +86,32 @@ export async function addProduct(product: {
         }
     }
 
-    // Insert modifiers if any exist
-    if (modifiers && modifiers.length > 0) {
-        const modifierData = modifiers.map(modifier => ({
+    // Insert tags if any exist
+    if (product.tags && product.tags.length > 0) {
+        const productTags = product.tags.map((tagId: number) => ({
             product_id: productData.id,
-            name: modifier.name,
-            description: modifier.description,
-            additional_cost: modifier.additional_cost,
-            weight: modifier.weight
+            tag_id: tagId,
         }));
 
+        const { error: tagError } = await supabase
+            .from('product_tags')
+            .insert(productTags);
+
+        if (tagError) {
+            console.error('Error inserting tags:', tagError);
+            // Don't fail the entire operation if tags fail
+        }
+    }
+
+    // Insert modifiers if any exist
+    if (modifiers && modifiers.length > 0) {
+    
         const { error: modifierError } = await supabase
-            .from('product_modifiers')
-            .insert(modifierData);
+            .from('products_modifiers')
+            .insert(modifiers.map(modifier => ({
+                product_id: productData.id,
+                modifier_group_id: modifier,
+            })));
 
         if (modifierError) {
             console.error('Error inserting modifiers:', modifierError);

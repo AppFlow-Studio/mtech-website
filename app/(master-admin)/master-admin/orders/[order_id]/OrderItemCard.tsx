@@ -125,15 +125,15 @@ export function OrderItemCard({ item, order_id, refetchOrderInfo, agentTierId }:
                                         fulfillment_type: 'SHIPPING',
                                         status: 'SHIPPED',
                                     }).select('id').single()
-                                
+
                                 if (fulfillment) {
-                                    const { data : ItemRegistered } = await supabase.from('order_items').update({
+                                    const { data: ItemRegistered } = await supabase.from('order_items').update({
                                         id: item.id,
                                         fulfillment_id: fulfillment.id,
                                         fulfillment_type: 'SHIPPING',
                                         order_status: 'SHIPPED',
                                     }).eq('id', item.id)
-                                    
+
                                     await saveManualTracking({
                                         fulfillmentId: fulfillment.id,
                                         trackingNumber: editTracking,
@@ -455,10 +455,18 @@ export function OrderItemCard({ item, order_id, refetchOrderInfo, agentTierId }:
                         {editFulfillment === "SHIPPING" && (
                             <>
                                 <div>
-                                    <label className="block text-sm font-medium mb-1">Tracking Number</label>
+                                    <div className="flex justify-between items-center gap-y-2 mb-2">
+                                        <label className="block text-sm font-medium ">Tracking Number</label>
+                                        <Button variant="ghost" onClick={() =>{
+                                             setEditTracking("")
+                                             setEditCarrier("")
+                                             }} className="text-xs text-muted-foreground underline">Clear Manuel Tracking Number Fields</Button>
+                                    </div>
+
                                     <Input
                                         value={editTracking}
                                         onChange={e => setEditTracking(e.target.value)}
+                                        placeholder="Enter tracking number"
                                         disabled={isSaving}
                                     />
                                 </div>
@@ -469,7 +477,7 @@ export function OrderItemCard({ item, order_id, refetchOrderInfo, agentTierId }:
                                         onChange={e => setEditCarrier(e.target.value)}
                                         disabled={isSaving}
                                     /> */}
-                                    <Select onValueChange={(value) => setEditCarrier(value)}>
+                                    <Select onValueChange={(value) => setEditCarrier(value)} value={editCarrier}>
                                         <SelectTrigger className="w-full">
                                             <SelectValue placeholder="Carrier" />
                                         </SelectTrigger>

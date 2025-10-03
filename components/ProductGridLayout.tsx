@@ -8,6 +8,7 @@ import type { Product } from "@/lib/types";
 import { SlidersHorizontal, LayoutGrid, List } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useProducts } from "./actions/hooks/useProducts";
+import { useTags } from "@/app/(master-admin)/master-admin/actions/hook/useTagHooks";
 
 interface ProductGridLayoutProps {
   title: string;
@@ -21,6 +22,7 @@ const ProductGridLayout = ({
   initialProducts,
 }: ProductGridLayoutProps) => {
   const { data: products, isLoading, isError } = useProducts()
+  const { data: tags, isLoading: tagsLoading } = useTags()
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -66,6 +68,7 @@ const ProductGridLayout = ({
 
   const productsPerPage = viewMode === "grid" ? 9 : 6;
 
+
   // Apply filters and sorting whenever they change
   useEffect(() => {
     let result = [...initialProducts || products || []];
@@ -74,7 +77,7 @@ const ProductGridLayout = ({
     if (tagFilters.length > 0) {
       result = result.filter(
         (product) =>
-          product.tags && tagFilters.some((tag) => product.tags?.includes(tag))
+          product.product_tags && tagFilters.some((tag) => product.product_tags?.some((tags: Product["product_tags"][number]) => tags.tag_id === tag))
       );
     }
 
@@ -228,15 +231,7 @@ const ProductGridLayout = ({
       </div>
     )
   }
-  if (filteredProducts.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-96 bg-gradient-to-b from-[#f5f3ff] to-[#ede9fe] dark:from-[#2C134C] dark:to-[#1a102b] rounded-xl shadow-lg border border-purple-200 dark:border-purple-900">
-        <span className="text-xl font-semibold text-purple-700 dark:text-purple-200 mb-1">
-          No products found
-        </span>
-      </div>
-    )
-  }
+
   return (
     <div className="py-8 sm:py-12">
       <div className="container mx-auto px-4">
@@ -257,6 +252,50 @@ const ProductGridLayout = ({
             <SlidersHorizontal className="h-5 w-5" />
           </button>
         </div>
+
+        {/* --- Active Filters Toolbar --- */}
+        {(tagFilters.length > 0 || inStockFilter !== null || sortOption !== null) && (
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {/* Stock chip */}
+            {inStockFilter !== null && (
+              <button
+                onClick={() => setInStockFilter(null)}
+                className="inline-flex items-center gap-2 rounded-full bg-purple-100/70 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200 px-3 py-1 text-sm"
+              >
+                {inStockFilter ? 'In Stock' : 'Out of Stock'}
+                <span className="h-4 w-4 inline-flex items-center justify-center rounded-full bg-purple-200/80 dark:bg-purple-800/70 text-purple-900 dark:text-white">×</span>
+              </button>
+            )}
+            {/* Sort chip */}
+            {sortOption && (
+              <button
+                onClick={() => setSortOption(null)}
+                className="inline-flex items-center gap-2 rounded-full bg-purple-100/70 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200 px-3 py-1 text-sm"
+              >
+                {sortOption === 'alpha-az' ? 'A → Z' : sortOption === 'alpha-za' ? 'Z → A' : 'Sorted'}
+                <span className="h-4 w-4 inline-flex items-center justify-center rounded-full bg-purple-200/80 dark:bg-purple-800/70 text-purple-900 dark:text-white">×</span>
+              </button>
+            )}
+            {/* Tag chips */}
+            {tagFilters.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => setTagFilters(tagFilters.filter((t) => t !== tag))}
+                className="inline-flex items-center gap-2 rounded-full bg-purple-100/70 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200 px-3 py-1 text-sm"
+              >
+                {tags?.find((t) => t.id === tag)?.name}
+                <span className="h-4 w-4 inline-flex items-center justify-center rounded-full bg-purple-200/80 dark:bg-purple-800/70 text-purple-900 dark:text-white">×</span>
+              </button>
+            ))}
+            {/* Reset button */}
+            <button
+              onClick={resetFilters}
+              className="ml-auto text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 underline"
+            >
+              Reset filters
+            </button>
+          </div>
+        )}
 
         <div className="mt-8 lg:grid lg:grid-cols-4 lg:gap-8">
           {/* --- Desktop Sidebar --- */}

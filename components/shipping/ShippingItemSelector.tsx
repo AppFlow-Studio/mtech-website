@@ -12,10 +12,11 @@ import {
     Truck,
     Calculator,
     CheckCircle,
-    AlertCircle
+    AlertCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import FedExRateCalculator from './FedExRateCalculator';
+import { Sheet } from 'react-modal-sheet';
 
 interface Product {
     id: string;
@@ -48,6 +49,7 @@ interface ShippingItemSelectorProps {
     customerEmail: string;
     refetchOrderInfo: () => void;
 }
+const snapPoints = [0, 0.5, 0.95,1];
 
 export default function ShippingItemSelector({
     isOpen,
@@ -90,6 +92,7 @@ export default function ShippingItemSelector({
             toast.error('Please select at least one item for shipping');
             return;
         }
+        onClose();
         setShowRateCalculator(true);
     };
 
@@ -110,144 +113,153 @@ export default function ShippingItemSelector({
     }, 0);
 
     return (
-        <>
-            <Dialog open={isOpen} onOpenChange={onClose}>
-                <DialogContent className="min-w-6xl w-full">
-                    <DialogHeader className=" h-fit">
-                        <DialogTitle className="flex items-center gap-2">
-                            <Truck className="h-5 w-5" />
-                            Select Items for Shipping
-                        </DialogTitle>
-                        <DialogDescription>
-                            Choose which shipping items to include in your rate calculation
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-4 justify-start h-full border">
-                        {/* Summary */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Package className="h-5 w-5" />
-                                    Shipping Summary
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <div className="text-sm text-muted-foreground">Available Items</div>
-                                        <div className="text-2xl font-bold">{shippingItems.length}</div>
-                                    </div>
-                                    <div>
-                                        <div className="text-sm text-muted-foreground">Selected Items</div>
-                                        <div className="text-2xl font-bold text-primary">{selectedItems.length}</div>
-                                    </div>
-                                </div>
-
-                                {selectedItems.length > 0 && (
-                                    <>
-                                        <Separator className="my-4" />
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <div className="text-sm text-muted-foreground">Total Weight</div>
-                                                <div className="text-lg font-semibold">{totalWeight.toFixed(2)} lbs</div>
-                                            </div>
-                                            <div>
-                                                <div className="text-sm text-muted-foreground">Total Value</div>
-                                                <div className="text-lg font-semibold">${totalValue.toFixed(2)}</div>
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-                            </CardContent>
-                        </Card>
-
-                        {/* Item Selection */}
-                        <Card>
-                            <CardHeader>
-                                <div className="flex items-center justify-between">
-                                    <CardTitle>Shipping Items</CardTitle>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleSelectAll}
-                                    >
-                                        {selectedItems.length === shippingItems.length ? 'Deselect All' : 'Select All'}
-                                    </Button>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                {shippingItems.length === 0 ? (
-                                    <div className="text-center py-8">
-                                        <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                                        <p className="text-muted-foreground">No items marked for shipping</p>
-                                        <p className="text-sm text-muted-foreground mt-2">
-                                            Only items with fulfillment type "SHIPPING" will appear here
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {shippingItems.map((item) => {
-                                            const isSelected = selectedItems.some(selected => selected.id === item.id);
-                                            const itemWeight = item.products.weight || 0;
-                                            const totalItemWeight = itemWeight * item.quantity;
-
-                                            return (
-                                                <Card
-                                                    key={item.id}
-                                                    className={`p-4 cursor-pointer transition-all hover:shadow-sm ${isSelected ? 'ring-2 ring-primary bg-primary/5' : ''
-                                                        }`}
-                                                    onClick={() => handleItemToggle(item)}
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <Checkbox
-                                                            checked={isSelected}
-                                                            onChange={() => handleItemToggle(item)}
-                                                        />
-                                                        <div className="flex-1">
-                                                            <div className="font-medium">{item.products.name}</div>
-                                                            <div className="text-sm text-muted-foreground">
-                                                                Qty: {item.quantity} • ${item.price_at_order} each
-                                                            </div>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <div className="text-sm font-medium">
-                                                                {totalItemWeight.toFixed(1)} lbs
-                                                            </div>
-                                                            <div className="text-xs text-muted-foreground">
-                                                                ${(item.price_at_order * item.quantity).toFixed(2)}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </Card>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-
-                        {/* Actions */}
-                        <div className="flex gap-2">
-                            <Button
-                                variant="outline"
-                                onClick={onClose}
-                                className="flex-1"
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                onClick={handleGetRates}
-                                disabled={selectedItems.length === 0}
-                                className="flex-1"
-                            >
-                                <Calculator className="h-4 w-4 mr-2" />
-                                Get Shipping Rates ({selectedItems.length})
-                            </Button>
+        <div className='flex items-center justify-center'>
+            <Sheet 
+            snapPoints={snapPoints}
+            initialSnap={2}
+            isOpen={isOpen} 
+            onClose={onClose} 
+            className='flex items-center justify-center'>
+                <Sheet.Container className=" w-full flex mx-auto self-center">
+                    <Sheet.Header />
+                    <Sheet.Content>
+                        <div className=" h-fit px-8 mb-6">
+                            <div className="flex items-center gap-2">
+                                <Truck className="h-5 w-5" />
+                                Select Items for Shipping
+                            </div>
+                            <div>
+                                Choose which shipping items to include in your rate calculation
+                            </div>
                         </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
+
+                        <div className="space-y-4 justify-start h-full px-8">
+                            {/* Summary */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Package className="h-5 w-5" />
+                                        Shipping Summary
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <div className="text-sm text-muted-foreground">Available Items</div>
+                                            <div className="text-2xl font-bold">{shippingItems.length}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-sm text-muted-foreground">Selected Items</div>
+                                            <div className="text-2xl font-bold text-primary">{selectedItems.length}</div>
+                                        </div>
+                                    </div>
+
+                                    {selectedItems.length > 0 && (
+                                        <>
+                                            <Separator className="my-4" />
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <div className="text-sm text-muted-foreground">Total Weight</div>
+                                                    <div className="text-lg font-semibold">{totalWeight.toFixed(2)} lbs</div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-sm text-muted-foreground">Total Value</div>
+                                                    <div className="text-lg font-semibold">${totalValue.toFixed(2)}</div>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            {/* Item Selection */}
+                            <Card>
+                                <CardHeader>
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle>Shipping Items</CardTitle>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={handleSelectAll}
+                                        >
+                                            {selectedItems.length === shippingItems.length ? 'Deselect All' : 'Select All'}
+                                        </Button>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    {shippingItems.length === 0 ? (
+                                        <div className="text-center py-8">
+                                            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                                            <p className="text-muted-foreground">No items marked for shipping</p>
+                                            <p className="text-sm text-muted-foreground mt-2">
+                                                Only items with fulfillment type "SHIPPING" will appear here
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {shippingItems.map((item) => {
+                                                const isSelected = selectedItems.some(selected => selected.id === item.id);
+                                                const itemWeight = item.products.weight || 0;
+                                                const totalItemWeight = itemWeight * item.quantity;
+
+                                                return (
+                                                    <Card
+                                                        key={item.id}
+                                                        className={`p-4 cursor-pointer transition-all hover:shadow-sm ${isSelected ? 'ring-2 ring-primary bg-primary/5' : ''
+                                                            }`}
+                                                        onClick={() => handleItemToggle(item)}
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <Checkbox
+                                                                checked={isSelected}
+                                                                onChange={() => handleItemToggle(item)}
+                                                            />
+                                                            <div className="flex-1">
+                                                                <div className="font-medium">{item.products.name}</div>
+                                                                <div className="text-sm text-muted-foreground">
+                                                                    Qty: {item.quantity} • ${item.price_at_order} each
+                                                                </div>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <div className="text-sm font-medium">
+                                                                    {totalItemWeight.toFixed(1)} lbs
+                                                                </div>
+                                                                <div className="text-xs text-muted-foreground">
+                                                                    ${(item.price_at_order * item.quantity).toFixed(2)}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </Card>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            {/* Actions */}
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="outline"
+                                    onClick={onClose}
+                                    className="flex-1"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={handleGetRates}
+                                    disabled={selectedItems.length === 0}
+                                    className="flex-1"
+                                >
+                                    <Calculator className="h-4 w-4 mr-2" />
+                                    Get Shipping Rates ({selectedItems.length})
+                                </Button>
+                            </div>
+                        </div>
+                    </Sheet.Content>
+                </Sheet.Container>
+                <Sheet.Backdrop onClick={onClose} />
+            </Sheet>
 
             {/* FedEx Rate Calculator */}
             <FedExRateCalculator
@@ -262,6 +274,6 @@ export default function ShippingItemSelector({
                 customerEmail={customerEmail}
                 refetchOrderInfo={refetchOrderInfo}
             />
-        </>
+        </div>
     );
 } 

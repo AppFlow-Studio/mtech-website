@@ -1,5 +1,11 @@
 'use server'
 
+import { transactionStatusCheck } from "../order/[order_id]/actions/transaction-status-check"
+import { InsertTransactionsLog } from "../order/[order_id]/actions/transactions-log"
+import { UpdateTransactionsLog } from "../order/[order_id]/actions/UpdateTransactionLog"
+import { linkPaymentCardToAgent } from "./link-payment-card-to-agent"
+import { processRefund } from "./process-refund"
+
 interface PaymentCardResponse {
     success: boolean
     data?: any
@@ -8,12 +14,29 @@ interface PaymentCardResponse {
     transactionId?: string
 }
 
+
+interface TransactionStatusResponse {
+    success: boolean
+    error?: string
+    Card?: {
+        ChdToken: string,
+        Label: string,
+        MaskedPan: string
+    }
+    transactionId?: string
+    BatchNo?: string
+    InvoiceNo?: string
+    RespStatus?: string
+    RespMsg?: string
+    Rrn?: string
+}
+
+
 export async function addPaymentCard(
     paymentToken: string,
     agentId: string,
     email: string,
     name: string,
-    mobile: string
 ): Promise<PaymentCardResponse> {
     try {
         // Input validation
@@ -44,43 +67,55 @@ export async function addPaymentCard(
                 error: 'Cardholder name is required'
             }
         }
-
         // Environment variable validation
+        if (!process.env.NEXT_PUBLIC_DEJAVOO_CHECK_TRANSACTION_URL) {
+            console.error('Missing NEXT_PUBLIC_DEJAVOO_CHECK_TRANSACTION_URL environment variable')
+            return {
+                success: false,
+                error: 'Payment service configuration error, Missing NEXT_PUBLIC_DEJAVOO_CHECK_TRANSACTION_URL environment variable'
+            }
+        }
         if (!process.env.NEXT_PUBLIC_DEJAVOO_TOKEN) {
             console.error('Missing NEXT_PUBLIC_DEJAVOO_TOKEN environment variable')
             return {
                 success: false,
-                error: 'Payment service configuration error'
+                error: 'Payment service configuration error, Missing NEXT_PUBLIC_DEJAVOO_TOKEN environment variable'
             }
         }
-
         if (!process.env.NEXT_PUBLIC_DEJAVOO_POS_TRANSACT_URL) {
             console.error('Missing NEXT_PUBLIC_DEJAVOO_POS_TRANSACT_URL environment variable')
             return {
                 success: false,
-                error: 'Payment service configuration error'
+                error: 'Payment service configuration error, Missing NEXT_PUBLIC_DEJAVOO_POS_TRANSACT_URL environment variable'
             }
         }
-
         if (!process.env.DEJAVOO_MERCHANT_ID) {
             console.error('Missing DEJAVOO_MERCHANT_ID environment variable')
             return {
                 success: false,
-                error: 'Payment service configuration error'
+                error: 'Payment service configuration error, Missing DEJAVOO_MERCHANT_ID environment variable'
             }
         }
 
+        // Insert transactions log
+        const transactionsLogId = await InsertTransactionsLog(agentId, "ADD_PAYMENT_CARD");
+        if (transactionsLogId instanceof Error) {
+            return {
+                success: false,
+                error: transactionsLogId.message
+            }
+        }
         // Prepare request payload
         const requestPayload = {
             "merchantAuthentication": {
                 "merchantId": process.env.DEJAVOO_MERCHANT_ID,
-                "transactionReferenceId": "41312331"
+                "transactionReferenceId": transactionsLogId
             },
             "transactionRequest": {
                 "transactionType": 1, // Sale (using token)
-                "amount": "1", // Example: 1000 = $10.00 (amount is in cents, divided by 100)
+                "amount": "100", // Example: 102 = $1.01 (amount is in cents, divided by 100)
                 "paymentTokenId": paymentToken,
-                "applySteamSettingTipFeeTax": false
+                "applySteamSettingTipFeeTax": false,
             },
             "preferences": {
                 "eReceipt": false,
@@ -88,12 +123,7 @@ export async function addPaymentCard(
             },
         }
 
-        console.log('Sending payment card request for agent:', agentId)
-
-        // Make API request with timeout
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
-
+        // Dejavoo iPos Transact API -> GET ChdToken and TransactionId
         const response = await fetch(process.env.NEXT_PUBLIC_DEJAVOO_POS_TRANSACT_URL, {
             method: 'POST',
             headers: {
@@ -101,10 +131,7 @@ export async function addPaymentCard(
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(requestPayload),
-            signal: controller.signal
         })
-
-        clearTimeout(timeoutId)
 
         // Check if response is ok
         if (!response.ok) {
@@ -127,6 +154,8 @@ export async function addPaymentCard(
             data = await response.json()
         } catch (parseError) {
             console.error('Failed to parse payment API response:', parseError)
+            const error = await UpdateTransactionsLog(transactionsLogId, "FAILED", "No Transaction ID", "Failed to parse payment API response")
+
             return {
                 success: false,
                 error: 'Invalid response from payment service'
@@ -139,6 +168,8 @@ export async function addPaymentCard(
         if (data.error || data.errors) {
             const errorMessage = data.error || data.errors?.[0]?.message || 'Payment processing failed'
             console.error('Payment API returned error:', errorMessage)
+            const error = await UpdateTransactionsLog(transactionsLogId, "FAILED", "No Transaction ID", errorMessage)
+
             return {
                 success: false,
                 error: errorMessage
@@ -146,8 +177,9 @@ export async function addPaymentCard(
         }
 
         // Check for transaction failure
-        if (data.transactionResponse?.responseCode !== '1' && data.transactionResponse?.responseCode !== 1) {
-            const errorMessage = data.transactionResponse?.responseText || 'Transaction failed'
+        if (data.iposhpresponse?.responseCode !== '200') {
+            const errorMessage = data.transactionResponse?.responseMessage || 'Transaction failed'
+            const error = await UpdateTransactionsLog(transactionsLogId, "FAILED", data.iposhpresponse?.transactionId, errorMessage)
             console.error('Transaction failed:', errorMessage)
             return {
                 success: false,
@@ -156,10 +188,10 @@ export async function addPaymentCard(
         }
 
         // Extract card token if available
-        const cardToken = data.transactionResponse?.cardToken || data.cardToken
-        const transactionId = data.transactionResponse?.transactionId || data.transactionId
+        const cardChdToken = data.iposhpresponse?.chdToken
+        const transactionId = data.iposhpresponse?.transactionId
 
-        if (!cardToken) {
+        if (!cardChdToken) {
             console.warn('No card token returned from payment service')
             return {
                 success: false,
@@ -167,18 +199,57 @@ export async function addPaymentCard(
             }
         }
 
-        // TODO: Store the card token in your database associated with the agent
-        // await storeCardToken(agentId, cardToken, {
-        //     last4: data.transactionResponse?.last4,
-        //     cardType: data.transactionResponse?.cardType,
-        //     expiryMonth: data.transactionResponse?.expiryMonth,
-        //     expiryYear: data.transactionResponse?.expiryYear
-        // })
 
+        const transactionStatusResponse: TransactionStatusResponse = await transactionStatusCheck(transactionsLogId)
+        if (!transactionStatusResponse.success) {
+            return {
+                success: false,
+                error: 'Failed to get transaction status from transaction status check'
+            }
+        }
+        // Make sure Rrn is not undefined
+        if (transactionStatusResponse.success && !transactionStatusResponse.Rrn) {
+            const error = await UpdateTransactionsLog(transactionsLogId, "FAILED", data.iposhpresponse?.transactionId, `Failed to get Rrn from transaction status check`)
+            return {
+                success: false,
+                error: 'Failed to get Rrn from transaction status check'
+            }
+        }
+
+        if (transactionStatusResponse.success && transactionStatusResponse.Card) {
+            // Link Card info to agent and Refund user account with card info
+            const linkCardResponse = await linkPaymentCardToAgent({
+                agentId,
+                cardInfo: transactionStatusResponse.Card,
+                transaction_id: transactionId
+            })
+            // Process Refund
+            if (linkCardResponse.success) {
+                const refundResponse = await processRefund({
+                    Rrn: transactionStatusResponse.Rrn || '',
+                    Amount: 100,
+                    transactionReferenceId: transactionsLogId
+                })
+                const error = await UpdateTransactionsLog(transactionsLogId, "SUCCESS", data.iposhpresponse?.transactionId, `Successfully processed refund & linked card info to agent`)
+                if (refundResponse.success) {
+                    return {
+                        success: true,
+                    }
+                }
+
+            } else {
+                const error = await UpdateTransactionsLog(transactionsLogId, "FAILED", data.iposhpresponse?.transactionId, `Failed to link card info to agent`)
+                return {
+                    success: false,
+                    error: 'Failed to link card info to agent'
+                }
+            }
+
+        }
         return {
             success: true,
             data: data,
-            cardToken: cardToken,
+            cardToken: cardChdToken,
             transactionId: transactionId
         }
 

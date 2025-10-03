@@ -11,7 +11,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const supabase = await createClient();
-    const { data : user_profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+    const { data : user_profile } = await supabase.from('profiles').select(`
+      *,
+      card_payment_info( * )
+      `).eq('id', user.id).single();
     return NextResponse.json({ data: user_profile });
   });
 }

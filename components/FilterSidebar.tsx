@@ -86,18 +86,6 @@ const FilterSidebar = ({
     onTagFilterChange(newTags);
   };
 
-  // Count products for each tag
-  const tagCounts = {
-    "atm machines": products.filter((p) => p.tags?.includes("atm machines"))
-      .length,
-    "pos system": products.filter((p) => p.tags?.includes("pos system")).length,
-    "credit card terminals": products.filter((p) =>
-      p.tags?.includes("credit card terminals")
-    ).length,
-    "network devices": products.filter((p) =>
-      p.tags?.includes("network devices")
-    ).length,
-  };
 
   return (
     <aside>
@@ -130,10 +118,10 @@ const FilterSidebar = ({
                   id={tag.id}
                   label={tag.name}
                   count={
-                    products.filter((p) => p.tags?.includes(tag.name)).length
+                    products.filter((p) => p.product_tags?.some((pt) => pt.tag_id === tag.id)).length
                   }
-                  checked={currentTagFilters.includes(tag.name)}
-                  onChange={() => handleTagToggle(tag.name)}
+                  checked={currentTagFilters.includes(tag.id)}
+                  onChange={() => handleTagToggle(tag.id)}
                 />
               ))
             )}

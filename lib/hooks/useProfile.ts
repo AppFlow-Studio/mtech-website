@@ -2,6 +2,17 @@
 import { useState, useEffect } from "react";
 import { ProfileFormData } from "@/lib/validations/profiles";
 import { toast } from "sonner";
+import { AgentProductTierAndPrices, AgentTier } from "../types";
+
+export interface CardPaymentInfo {
+  id: string;
+  user_id: string;
+  chd_token: string;
+  label: string;
+  masked_pan: string;
+  transaction_id: string;
+  type: string;
+}
 
 export interface Profile {
   id: string;
@@ -10,6 +21,8 @@ export interface Profile {
   email: string | null;
   role: string | null;
   phone_number: string | null;
+  agent_tiers?: AgentTier;
+  card_payment_info: CardPaymentInfo[] | null;
 }
 
 interface UseProfile {

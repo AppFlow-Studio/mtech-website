@@ -190,8 +190,6 @@ export default function CreateOrderWithCartDialog({
         return cartItems.reduce((total, item) => total + item.quantity, 0);
     };
 
-
-    console.log(cartItems);
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">

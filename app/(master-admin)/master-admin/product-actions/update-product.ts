@@ -25,12 +25,12 @@ export async function updateProduct(
     imageSrc: string | File;
     link: string;
     inStock: boolean;
-    tags?: string[];
-    default_price: number;
+    tags?: number[];
+    modifiers?: number[];
     isSubscription?: boolean;
+    default_price: number;
     subscriptionInterval?: string;
     subscriptionPrice?: number;
-    modifiers?: any[];
     brochure?: File;
     brochureUrl?: string;
     weight?: number;
@@ -55,7 +55,7 @@ export async function updateProduct(
     }
   }
 
-  const { modifiers, tags, ...productData } = product;
+  const { modifiers, tags, isSubscription, subscriptionInterval, subscriptionPrice, ...productData } = product;
 
   const { data, error } = await supabase
     .from("products")
@@ -63,7 +63,7 @@ export async function updateProduct(
       ...productData,
       imageSrc: imageUrl,
       brochureUrl: brochureUrl,
-      subscription: product.isSubscription,
+      subscription: product.isSubscription || false,
       subscription_interval: product.subscriptionInterval || null,
       subscription_price: product.subscriptionPrice || null,
     })
@@ -77,39 +77,65 @@ export async function updateProduct(
 
   // Handle tags update
   if (tags) {
-    await supabase.from("product_tags").delete().eq("product_id", productId);
-    const { data: tagsData } = await supabase
-      .from("tags")
-      .select("id, name")
-      .in("name", tags);
-    if (tagsData) {
-      const productTags = tagsData.map((tag) => ({
+    console.log("tags", tags);
+    console.log("productId", productId);
+    const { error: tagError } = await supabase.from("product_tags").delete().eq("product_id", productId);
+    if (tagError) {
+      return new Error(tagError.message);
+    }
+
+    else {
+      if (tags.length > 0) {
+        const productTags = tags.map((tagId) => ({
+          product_id: productId,
+          tag_id: tagId,
+        }));
+
+        console.log("productTags", productTags);
+
+        const { error: tagError } = await supabase.from("product_tags").insert(productTags)
+        if (tagError) {
+          return new Error(tagError.message);
+        }
+      }
+    }
+  }
+
+  // Handle modifier group update
+  if (modifiers) {
+    console.log("modifiers", modifiers);
+    await supabase.from("products_modifiers").delete().eq("product_id", productId);
+    if (modifiers.length > 0) {
+      const modifierGroupData = modifiers.map((modifierGroupId) => ({
         product_id: productId,
-        tag_id: tag.id,
+        modifier_group_id: modifierGroupId,
       }));
-      await supabase.from("product_tags").insert(productTags);
+      const { error: modifierGroupError } = await supabase.from("products_modifiers").insert(modifierGroupData);
+      if (modifierGroupError) {
+        return new Error(modifierGroupError.message);
+      }
     }
   }
 
   // Handle modifiers update
-  if (modifiers !== undefined) {
-    await supabase
-      .from("product_modifiers")
-      .delete()
-      .eq("product_id", productId);
-    if (modifiers.length > 0) {
-      const modifierData = modifiers.map((modifier) => ({
-        product_id: productId,
-        ...modifier,
-      }));
-      const { error: modifierError } = await supabase
-        .from("product_modifiers")
-        .insert(modifierData);
-      if (modifierError) {
-        return new Error(modifierError.message);
-      }
-    }
-  }
+  // if (modifiers !== undefined) {
+  //   await supabase
+  //     .from("product_modifiers")
+  //     .delete()
+  //     .eq("product_id", productId);
+  //   if (modifiers.length > 0) {
+  //     const modifierData = modifiers.map((modifier) => ({
+  //       product_id: productId,
+  //       ...modifier,
+  //     }));
+  //     const { error: modifierError } = await supabase
+  //       .from("product_modifiers")
+  //       .insert(modifierData);
+  //     if (modifierError) {
+  //       return new Error(modifierError.message);
+  //     }
+  //   }
+  // }
 
   return data;
 }

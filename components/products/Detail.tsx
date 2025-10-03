@@ -47,6 +47,7 @@ const FormInput = ({
 );
 
 function Detail({ slug }: { slug: string }) {
+  console.log(slug)
   const { data: product, isLoading } = useProductInfo(slug)
   const [isHovered, setIsHovered] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });

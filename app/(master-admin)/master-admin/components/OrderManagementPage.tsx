@@ -240,7 +240,8 @@ function OrderManagementCard({ order }: { order: any }) {
             <CardTitle className="text-lg font-semibold text-foreground truncate">
               {order.order_name}
             </CardTitle>
-            <CardDescription className="text-xs text-muted-foreground">
+            <CardDescription className="text-xs text-muted-foreground flex-col flex">
+              <span>Agent: {order.profiles?.first_name} {order.profiles?.last_name}</span>
               Created {formatDate(order.created_at)}
             </CardDescription>
           </div>
@@ -310,7 +311,14 @@ function OrderManagementCard({ order }: { order: any }) {
 
 function OrderManagementTable({ orders }: { orders: any[] }) {
   const router = useRouter();
-
+  const paymentStatusBadge = (status: string) => {
+    const config: Record<string, { color: string; label: string }> = {
+      paid: { color: "bg-green-100 text-green-800", label: "Paid" },
+      unpaid: { color: "bg-red-100 text-red-800", label: "Unpaid" },
+    };
+    const c = config[status] || config.unpaid;
+    return <Badge className={`${c.color} font-medium`}>{c.label}</Badge>;
+  };
   return (
     <Card>
       <Table>
@@ -318,7 +326,7 @@ function OrderManagementTable({ orders }: { orders: any[] }) {
           <TableRow>
             <TableHead>Order</TableHead>
             <TableHead>Date</TableHead>
-            <TableHead>Customer</TableHead>
+            <TableHead>Agent</TableHead>
             <TableHead>Channel</TableHead>
             <TableHead>Total</TableHead>
             <TableHead>Payment status</TableHead>
@@ -345,12 +353,12 @@ function OrderManagementTable({ orders }: { orders: any[] }) {
                 </TableCell>
                 <TableCell>{formatDate(order.created_at)}</TableCell>
                 <TableCell>
-                  {order.agent?.first_name} {order.agent?.last_name}
+                  {order.profiles?.first_name} {order.profiles?.last_name}
                 </TableCell>
                 <TableCell>Online Store</TableCell>
                 <TableCell>${total.toFixed(2)}</TableCell>
                 <TableCell>
-                  {statusBadge(order.payment_status || "unpaid")}
+                  {paymentStatusBadge(order.payment_status || "unpaid")}
                 </TableCell>
                 <TableCell>{statusBadge(order.status)}</TableCell>
                 <TableCell>{order.order_items.length} item(s)</TableCell>

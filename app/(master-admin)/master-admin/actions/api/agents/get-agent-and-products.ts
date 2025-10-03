@@ -11,7 +11,11 @@ export async function getAgentAndProducts(id: string) {
         *,
         agent_tiers( *,
                 agent_product_prices( *,
-                    products( * )
+                    products(
+                        *,
+                        product_tags( *, tags( * ) ),
+                        products_modifiers( *, modifier_groups( *, modifiers( * ) ) )
+                    )
                 )
          )
     `).eq('id', id).single()

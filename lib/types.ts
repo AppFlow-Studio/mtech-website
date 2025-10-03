@@ -1,17 +1,39 @@
 import { SanityImageSource } from "@sanity/image-url/lib/types/types";
 
+
 export interface Product {
-  name: string;
-  description: string;
-  imageSrc: string;
-  link: string;
-  inStock: boolean;
-  tags?: string[];
-  default_price: number;
-  subscription: boolean;
-  subscription_interval?: string;
-  subscription_price?: number;
-  weight?: number;
+  id: string
+  name: string
+  description: string
+  imageSrc: string
+  link: string
+  inStock: boolean
+  tags: string[]
+  default_price: number
+  createdAt: string
+  updatedAt: string
+  product_tags: {
+    id: string
+    tag_id: string
+    product_id: string
+    name: string
+    tags: {
+      id: string
+      name: string
+      description: string
+    }[]
+  }[]
+  products_modifiers: {
+    id: string
+    product_id: string
+    modifier_group_id: string
+    modifiers: {
+      id: string
+      name: string
+      desc: string
+      price_adjustment: number
+    }[]
+  }[]
 }
 
 export interface FullTestimonial {
@@ -36,18 +58,18 @@ export interface FeatureTabsProps {
 }
 
 export interface Insight {
-  icon:{
-    icon : string,
-    metadata : {
-      hFlip : boolean,
-      flip : number,
-      rotate : number,
-      size : {
-        width : number,
-        height : number
+  icon: {
+    icon: string,
+    metadata: {
+      hFlip: boolean,
+      flip: number,
+      rotate: number,
+      size: {
+        width: number,
+        height: number
       },
-      color : {
-        hex : string
+      color: {
+        hex: string
       }
     }
   };
@@ -114,7 +136,10 @@ export interface AgentProductWithPrices {
 }
 
 export interface AgentProductTierAndPrices {
-  agent_tiers: AgentTier
+  id: string
+  name: string
+  description: string
+  commission_rate: number
   agent_product_prices: AgentProductWithPrices[]
 }
 
@@ -132,6 +157,7 @@ export interface AgentInfoAndProductTierAndPrices {
   email: string
   phone_number: string
   agent_tiers: AgentProductTierAndPrices
+  products: Product[]
 }
 
 
@@ -248,6 +274,15 @@ export interface Shipment {
 
 export interface AdminPrivileges {
   can_edit_order: boolean
+}
+
+
+export interface TransactionsLog {
+  id: string
+  user_id: string
+  status: "PENDING" | "SUCCESS" | "FAILED"
+  reason: "PAYMENT" | "REFUND" | "ADD_PAYMENT_CARD"
+  log: string
 }
 
 // TypeScript types based on the provided JSON data structure
