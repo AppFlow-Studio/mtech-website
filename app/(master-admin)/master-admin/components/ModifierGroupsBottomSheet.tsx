@@ -11,6 +11,7 @@ import { Plus, Edit, Trash2, GripVertical, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useModifierGroups } from '../actions/hook/useModifiersGroups';
 import { createModifierGroup } from '../actions/order-actions/create-modifier-group';
+import { deleteModifierGroup } from '../actions/order-actions/delete-modifer-group';
 // Database Schema Types
 interface ModifierGroup {
     id: number;
@@ -69,8 +70,14 @@ export default function ModifierGroupsBottomSheet({ open, setOpen }: { open: boo
         }
     };
 
-    const handleDelete = (id: number) => {
-        toast.success('Modifier group deleted');
+    const handleDelete = async (id: number) => {
+        const result = await deleteModifierGroup(id);
+        if (result instanceof Error) {
+            toast.error('Error deleting modifier group', { description: result.message });
+        } else {
+            toast.success('Modifier group deleted');
+            refetch();
+        }
     };
 
     const handleEdit = (id: number) => {

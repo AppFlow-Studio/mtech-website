@@ -22,6 +22,7 @@ import {
   DialogContent,
   DialogDescription,
   DialogHeader,
+  DialogOverlay,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
@@ -98,6 +99,7 @@ export default function ProductManagement({
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
   const [openModifierGroups, setOpenModifierGroups] = useState(false);
+  const [openEditProductSheet, setOpenEditProductSheet] = useState(false);
   if (isLoading)
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
@@ -177,7 +179,7 @@ export default function ProductManagement({
         <h2 className="text-xl font-semibold text-foreground">
           Product Management
         </h2>
-        <Dialog>
+        <Dialog modal={false}>
           <DialogTrigger asChild>
             <Button className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
@@ -297,7 +299,7 @@ export default function ProductManagement({
                   ))}
                 </div>
                 <div className="flex gap-2">
-                  <Dialog>
+                  <Dialog modal={false}>
                     <DialogTrigger asChild>
                       <Button size="sm" variant="outline" className="flex-1">
                         <Edit className="h-3 w-3 mr-1" />
@@ -311,8 +313,9 @@ export default function ProductManagement({
                           Update product information, pricing, and availability.
                         </DialogDescription>
                       </DialogHeader>
-                      <ProductEditForm product={product} />
+                      <ProductEditForm product={product} setOpenEditProductSheet={() => setOpenEditProductSheet(true)} setCloseEditProductSheet={() => setOpenEditProductSheet(false)} open={openEditProductSheet} />
                     </DialogContent>
+                    <DialogOverlay />
                   </Dialog>
                   <Button
                     size="sm"
@@ -457,10 +460,10 @@ const editProductSchema = z.object({
 type EditProductFormType = z.infer<typeof editProductSchema>;
 
 // Replace the entire ProductEditForm function
-function ProductEditForm({ product }: { product: any }) {
+function ProductEditForm({ product, setOpenEditProductSheet, setCloseEditProductSheet, open }: { product: any, setOpenEditProductSheet: () => void, setCloseEditProductSheet: () => void, open: boolean }) {
   const { data: tags } = useTags();
   const { data: modifierGroups } = useModifierGroups();
-  const [openModifierGroups, setOpenModifierGroups] = useState(false);
+  // const [openModifierGroups, setOpenModifierGroups] = useState(false);
   const form = useForm<EditProductFormType>({
     resolver: zodResolver(editProductSchema),
     defaultValues: {
@@ -481,13 +484,12 @@ function ProductEditForm({ product }: { product: any }) {
     },
     mode: "onTouched",
   });
-  console.log(form.getValues())
   const [previewUrl, setPreviewUrl] = useState<string>(product.imageSrc || "");
   const { refetch } = useProducts();
 
   const onSubmit = async (values: EditProductFormType) => {
     // Include selected modifier group IDs in the submission
-   
+
 
     const result = await updateProduct(product.id, values);
     if (result instanceof Error) {
@@ -497,6 +499,7 @@ function ProductEditForm({ product }: { product: any }) {
       await refetch();
     }
   };
+  console.log(form.watch('modifiers'));
 
   return (
     <Form {...form}>
@@ -799,7 +802,7 @@ function ProductEditForm({ product }: { product: any }) {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => setOpenModifierGroups(true)}
+              onClick={setOpenEditProductSheet}
             >
               <Plus className="h-4 w-4 mr-1" />
               Select Modifier Groups
@@ -907,8 +910,8 @@ function ProductEditForm({ product }: { product: any }) {
         </div>
       </form>
       <EditProductModifierGroupsBottomSheet
-        open={openModifierGroups}
-        setOpen={setOpenModifierGroups}
+        open={open}
+        setOpen={setCloseEditProductSheet}
         product={product}
         selectedModifierGroupIds={form.watch('modifiers')}
         onSelectionChange={(ids: number[]) =>

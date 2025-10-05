@@ -11,7 +11,7 @@ interface ModifierGroup {
     name: string
     modifiers: Modifier[]
 }
-export const createModifierGroup = async (modifierGroup: ModifierGroup) => {
+export const createModifierGroup = async (modifierGroup: ModifierGroup, productId?: string) => {
     const supabase = await createClient()
     const { data, error } = await supabase.from('modifier_groups').insert({
         name: modifierGroup.name,
@@ -28,6 +28,16 @@ export const createModifierGroup = async (modifierGroup: ModifierGroup) => {
     })))
     if (modifierError) {
         return new Error(modifierError.message)
+    }
+
+    if (productId) {
+        const { error: productModifierError } = await supabase.from('products_modifiers').insert({
+            product_id: productId,
+            modifier_group_id: data?.id,
+        })
+        if (productModifierError) {
+            return new Error(productModifierError.message)
+        }
     }
     return data
 }
