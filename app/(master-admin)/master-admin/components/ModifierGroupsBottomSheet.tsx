@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Sheet } from 'react-modal-sheet';
-import { Plus, Edit, Trash2, GripVertical, X } from 'lucide-react';
+import { Plus, Edit, Trash2, GripVertical, X, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { useModifierGroups } from '../actions/hook/useModifiersGroups';
 import { createModifierGroup } from '../actions/order-actions/create-modifier-group';
@@ -51,6 +51,7 @@ type ModifierGroupFormData = z.infer<typeof modifierGroupSchema>;
 
 export default function ModifierGroupsBottomSheet({ open, setOpen }: { open: boolean, setOpen: (open: boolean) => void }) {
     const { data: modifierGroups, isLoading, error, refetch } = useModifierGroups();
+    const [searchQuery, setSearchQuery] = useState<string>('');
     const form = useForm<ModifierGroupFormData>({
         resolver: zodResolver(modifierGroupSchema),
         defaultValues: {
@@ -84,6 +85,14 @@ export default function ModifierGroupsBottomSheet({ open, setOpen }: { open: boo
         // Placeholder for edit functionality
         toast.info('Edit functionality coming soon');
     };
+
+    // Filter modifier groups based on search query
+    const filteredModifierGroups = modifierGroups?.filter(group =>
+        group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        group.modifiers.some((modifier: Modifier) =>
+            modifier.name.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+    ) || [];
 
     if (isLoading) {
         return <div>Loading...</div>
@@ -127,22 +136,22 @@ export default function ModifierGroupsBottomSheet({ open, setOpen }: { open: boo
                                 </p>
                             </div>
 
-                            
+
                         </div>
                     </Sheet.Header>
 
                     <Sheet.Content className=''>
-                        <div 
-                        style={{
-                            display: 'flex',
-                            width: '100%',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            paddingTop: '0px',
-                            gap: '16px',
-                        }}
-                        className='flex-1 overflow-y-auto border'
+                        <div
+                            style={{
+                                display: 'flex',
+                                width: '100%',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                paddingTop: '0px',
+                                gap: '16px',
+                            }}
+                            className='flex-1 overflow-y-auto border'
                         >
                             {/* Create New Group Form */}
                             <div className="px-6 pb-6 border-b border-border w-full">
@@ -291,9 +300,20 @@ export default function ModifierGroupsBottomSheet({ open, setOpen }: { open: boo
                             {/* Existing Groups List */}
                             <div className="flex-1 overflow-hidden w-full">
                                 <div className="px-6 py-4">
-                                    <h3 className="text-lg font-medium text-foreground mb-4">
-                                        Existing Groups ({modifierGroups?.length})
-                                    </h3>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-lg font-medium text-foreground">
+                                            Existing Groups ({modifierGroups?.length})
+                                        </h3>
+                                        <div className="relative w-64">
+                                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                            <Input
+                                                placeholder="Search groups..."
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                className="pl-10"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div className="flex-1 overflow-y-auto px-6 pb-6">
@@ -303,9 +323,15 @@ export default function ModifierGroupsBottomSheet({ open, setOpen }: { open: boo
                                             <p>No modifier groups yet</p>
                                             <p className="text-sm">Create your first group above</p>
                                         </div>
+                                    ) : filteredModifierGroups.length === 0 ? (
+                                        <div className="text-center py-8 text-muted-foreground">
+                                            <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                                            <p>No groups found</p>
+                                            <p className="text-sm">Try adjusting your search terms</p>
+                                        </div>
                                     ) : (
                                         <div className="space-y-3">
-                                            {modifierGroups?.map((group) => (
+                                            {filteredModifierGroups.map((group) => (
                                                 <div
                                                     key={group.id}
                                                     className="flex items-center justify-between p-4 border border-border rounded-lg bg-card hover:bg-muted/50 transition-colors"

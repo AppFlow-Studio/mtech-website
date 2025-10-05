@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { GripVertical, Check, Plus, X } from 'lucide-react';
+import { GripVertical, Check, Plus, X, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { useModifierGroups } from '../actions/hook/useModifiersGroups';
 import { createModifierGroup, Modifier } from '../actions/order-actions/create-modifier-group';
@@ -37,6 +37,7 @@ export default function AddProductModiferGroupBottomSheet({
 }) {
     const { data: modifierGroups, refetch } = useModifierGroups();
     const [selectedIds, setSelectedIds] = useState<number[]>(selectedModifierGroupIds);
+    const [searchQuery, setSearchQuery] = useState<string>('');
 
     // Create group form
     const createForm = useForm<ModifierGroupFormData>({
@@ -79,6 +80,14 @@ export default function AddProductModiferGroupBottomSheet({
         }
     };
 
+    // Filter modifier groups based on search query
+    const filteredModifierGroups = modifierGroups?.filter(group =>
+        group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        group.modifiers.some((modifier: Modifier) =>
+            modifier.name.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+    ) || [];
+
     return (
         <Sheet isOpen={open} onClose={() => setOpen(false)}>
             <Sheet.Container>
@@ -114,15 +123,34 @@ export default function AddProductModiferGroupBottomSheet({
                         className='flex-1 overflow-y-auto border'
                     >
                         <div className="flex-1 w-full overflow-y-auto max-h-[500px] px-6 pb-6 mt-6">
+                            {/* Search Bar */}
+                            <div className="mb-4">
+                                <div className="relative py-1">
+                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Search modifier groups..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="pl-10"
+                                    />
+                                </div>
+                            </div>
+
                             {modifierGroups?.length === 0 ? (
                                 <div className="text-center py-8 text-muted-foreground">
                                     <GripVertical className="h-12 w-12 mx-auto mb-4 opacity-50" />
                                     <p>No modifier groups available</p>
                                     <p className="text-sm">Create modifier groups first</p>
                                 </div>
+                            ) : filteredModifierGroups.length === 0 ? (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                                    <p>No modifier groups found</p>
+                                    <p className="text-sm">Try adjusting your search terms</p>
+                                </div>
                             ) : (
                                 <div className="space-y-3">
-                                    {modifierGroups?.map((group) => {
+                                    {filteredModifierGroups.map((group) => {
                                         const isSelected = selectedIds.includes(group.id);
                                         return (
                                             <div
