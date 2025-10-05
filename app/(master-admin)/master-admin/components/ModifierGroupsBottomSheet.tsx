@@ -112,18 +112,33 @@ export default function ModifierGroupsBottomSheet({ open, setOpen }: { open: boo
                         </div>
 
                         {/* Header */}
-                        <div className="px-6 pb-4">
-                            <h2 className="text-xl font-semibold text-foreground">Modifier Groups</h2>
-                            <p className="text-sm text-muted-foreground mt-1">
-                                Create and manage modifier groups for your products
-                            </p>
+                        <div className="px-6 pb-4 w-full items-center justify-center">
+                            <div className='w-full'>
+                                <h2 className="text-xl font-semibold text-foreground">Modifier Groups</h2>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    Create and manage modifier groups for your products
+                                </p>
+                            </div>
+
+                            
                         </div>
                     </Sheet.Header>
 
-                    <Sheet.Content>
-                        <div className="h-full flex flex-col">
+                    <Sheet.Content className=''>
+                        <div 
+                        style={{
+                            display: 'flex',
+                            width: '100%',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            paddingTop: '0px',
+                            gap: '16px',
+                        }}
+                        className='flex-1 overflow-y-auto border'
+                        >
                             {/* Create New Group Form */}
-                            <div className="px-6 pb-6 border-b border-border">
+                            <div className="px-6 pb-6 border-b border-border w-full">
                                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                                     {/* Group Name */}
                                     <div className="space-y-2">
@@ -267,7 +282,7 @@ export default function ModifierGroupsBottomSheet({ open, setOpen }: { open: boo
                             </div>
 
                             {/* Existing Groups List */}
-                            <div className="flex-1 overflow-hidden">
+                            <div className="flex-1 overflow-hidden w-full">
                                 <div className="px-6 py-4">
                                     <h3 className="text-lg font-medium text-foreground mb-4">
                                         Existing Groups ({modifierGroups?.length})

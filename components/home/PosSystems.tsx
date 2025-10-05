@@ -69,9 +69,9 @@ const PosSystems_QUERY = defineQuery(`*[_type == 'POSSystems']`)
 
 const options = { next: { revalidate: 30 } };
 
-const  PosSystems = async () => {
+const PosSystems = async () => {
   const { isEnabled } = await draftMode();
-  const PosSystemsData : PosSystemsQueryResultProps = await sanityFetch({
+  const PosSystemsData: PosSystemsQueryResultProps = await sanityFetch({
     query: PosSystems_QUERY,
     ...options,
   });
@@ -84,13 +84,13 @@ const  PosSystems = async () => {
         </h2>
 
         {/* Responsive Grid for Cards */}
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {PosSystemsData.data[0].Pos_Systems.map((system) => (
+        <div className="mt-12 flex flex-wrap items-stretch flex-row justify-center gap-8">
+          {PosSystemsData.data[0].Pos_Systems.map((system, idx) => (
             <div
-              key={system.POS_System_Header}
+              key={system?.POS_System_Header}
               className="
               flex flex-col bg-[#E6E7E7] dark:bg-[#231A30] 
-              rounded-2xl shadow-lg overflow-hidden
+              rounded-2xl shadow-lg max-w-1/4 overflow-hidden
             "
             >
               {/* Image Container */}
@@ -102,23 +102,25 @@ const  PosSystems = async () => {
                   height={300}
                   className="w-full h-auto object-contain aspect-[4/3]"
                 /> */}
-                <SanityImage 
-                  image={system.POS_System_Image}
-                  alt={`Image of ${system.POS_System_Header}`}
-                  width={400}
-                  height={300}
-                  className="w-full h-auto object-contain aspect-[4/3]"
-                />
+                {system?.POS_System_Image &&
+                  <SanityImage
+                    image={system?.POS_System_Image}
+                    alt={`Image of ${system?.POS_System_Header}`}
+                    width={400}
+                    height={300}
+                    className="w-full h-auto object-cover aspect-[4/3]"
+                  />
+                }
               </div>
 
               {/* Content Container */}
               <div className="p-6 flex flex-col flex-grow">
                 <h3 className="font-bold text-2xl text-center text-gray-800 dark:text-gray-100">
-                  {system.POS_System_Header}
+                  {system?.POS_System_Header}
                 </h3>
 
                 <Link
-                  href={system.POS_System_Link}
+                  href={system?.POS_System_Link || "#"}
                   className="inline-flex items-center justify-center gap-2 mt-4 w-full
                   px-6 py-3 rounded-full font-semibold bg-gradient-to-b from-[#662CB2] to-[#2C134C] dark:from-[#662CB2] dark:to-purple-[#2C134C] hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600 text-white
                   transition-colors duration-300"
@@ -128,7 +130,7 @@ const  PosSystems = async () => {
 
                 {/* Features List */}
                 <p className="mt-6 space-y-3">
-                  {system.POS_System_SubText}
+                  {system?.POS_System_SubText}
                 </p>
               </div>
             </div>

@@ -171,7 +171,7 @@ export default async function Home() {
       <FeaturesTabs features={HomePageData.data[0].Features_Payments} />
       <InsightsSection header={HomePageData.data[0].Insights_Section.Insights_Section_Header} subtext={HomePageData.data[0].Insights_Section.Insights_Section_SubText} cards={HomePageData.data[0].Insights_Section.Insights_Section_Cards} />
       <PreferredChoice ComparisonData={ComparisonData} />
-      <MerchantPortal MerchantPortalData={HomePageData.data[0].Merchant_Portal} />
+      <MerchantPortal MerchantPortalData={HomePageData.data[0]?.Merchant_Portal} />
       <Testimonials testimonials={TestimonialsData.data[0].Testimonial_Cards} testimonial_header={TestimonialsData.data[0].Testimonial_Header} />
       <Collection />
       <PosSystems />

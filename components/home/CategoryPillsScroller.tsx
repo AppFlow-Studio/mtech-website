@@ -191,6 +191,7 @@ const CategoryPillsScroller = ({ hero_cards }: { hero_cards: any }) => {
     startAnimationSequence(index);
   };
 
+  console.log(hero_cards)
   return (
     <div className="w-full mx-auto h-[280px] md:h-[350px] relative overflow-hidden flex items-end justify-center">
       <div className="flex items-end justify-center gap-6 px-4">
@@ -262,7 +263,7 @@ const CategoryPillsScroller = ({ hero_cards }: { hero_cards: any }) => {
                           <Link
                             href={
                               `/products?data=${encodeURIComponent(
-                                JSON.stringify({ tags: category.linkTags })
+                                JSON.stringify({ tags: category.linkTags.map((tag: string) => Number(tag)) })
                               )}`
                             }
                             className="w-full bg-gradient-to-r from-[#662CB2] to-[#2C134C] text-white 

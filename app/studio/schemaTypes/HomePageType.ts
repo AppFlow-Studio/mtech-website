@@ -1,6 +1,7 @@
 import { defineField, defineType } from 'sanity'
 import { mediaPreview } from 'sanity-plugin-icon-manager'
-
+import { createClient } from '@/utils/supabase/server'
+import TagSelector from './components/TagSelector'
 export const HomePageType = defineType({
   name: 'Home_Page',
   title: 'Home_Page',
@@ -47,27 +48,42 @@ export const HomePageType = defineType({
               name: "linkTags",
               type: "array",
               of: [{ type: "string" }],
-              options: {
-                list: [
-                  { title: "POS System", value: "pos system" },
-                  { title: "ATM Machines", value: "atm machines" },
-                  { title: "ATM Parts & Components", value: "atm parts" },
-                  { title: "POS Accessories", value: "pos accessories" },
-                  { title: "Digital Scales", value: "scales" },
-                  { title: "ATM Signage Solutions", value: "atm signage" },
-                  { title: "ATM Card Terminals", value: "credit card terminals" },
-                  { title: "Credit Card Terminals", value: "credit card terminals" },
-                  { title: "Network Devices", value: "network devices" },
-                ],
-                layout: "grid",
-                direction: "horizontal"
-              }
-            }),
+              components: {
+                input: TagSelector,
+              },
+              // options: {
+              //   list: [],
+              //   // async () => {
+              //   //   try {
+              //   //     const supabase = await createClient()
+              //   //     const { data: tags, error } = await supabase.from('tags').select('name, id')
+
+              //   //     return tags?.map((tag) => ({ title: tag.name, value: tag.id })) || []
+              //   //   } catch (error) {
+              //   //     console.error(error)
+              //   //     return [{ title: 'Could not load vendors', value: '' }]
+              //   //   }
+              //   // },
+              //   layout: "grid",
+              //   direction: "horizontal"
+              // },
+              // [
+              //   { title: "POS System", value: "pos system" },
+              //   { title: "ATM Machines", value: "atm machines" },
+              //   { title: "ATM Parts & Components", value: "atm parts" },
+              //   { title: "POS Accessories", value: "pos accessories" },
+              //   { title: "Digital Scales", value: "scales" },
+              //   { title: "ATM Signage Solutions", value: "atm signage" },
+              //   { title: "ATM Card Terminals", value: "credit card terminals" },
+              //   { title: "Credit Card Terminals", value: "credit card terminals" },
+              //   { title: "Network Devices", value: "network devices" },
+              // ],
+
+            })
           ],
         },
-      ],
+      ]
     }),
-
     //Why Choose Us
     defineField({
       name: 'Why_Choose_Us',
@@ -365,7 +381,6 @@ export const HomePageType = defineType({
           name: 'Merchant_Portal_Image',
           title: 'Merchant Portal Image',
           type: 'image',
-          validation: (rule) => rule.required(),
         }),
         defineField({
           name: 'Merchant_Portal_Button_Text',
