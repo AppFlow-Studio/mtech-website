@@ -44,6 +44,7 @@ import {
   List,
   ChevronDown,
   LayoutGrid,
+  LogOut,
 } from "lucide-react";
 import { useProfile } from "@/lib/hooks/useProfile";
 import { useSignOut } from "@/lib/auth-utils";
@@ -59,6 +60,7 @@ import AgentOrdersScreen from "../components/AgentOrdersScreen";
 import { useRouter, useSearchParams } from "next/navigation";
 import AgentSettingsDialog from "../components/AgentSettingsDialog";
 import Profile from "./Profile";
+import { Product } from "@/lib/types";
 
 function areObjectsEqual(obj1: any, obj2: any) {
   const keys1 = Object.keys(obj1);
@@ -76,9 +78,9 @@ function areObjectsEqual(obj1: any, obj2: any) {
   return true;
 }
 
-function doAllObjectsMatch(arr1, arr2) {
-  return arr2.every(obj2 =>
-    arr1.some(obj1 => areObjectsEqual(obj1, obj2))
+function doAllObjectsMatch(arr1: any[] = [], arr2: any[] = []): boolean {
+  return arr2.every((obj2: any) =>
+    arr1.some((obj1: any) => areObjectsEqual(obj1, obj2))
   );
 }
 
@@ -274,7 +276,7 @@ export default function AgentPage() {
   // Cart functions
   const addToCart = async (product: any) => {
     setCartItems((prev) => {
-      const existingItem = prev.find((item) => item.id === product.id && areObjectsEqual(item?.selectedModifiers, product?.selectedModifiers));
+      const existingItem = prev.find((item) => item.id === product.id && doAllObjectsMatch(item?.selectedModifiers, product?.selectedModifiers));
       if (existingItem) {
         return prev.map((item) =>
           item.id === product.id
@@ -303,8 +305,29 @@ export default function AgentPage() {
     // }
   };
 
-  const removeFromCart = (productId: string) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== productId));
+  const removeFromCart = (productId: string, productSelectedModifiers?: {
+    [groupId: number]: number
+    modifierId: number
+    groupName: string
+    modifierName: string
+    priceAdjustment: number
+  }[]
+  ) => {
+    console.log('Product Selected Modifiers', productSelectedModifiers)
+    console.log('Cart Items', cartItems)
+    setCartItems((prev) =>
+      prev.filter((item) => {
+        const hasModifiers = Array.isArray(productSelectedModifiers) && productSelectedModifiers.length > 0;
+        if (!hasModifiers) {
+          // No modifiers specified: remove by product ID only
+          return item.id !== productId;
+        }
+        // Modifiers specified: remove only the item matching both ID and modifiers
+        const idMatches = item.id === productId;
+        const modifiersMatch = doAllObjectsMatch(item?.selectedModifiers || [], productSelectedModifiers);
+        return !(idMatches && modifiersMatch);
+      })
+    );
   };
 
   const updateQuantity = (productId: string, quantity: number) => {
@@ -449,11 +472,10 @@ export default function AgentPage() {
               <div className="flex space-x-8">
                 <button
                   onClick={() => setActiveTab("dashboard")}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === "dashboard"
-                      ? "border-primary text-primary"
-                      : "border-transparent text-muted-foreground hover:text-foreground"
-                  }`}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === "dashboard"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                    }`}
                 >
                   <div className="flex items-center gap-2">
                     <TrendingUp className="h-4 w-4" />
@@ -462,11 +484,10 @@ export default function AgentPage() {
                 </button>
                 <button
                   onClick={() => setActiveTab("products")}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === "products"
-                      ? "border-primary text-primary"
-                      : "border-transparent text-muted-foreground hover:text-foreground"
-                  }`}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === "products"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                    }`}
                 >
                   <div className="flex items-center gap-2">
                     <Package className="h-4 w-4" />
@@ -475,11 +496,10 @@ export default function AgentPage() {
                 </button>
                 <button
                   onClick={() => setActiveTab("orders")}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === "orders"
-                      ? "border-primary text-primary"
-                      : "border-transparent text-muted-foreground hover:text-foreground"
-                  }`}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === "orders"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                    }`}
                 >
                   <div className="flex items-center gap-2">
                     <List className="h-4 w-4" />
@@ -488,11 +508,10 @@ export default function AgentPage() {
                 </button>
                 <button
                   onClick={() => setActiveTab("profile")}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === "profile"
-                      ? "border-primary text-primary"
-                      : "border-transparent text-muted-foreground hover:text-foreground"
-                  }`}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === "profile"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                    }`}
                 >
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4" />
@@ -561,9 +580,9 @@ export default function AgentPage() {
                 <span className="text-3xl font-bold text-purple-700">
                   {Array.isArray(orders)
                     ? orders.filter(
-                        (o: any) =>
-                          o.status === "fulfilled" || o.status === "completed"
-                      ).length
+                      (o: any) =>
+                        o.status === "fulfilled" || o.status === "completed"
+                    ).length
                     : 0}
                 </span>
               </div>
@@ -593,7 +612,7 @@ export default function AgentPage() {
                         if (
                           !mostRecentItem ||
                           new Date(item.updated_at) >
-                            new Date(mostRecentItem.updated_at)
+                          new Date(mostRecentItem.updated_at)
                         ) {
                           mostRecentItem = {
                             ...item,
@@ -605,7 +624,7 @@ export default function AgentPage() {
                     if (
                       mostRecentItem &&
                       new Date(mostRecentItem.created_at) >
-                        new Date(mostRecentOrder.created_at)
+                      new Date(mostRecentOrder.created_at)
                     ) {
                       return (
                         <div className="text-sm text-muted-foreground">
@@ -950,8 +969,8 @@ export default function AgentPage() {
                         onChange={(e) => {
                           const selected = Array.isArray(orders)
                             ? orders.find(
-                                (order: any) => order.id === e.target.value
-                              ) || null
+                              (order: any) => order.id === e.target.value
+                            ) || null
                             : null;
                           setSelectedInquiryForCart(selected);
                         }}

@@ -21,7 +21,7 @@ import AddPaymentMethodDialog from '../components/AddPaymentMethodDialog'
 import CreditCardShower from '../components/CreditCardShower'
 
 interface ProfileProps {
-    agent: any
+    agent?: any
     onProfileUpdated?: () => void
 }
 
@@ -223,17 +223,17 @@ export default function Profile({ }: ProfileProps) {
                 </CardHeader>
                 <CardContent>
                     <div className="flex flex-col items-center justify-center py-6">
-                        {agent?.card_payment_info ?    
-                        ( 
-                            <section className='flex flex-row flex-wrap gap-4 w-full'>
-                                {
-                                    agent?.card_payment_info?.map((card) => (
-                                        <CreditCardShower key={card.id} card={card} />
-                                    ))
-                                }
-                            </section> 
-                        )
-                        : <span className="text-muted-foreground mb-2">No payment method added.</span>}
+                        {agent?.card_payment_info ?
+                            (
+                                <section className='flex flex-row flex-wrap gap-4 w-full'>
+                                    {
+                                        agent?.card_payment_info?.map((card) => (
+                                            <CreditCardShower key={card.id} card={card} />
+                                        ))
+                                    }
+                                </section>
+                            )
+                            : <span className="text-muted-foreground mb-2">No payment method added.</span>}
                         <Button
                             variant="outline"
                             onClick={() => setShowAddPaymentDialog(true)}

@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { parseAddress } from "@/utils/parse-address";
 import { createOrderWithItems } from "../actions/create-order-with-items";
 import { syncOrderItems } from "../actions/sync-order-items";
+import { addItemsWithModifiers } from "../actions/add-items-with-modifiers";
 
 interface Address {
     country?: string;
@@ -32,6 +33,12 @@ interface Address {
 interface CartItem {
     product: any;
     price: number;
+    selectedModifiers?: {
+        modifierId: number;
+        groupName: string;
+        modifierName: string;
+        priceAdjustment: number;
+    }[];
     quantity: number;
 }
 
@@ -123,16 +130,38 @@ export default function CreateOrderWithCartDialog({
 
         try {
             // Create the order first
-            const orderResult = await createOrderWithItems(
-                profile.id,
-                orderForm.order_name,
-                orderForm.notes,
-                cartItems.map((item) => ({
-                    product_id: item?.product?.id || item.id,
+            console.log(
+                cartItems?.map((item) => ({
+                    product_id: item?.id,
                     quantity: Number(item.quantity),
-                    price_at_order: item.price
-                }))
-            );
+                    price_at_order: item.price,
+                    selected_modifiers: item?.selectedModifiers || []
+                })))
+            const orderResult = await addItemsWithModifiers({
+                order_info: {
+                    p_agent_id: profile.id,
+                    p_order_name: orderForm.order_name,
+                    p_notes: orderForm.notes,
+                    items_payload: cartItems?.map((item) => ({
+                        product_id: item?.id,
+                        quantity: Number(item.quantity),
+                        price_at_order: item.price,
+                        selected_modifiers: item?.selectedModifiers || []
+                    }))
+                }
+            })
+
+            // await createOrderWithItems(
+            //     profile.id,
+            //     orderForm.order_name,
+            //     orderForm.notes,
+            //     cartItems.map((item) => ({
+            //         product_id: item?.product?.id || item.id,
+            //         quantity: Number(item.quantity),
+            //         price_at_order: item.price,
+            //         selected_modifiers: item?.selectedModifiers
+            //     }))
+            // );
 
             if (orderResult instanceof Error) {
                 toast.error('Failed to create order',
@@ -145,29 +174,29 @@ export default function CreateOrderWithCartDialog({
             }
 
             // Add cart items to the order
-            const orderItems = cartItems.map((item) => ({
-                order_id: orderResult.order.id,
-                product_id: item?.product?.id || item.id,
-                quantity: Number(item.quantity),
-                price_at_order: item.price
-            }));
+            // const orderItems = cartItems.map((item) => ({
+            //     order_id: orderResult.order.id,
+            //     product_id: item?.product?.id || item.id,
+            //     quantity: Number(item.quantity),
+            //     price_at_order: item.price
+            // }));
 
-            const syncResult = await syncOrderItems(orderResult.order.id, orderItems);
-            if (syncResult instanceof Error) {
-                toast.error('Failed to add cart items to order',
-                    {
-                        description: syncResult.message
-                    }
-                );
-                setIsSubmitting(false);
-                return;
-            }
+            // const syncResult = await syncOrderItems(orderResult.order.id, orderItems);
+            // if (syncResult instanceof Error) {
+            //     toast.error('Failed to add cart items to order',
+            //         {
+            //             description: syncResult.message
+            //         }
+            //     );
+            //     setIsSubmitting(false);
+            //     return;
+            // }
 
             toast.success('New order created with cart items!');
             clearCart();
-            if (onOrderCreated) {
-                onOrderCreated(orderResult.order.id);
-            }
+            // if (onOrderCreated) {
+            //     onOrderCreated(orderResult.order.id);
+            // }
             handleClose();
         } catch (error) {
             console.error('Error creating order with cart items:', error);
@@ -176,6 +205,7 @@ export default function CreateOrderWithCartDialog({
             setIsSubmitting(false);
         }
     };
+
 
     const isAddressValid = shippingAddress?.first_name &&
         shippingAddress?.last_name &&
@@ -264,6 +294,11 @@ export default function CreateOrderWithCartDialog({
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <h4 className="font-medium text-sm truncate">{item.name}</h4>
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    {item?.selectedModifiers?.map((modifier: any) => (
+                                                        <span key={modifier.id}>{modifier.modifierName}: + ${modifier.priceAdjustment?.toFixed(2)}</span>
+                                                    ))}
+                                                </p>
                                                 <p className="text-xs text-muted-foreground">
                                                     Qty: {item.quantity} × ${item.price.toFixed(2)}
                                                 </p>

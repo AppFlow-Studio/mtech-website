@@ -7,6 +7,13 @@ type OrderItem = {
     product_id: string,
     quantity: number,
     price_at_order: number
+    selected_modifiers: {
+        [groupId: number]: number;
+        modifierId: number;
+        groupName: string;
+        modifierName: string;
+        priceAdjustment: number;
+    }[]
 };
 
 export async function createOrderWithItems(agent_id: string, order_name: string, notes: string, items: OrderItem[]) {
@@ -46,6 +53,7 @@ export async function createOrderWithItems(agent_id: string, order_name: string,
         .insert(orderItems)
         .select();
 
+    
     if (insertError) {
         console.error('Error inserting order items:', insertError);
         throw new Error('Could not add items to order.');

@@ -13,6 +13,7 @@ import { draftMode } from "next/headers";
 import { DisableDraftMode } from "@/components/DisableDraftMode";
 import { SanityLive } from "@/utils/sanity/lib/live";
 import NavBarNumber from "@/components/home/NavBarNumber";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -53,9 +54,27 @@ export default async function RootLayout({
         set its className on the server, as the client might initially render
         something different before hydration.
       */}
+      <head>
+        <Script>
+          {
+            `
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-NM6HBL86');
+            `
+          }
+        </Script>
+        <Script src="https://cdn.gomega.ai/scripts/optimizer.min.js" />
+
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased dark:bg-[#0B0119] dark:text-gray-200 bg-white text-[#2C3551] `}
       >
+        <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NM6HBL86"
+          height="0" width="0" style={{ display: "none", visibility: "hidden" }}></iframe>
+          </noscript>
         <ThemeProvider initialTheme={initialTheme}>
           <AuthProvider>
             <TanstackProvider>

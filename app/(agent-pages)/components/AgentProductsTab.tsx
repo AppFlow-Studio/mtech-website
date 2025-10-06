@@ -52,12 +52,18 @@ export default function AgentProductsTab({
     selectedInquiryForCart?: any
     setSelectedInquiryForCart?: (inquiry: any) => void
     cartItems?: any[]
-    removeFromCart?: (productId: string) => void
+    removeFromCart?: (productId: string, productSelectedModifiers?: {
+        [groupId: number]: number
+        modifierId: number
+        groupName: string
+        modifierName: string
+        priceAdjustment: number
+    }[]) => void
     updateQuantity?: (productId: string, quantity: number) => void
 }) {
     const { data: agent, isLoading: isAgentLoading } = useGetAgentProducts(agent_id)
     const { data: tags } = useTags()
-    console.log(cartItems)
+    // console.log(cartItems)
     const [productSearchTerm, setProductSearchTerm] = useState("")
     const [categoryFilter, setCategoryFilter] = useState("all")
     const [selectedTags, setSelectedTags] = useState<string[]>([])
@@ -73,6 +79,10 @@ export default function AgentProductsTab({
     const [productForModifiers, setProductForModifiers] = useState<any>(null);
     const [selectedModifiers, setSelectedModifiers] = useState<{ [groupId: number]: number }>({});
 
+    // Cart management functions using header cart (single source of truth)
+    const getTotalCartItems = () => {
+        return cartItems?.reduce((total, item) => total + (item.quantity || 1), 0) || 0
+    }
     // Handle scroll for sticky cart
     useEffect(() => {
         const handleScroll = () => {
@@ -102,7 +112,7 @@ export default function AgentProductsTab({
                     quantity: Number(item.quantity),
                     price_at_order: item.price
                 }))
-                console.log('Orders Items', orders_items)
+                // console.log('Orders Items', orders_items)
                 const result = await syncOrderItems(selectedInquiryForCart.id, orders_items)
                 if (result instanceof Error) {
                     toast.error('Failed to add cart items to order',
@@ -116,7 +126,7 @@ export default function AgentProductsTab({
                 // Clear the header cart
                 if (removeFromCart) {
                     headerCartItems.forEach((item: any) => {
-                        removeFromCart(item.id)
+                        removeFromCart(item.id, item?.selectedModifiers)
                     })
                 }
                 if (setSelectedInquiryForCart) {
@@ -165,14 +175,11 @@ export default function AgentProductsTab({
         setSelectedTags([])
     }
 
-    // Cart management functions using header cart (single source of truth)
-    const getTotalCartItems = () => {
-        return cartItems?.reduce((total, item) => total + (item.quantity || 1), 0) || 0
-    }
-
     const getCartItemCount = (productId: string) => {
-        const item = cartItems?.find((item: any) => item.id === productId)
-        return item ? item.quantity : 0
+        const totalQuantity = cartItems
+            ?.filter((item: any) => item.id === productId)
+            .reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 0
+        return totalQuantity || 0
     }
 
     const getCartTotal = () => {
@@ -289,8 +296,6 @@ export default function AgentProductsTab({
         setSelectedProduct(productForDialog);
         setShowProductDialog(true);
     };
-    console.log(selectedProduct)
-
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -455,12 +460,17 @@ export default function AgentProductsTab({
                                                 <p className="text-xs text-muted-foreground">
                                                     Qty: {item.quantity} • ${item.price?.toFixed(2)} each
                                                 </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {item.selectedModifiers?.map((modifier: any) => (
+                                                        <span key={modifier.id}>{modifier.modifierName}: + ${modifier.priceAdjustment?.toFixed(2)}</span>
+                                                    ))}
+                                                </p>
                                             </div>
                                             <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    onClick={() => removeFromCart?.(item.id || '')}
+                                                    onClick={() => removeFromCart?.(item.id || '', item?.selectedModifiers)}
                                                     className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
                                                 >
                                                     <X className="h-3 w-3" />
