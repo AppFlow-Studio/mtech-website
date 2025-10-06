@@ -17,7 +17,8 @@ import {
     Calendar,
     ExternalLink,
     Info,
-    Tag
+    Tag,
+    Check
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -56,6 +57,7 @@ export default function AgentProductsTab({
 }) {
     const { data: agent, isLoading: isAgentLoading } = useGetAgentProducts(agent_id)
     const { data: tags } = useTags()
+    console.log(cartItems)
     const [productSearchTerm, setProductSearchTerm] = useState("")
     const [categoryFilter, setCategoryFilter] = useState("all")
     const [selectedTags, setSelectedTags] = useState<string[]>([])
@@ -67,6 +69,9 @@ export default function AgentProductsTab({
     const [showNewOrderDialog, setShowNewOrderDialog] = useState(false)
     const [selectedProduct, setSelectedProduct] = useState<any>(null);
     const [showProductDialog, setShowProductDialog] = useState(false);
+    const [showModifierDialog, setShowModifierDialog] = useState(false);
+    const [productForModifiers, setProductForModifiers] = useState<any>(null);
+    const [selectedModifiers, setSelectedModifiers] = useState<{ [groupId: number]: number }>({});
 
     // Handle scroll for sticky cart
     useEffect(() => {
@@ -184,6 +189,15 @@ export default function AgentProductsTab({
     const addToCartLocal = (productId: string, productName: string) => {
         const agentProduct = agent?.agent_tiers?.agent_product_prices?.find((ap: any) => ap.products.id === productId)
         if (agentProduct && addToCart) {
+            // Check if product has modifiers
+            if (agentProduct.products.products_modifiers && agentProduct.products.products_modifiers.length > 0) {
+                // Show modifier selection dialog
+                setProductForModifiers(agentProduct)
+                setShowModifierDialog(true)
+                return
+            }
+
+            // No modifiers, add directly to cart
             const productForCart = {
                 id: agentProduct.products.id,
                 name: agentProduct.products.name,
@@ -199,6 +213,58 @@ export default function AgentProductsTab({
             console.log('Current header cart:', cartItems)
             toast.success(`${productName} added to cart`)
         }
+    }
+
+    const handleModifierSelection = () => {
+        if (!productForModifiers || !addToCart) return
+
+        // Calculate total price with modifiers
+        let totalPrice = productForModifiers.price
+        const selectedModifierDetails: any[] = []
+
+        Object.entries(selectedModifiers).forEach(([groupId, modifierId]) => {
+            const modifierGroup = productForModifiers.products.products_modifiers.find((pm: any) => pm.modifier_group_id === parseInt(groupId))
+            if (modifierGroup) {
+                const modifier = modifierGroup.modifier_groups.modifiers.find((m: any) => m.id === modifierId)
+                if (modifier) {
+                    totalPrice += modifier.price_adjustment
+                    selectedModifierDetails.push({
+                        groupName: modifierGroup.modifier_groups.name,
+                        modifierName: modifier.name,
+                        modifierId: modifier.id,
+                        priceAdjustment: modifier.price_adjustment
+                    })
+                }
+            }
+        })
+
+        const productForCart = {
+            id: productForModifiers.products.id,
+            name: productForModifiers.products.name,
+            description: productForModifiers.products.description,
+            price: totalPrice,
+            imageSrc: productForModifiers.products.imageSrc,
+            regularPrice: productForModifiers.products.default_price,
+            tags: productForModifiers.products.tags,
+            inStock: productForModifiers.products.inStock,
+            selectedModifiers: selectedModifierDetails
+        }
+
+        addToCart(productForCart)
+        console.log('Added to header cart with modifiers:', productForCart)
+        toast.success(`${productForModifiers.products.name} added to cart with modifiers`)
+
+        // Reset state
+        setShowModifierDialog(false)
+        setProductForModifiers(null)
+        setSelectedModifiers({})
+    }
+
+    const handleModifierChange = (groupId: number, modifierId: number) => {
+        setSelectedModifiers(prev => ({
+            ...prev,
+            [groupId]: modifierId
+        }))
     }
 
     const filteredProducts = agent?.agent_tiers?.agent_product_prices?.filter((agent_product: any) => {
@@ -604,7 +670,11 @@ export default function AgentProductsTab({
                                         ) : (
                                             <Button
                                                 size="sm"
-                                                onClick={() => addToCartLocal(agent_product.products.id, agent_product.products.name)}
+                                                onClick={() =>
+
+                                                    addToCartLocal(agent_product.products.id, agent_product.products.name)
+
+                                                }
                                                 disabled={!agent_product.products.inStock}
                                             >
                                                 <ShoppingCart className="h-3 w-3" />
@@ -1024,6 +1094,181 @@ export default function AgentProductsTab({
                                         }
                                     }}
                                     className="flex-1"
+                                >
+                                    <ShoppingCart className="h-4 w-4 mr-2" />
+                                    Add to Cart
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Modifier Selection Dialog */}
+            <Dialog open={showModifierDialog} onOpenChange={setShowModifierDialog}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Package className="h-5 w-5" />
+                            Select Modifier Options
+                        </DialogTitle>
+                        <DialogDescription>
+                            Choose your preferred options for {productForModifiers?.products.name}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {productForModifiers && (
+                        <div className="space-y-6">
+                            {/* Product Info */}
+                            <Card>
+                                <CardContent className="p-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden flex-shrink-0">
+                                            <img
+                                                src={productForModifiers.products.imageSrc}
+                                                alt={productForModifiers.products.name}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                        <div className="flex-1">
+                                            <h3 className="font-semibold text-lg">{productForModifiers.products.name}</h3>
+                                            <p className="text-sm text-muted-foreground mb-2">
+                                                {productForModifiers.products.description}
+                                            </p>
+                                            <div className="text-lg font-bold text-primary">
+                                                Base Price: ${productForModifiers.price?.toFixed(2)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Modifier Groups */}
+                            <div className="space-y-4">
+                                {productForModifiers.products.products_modifiers.map((modifierGroup: any) => (
+                                    <Card key={modifierGroup.id}>
+                                        <CardHeader>
+                                            <CardTitle className="text-lg">
+                                                {modifierGroup.modifier_groups.name}
+                                            </CardTitle>
+                                            <CardDescription>
+                                                Select your preferred option
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="space-y-3">
+                                                {modifierGroup.modifier_groups.modifiers.map((modifier: any) => {
+                                                    const isSelected = selectedModifiers[modifierGroup.modifier_group_id] === modifier.id
+                                                    return (
+                                                        <div
+                                                            key={modifier.id}
+                                                            className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-all ${isSelected
+                                                                ? 'border-primary bg-primary/5'
+                                                                : 'border-border hover:bg-muted/50'
+                                                                }`}
+                                                            onClick={() => handleModifierChange(modifierGroup.modifier_group_id, modifier.id)}
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isSelected
+                                                                    ? 'border-primary bg-primary text-primary-foreground'
+                                                                    : 'border-muted-foreground'
+                                                                    }`}>
+                                                                    {isSelected && <Check className="h-3 w-3" />}
+                                                                </div>
+                                                                <div>
+                                                                    <div className="font-medium">{modifier.name}</div>
+                                                                    {modifier.desc && (
+                                                                        <div className="text-sm text-muted-foreground">
+                                                                            {modifier.desc}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <div className={`font-semibold ${modifier.price_adjustment > 0
+                                                                    ? 'text-green-600'
+                                                                    : modifier.price_adjustment < 0
+                                                                        ? 'text-red-600'
+                                                                        : 'text-muted-foreground'
+                                                                    }`}>
+                                                                    {modifier.price_adjustment > 0
+                                                                        ? `+$${modifier.price_adjustment.toFixed(2)}`
+                                                                        : modifier.price_adjustment < 0
+                                                                            ? `-$${Math.abs(modifier.price_adjustment).toFixed(2)}`
+                                                                            : 'No additional cost'
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+
+                            {/* Price Summary */}
+                            <Card>
+                                <CardContent className="p-4">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <div className="text-sm text-muted-foreground">Base Price</div>
+                                            <div className="text-lg font-semibold">${productForModifiers.price?.toFixed(2)}</div>
+                                        </div>
+                                        {Object.keys(selectedModifiers).length > 0 && (
+                                            <div className="text-right">
+                                                <div className="text-sm text-muted-foreground">Modifier Adjustments</div>
+                                                <div className="text-lg font-semibold text-primary">
+                                                    +${Object.entries(selectedModifiers).reduce((total, [groupId, modifierId]) => {
+                                                        const modifierGroup = productForModifiers.products.products_modifiers.find((pm: any) => pm.modifier_group_id === parseInt(groupId))
+                                                        if (modifierGroup) {
+                                                            const modifier = modifierGroup.modifier_groups.modifiers.find((m: any) => m.id === modifierId)
+                                                            if (modifier) {
+                                                                return total + modifier.price_adjustment
+                                                            }
+                                                        }
+                                                        return total
+                                                    }, 0).toFixed(2)}
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div className="text-right">
+                                            <div className="text-sm text-muted-foreground">Total Price</div>
+                                            <div className="text-2xl font-bold text-primary">
+                                                ${(productForModifiers.price + Object.entries(selectedModifiers).reduce((total, [groupId, modifierId]) => {
+                                                    const modifierGroup = productForModifiers.products.products_modifiers.find((pm: any) => pm.modifier_group_id === parseInt(groupId))
+                                                    if (modifierGroup) {
+                                                        const modifier = modifierGroup.modifier_groups.modifiers.find((m: any) => m.id === modifierId)
+                                                        if (modifier) {
+                                                            return total + modifier.price_adjustment
+                                                        }
+                                                    }
+                                                    return total
+                                                }, 0)).toFixed(2)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Action Buttons */}
+                            <div className="flex gap-3 pt-4 border-t">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        setShowModifierDialog(false)
+                                        setProductForModifiers(null)
+                                        setSelectedModifiers({})
+                                    }}
+                                    className="flex-1"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={handleModifierSelection}
+                                    className="flex-1"
+                                    disabled={Object.keys(selectedModifiers).length !== productForModifiers.products.products_modifiers.length}
                                 >
                                     <ShoppingCart className="h-4 w-4 mr-2" />
                                     Add to Cart

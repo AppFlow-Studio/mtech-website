@@ -21,16 +21,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   User,
-  Mail,
-  Phone,
-  MessageSquare,
   Package,
-  DollarSign,
-  Calendar,
   Clock,
   AlertCircle,
-  CheckCircle,
-  UserCheck,
   Star,
   TrendingUp,
   Settings,
@@ -44,12 +37,7 @@ import {
   ShoppingCart,
   Minus,
   Trash2,
-  CreditCard,
-  UserPlus,
-  LogOut,
-  Users,
   ShoppingBag,
-  Plane,
   ClipboardList,
   Send,
   PackageCheck,
@@ -58,7 +46,6 @@ import {
   LayoutGrid,
 } from "lucide-react";
 import { useProfile } from "@/lib/hooks/useProfile";
-import makeNewOrder from "../actions/make-new-order";
 import { useSignOut } from "@/lib/auth-utils";
 import { toast } from "sonner";
 import { useGetAgentById } from "@/app/(master-admin)/master-admin/actions/AgentStore";
@@ -66,14 +53,35 @@ import AgentProductsTab from "@/app/(agent-pages)/components/AgentProductsTab";
 import NewOrderDialog from "./NewOrderDialog";
 import useOrderState from "../components/order-state";
 import OrdersSection from "./OrdersSection";
-import { assignOrderItems } from "../actions/assign-order-items";
-import { Product } from "@/lib/types";
 import { createOrderWithItems } from "../actions/create-order-with-items";
 import { syncOrderItems } from "../actions/sync-order-items";
 import AgentOrdersScreen from "../components/AgentOrdersScreen";
 import { useRouter, useSearchParams } from "next/navigation";
 import AgentSettingsDialog from "../components/AgentSettingsDialog";
 import Profile from "./Profile";
+
+function areObjectsEqual(obj1: any, obj2: any) {
+  const keys1 = Object.keys(obj1);
+  const keys2 = Object.keys(obj2);
+
+  if (keys1.length !== keys2.length) {
+    return false;
+  }
+
+  for (let key of keys1) {
+    if (obj1[key] !== obj2[key]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function doAllObjectsMatch(arr1, arr2) {
+  return arr2.every(obj2 =>
+    arr1.some(obj1 => areObjectsEqual(obj1, obj2))
+  );
+}
+
 
 export default function AgentPage() {
   const { profile } = useProfile();
@@ -266,7 +274,7 @@ export default function AgentPage() {
   // Cart functions
   const addToCart = async (product: any) => {
     setCartItems((prev) => {
-      const existingItem = prev.find((item) => item.id === product.id);
+      const existingItem = prev.find((item) => item.id === product.id && areObjectsEqual(item?.selectedModifiers, product?.selectedModifiers));
       if (existingItem) {
         return prev.map((item) =>
           item.id === product.id
