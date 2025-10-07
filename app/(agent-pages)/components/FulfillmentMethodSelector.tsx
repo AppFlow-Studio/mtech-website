@@ -117,7 +117,18 @@ export default function FulfillmentMethodSelector({
                                         />
                                     )}
                                     <div>
-                                        <div className="font-semibold">{item.products?.name}</div>
+                                        <div className="font-semibold mb-1">{item.products?.name}</div>
+                                        {item.order_item_modifiers.map((modifier: any) => (
+                                            <div className="flex flex-col items-start gap-1">
+                                                <p className="text-xs font-medium text-muted-foreground">
+                                                    {modifier.modifiers.modifier_groups.name}
+                                                </p>
+                                                <Badge variant="outline" className="text-xs">
+                                                    {modifier.modifiers.name}
+                                                </Badge>
+                                            </div>
+
+                                        ))}
                                         <div className="text-sm text-muted-foreground">
                                             Qty: {item.quantity} | ${item.price_at_order}
                                         </div>

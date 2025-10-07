@@ -8,6 +8,15 @@ export default async function getAgentOrders(agentId: string) {
         *,
         order_items (
             *,
+            order_item_modifiers (
+                *,
+                modifiers (
+                    *,
+                    modifier_groups (
+                     name
+                    )
+                )
+            ),
             products(
                 *
             )

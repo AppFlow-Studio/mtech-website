@@ -198,9 +198,16 @@ export default function CheckoutDialog({
         return v
     }
 
+    const getItemTotalWithModifiers = (item: any) => {
+        if (!item.order_item_modifiers) {
+            return item.price_at_order * item.quantity;
+        }
+        return item.price_at_order + item.order_item_modifiers?.reduce((total: number, modifier: any) => total + modifier.price_adjustment_at_order, 0) * item.quantity;
+    }
     const calculateSubtotal = () => {
+        
         return orderInfo.order_items.reduce((acc: number, item: any) =>
-            acc + (item.price_at_order * item.quantity), 0
+            acc + getItemTotalWithModifiers(item), 0
         )
     }
 

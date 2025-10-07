@@ -55,10 +55,22 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
     const [showCheckoutDialog, setShowCheckoutDialog] = useState(false);
     const [isSavingAddress, setIsSavingAddress] = useState(false);
     const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
-    const total = OrderInfo.order_items.reduce((acc: number, item: OrderItems) => acc + item.price_at_order * Number(item.quantity), 0);
+    const getItemTotalWithModifiers = (item: OrderItems) => {
+        if (!item.order_item_modifiers) {
+            return item.price_at_order * Number(item.quantity);
+        }
+        return item.price_at_order + item.order_item_modifiers?.reduce((total: number, modifier: any) => total + modifier.price_adjustment_at_order, 0) * Number(item.quantity);
+    };
+
+    const GetOrderTotal = () => {
+        return OrderInfo.order_items.reduce((acc: number, item: OrderItems) => acc + getItemTotalWithModifiers(item), 0);
+    };
+
+    const total = GetOrderTotal();
     const tax = total * 0.08;
     const totalWithTax = total + tax;
 
+    console.log(OrderInfo)
     const handleCheckout = () => {
         if (OrderInfo.order_items.length === 0) {
             toast.error('No items in this order');
@@ -202,10 +214,10 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
                             <div>
                                 <span className="text-sm font-medium">Order Total:</span>
                                 <span className="ml-2 text-lg font-bold text-green-700">${totalWithTax.toFixed(2)}</span>
-                            <div className="text-xs text-muted-foreground mt-1">
-                                Subtotal: ${total.toFixed(2)}<br />
-                                NY Sales Tax (8%): ${tax.toFixed(2)}
-                            </div>
+                                <div className="text-xs text-muted-foreground mt-1">
+                                    Subtotal: ${total.toFixed(2)}<br />
+                                    NY Sales Tax (8%): ${tax.toFixed(2)}
+                                </div>
                             </div>
                         </div>
                     </CardContent>
@@ -325,7 +337,7 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
                             onClick={handleCheckout}
                             // Disabled unless all items have a fulfillment method
                             disabled={OrderInfo.order_items.some((item: OrderItems) => !item.fulfillment_type) || OrderInfo.status === 'submitted'}
- 
+
                             className={`flex items-center gap-2 ${OrderInfo.status === 'approved'
                                 ? 'bg-green-600 hover:bg-green-700 text-white'
                                 : 'bg-blue-600 hover:bg-blue-700 text-white'
@@ -388,6 +400,25 @@ export default function AgentOrderDetailsPage({ params }: { params: { order_id: 
                                                                 </Badge>
                                                             )}
                                                         </div>
+                                                        {
+                                                            item.order_item_modifiers && item.order_item_modifiers.length > 0 && (
+                                                                <div className="space-y-2">
+                                                                    <div className="flex items-center gap-2">
+                                                                        {item.order_item_modifiers.map((modifier: any) => (
+                                                                            <div className="flex flex-col items-start gap-2">
+                                                                                <p className="text-xs font-medium text-muted-foreground">
+                                                                                    {modifier.modifiers.modifier_groups.name}
+                                                                                </p>
+                                                                                <Badge variant="outline" className="text-xs">
+                                                                                    {modifier.modifiers.name}
+                                                                                </Badge>
+                                                                            </div>
+
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )
+                                                        }
                                                     </div>
 
                                                     {/* Right Column - Fulfillment Details */}

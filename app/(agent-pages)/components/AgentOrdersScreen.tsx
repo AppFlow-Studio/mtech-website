@@ -13,13 +13,7 @@ import { Button } from "@/components/ui/button";
 import {
   Loader2,
   ArrowRight,
-  Clock,
   Filter,
-  DollarSign,
-  Package,
-  CheckCircle,
-  List,
-  LayoutGrid,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useMemo } from "react";
@@ -31,7 +25,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import Link from "next/link";
 
 function statusBadge(status: string) {
   const config: Record<string, { color: string; label: string }> = {
@@ -81,7 +74,12 @@ export default function AgentOrdersScreen({
     }
     return filtered;
   }, [orders, statusFilter, searchTerm]);
-
+  const getItemTotalWithModifiers = (item: any) => {
+    if (!item.order_item_modifiers) {
+      return item.price_at_order * item.quantity;
+    }
+    return item.price_at_order + item.order_item_modifiers?.reduce((total: number, modifier: any) => total + modifier.price_adjustment_at_order, 0) * item.quantity;
+  }
   const insights = useMemo(() => {
     if (!orders || !Array.isArray(orders)) return null;
     const totalOrders = orders.length;
@@ -89,7 +87,7 @@ export default function AgentOrdersScreen({
       const orderTotal =
         order.order_items?.reduce(
           (acc: number, item: any) =>
-            acc + item.price_at_order * Number(item.quantity),
+            acc + getItemTotalWithModifiers(item),
           0
         ) || 0;
       return sum + orderTotal;
@@ -207,11 +205,17 @@ export default function AgentOrdersScreen({
 }
 
 function OrderCard({ order }: { order: any }) {
+  const getItemTotalWithModifiers = (item: any) => {
+    if (!item.order_item_modifiers) {
+      return item.price_at_order * item.quantity;
+    }
+    return item.price_at_order + item.order_item_modifiers?.reduce((total: number, modifier: any) => total + modifier.price_adjustment_at_order, 0) * item.quantity;
+  }
   const router = useRouter();
   const total =
     order.order_items?.reduce(
       (acc: number, item: any) =>
-        acc + item.price_at_order * Number(item.quantity),
+        acc + getItemTotalWithModifiers(item),
       0
     ) || 0;
   return (
@@ -242,6 +246,12 @@ function OrderCard({ order }: { order: any }) {
 }
 
 function OrderTable({ orders }: { orders: any[] }) {
+  const getItemTotalWithModifiers = (item: any) => {
+    if (!item.order_item_modifiers) {
+      return item.price_at_order * item.quantity;
+    }
+    return item.price_at_order + item.order_item_modifiers?.reduce((total: number, modifier: any) => total + modifier.price_adjustment_at_order, 0) * item.quantity;
+  }
   const router = useRouter();
   return (
     <Card>
@@ -258,9 +268,10 @@ function OrderTable({ orders }: { orders: any[] }) {
         </TableHeader>
         <TableBody>
           {orders.map((order) => {
-            const total = order.order_items.reduce(
+
+            const totalWithModifiers = order.order_items.reduce(
               (acc: number, item: any) =>
-                acc + item.price_at_order * item.quantity,
+                acc + getItemTotalWithModifiers(item),
               0
             );
             return (
@@ -274,7 +285,7 @@ function OrderTable({ orders }: { orders: any[] }) {
                 </TableCell>
                 <TableCell>{formatDate(order.created_at)}</TableCell>
                 <TableCell>{order.order_items.length}</TableCell>
-                <TableCell>${total.toFixed(2)}</TableCell>
+                <TableCell>${totalWithModifiers.toFixed(2)}</TableCell>
                 <TableCell>{statusBadge(order.status)}</TableCell>
                 <TableCell>{order.fulfillment_status || "N/A"}</TableCell>
               </TableRow>

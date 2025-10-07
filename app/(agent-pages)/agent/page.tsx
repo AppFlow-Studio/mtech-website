@@ -340,9 +340,20 @@ export default function AgentPage() {
     );
   };
 
+  const getItemTotalWithModifiers = (item: any) => {
+    if (!item.selectedModifiers) {
+      return item.price * item.quantity;
+    }
+    return item.price + item.selectedModifiers?.reduce((total: number, modifier: any) => total + modifier.priceAdjustment, 0) * item.quantity;
+  };
+
+  const getTotalCartItems = () => {
+    return cartItems.reduce((total, item) => total + Number(item.quantity || 1), 0);
+  };
+
   const getCartTotal = () => {
     return cartItems.reduce(
-      (total, item) => total + item.price * item.quantity,
+      (total, item) => total + getItemTotalWithModifiers(item),
       0
     );
   };
@@ -398,6 +409,7 @@ export default function AgentPage() {
     }
     setIsAssigningOrderItems(false);
   };
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -535,7 +547,7 @@ export default function AgentPage() {
                       variant="outline"
                       className="ml-1 h-5 w-5 flex items-center justify-center rounded-full p-0 text-xs"
                     >
-                      {cartItems.length}
+                      {getTotalCartItems()}
                     </Badge>
                   )}
                 </Button>
@@ -821,7 +833,7 @@ export default function AgentPage() {
                 Shopping Cart
                 {cartItems.length > 0 && (
                   <Badge variant="outline" className="ml-2">
-                    {cartItems.length} items
+                    {getTotalCartItems()} items
                   </Badge>
                 )}
               </DialogTitle>
@@ -1095,6 +1107,7 @@ export default function AgentPage() {
                   product_id: item.id,
                   quantity: item.quantity,
                   price_at_order: item.price,
+                  selected_modifiers: item.selectedModifiers || [],
                 }));
                 try {
                   const result = await createOrderWithItems(

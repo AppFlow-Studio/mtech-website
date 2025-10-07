@@ -13,6 +13,15 @@ export async function GetOrderInfo(order_id: string) {
     admin:profiles!admin_assigned ( * ),
         order_items (
             *,
+            order_item_modifiers (
+                *,
+                modifiers (
+                    *,
+                    modifier_groups (
+                     name
+                    )
+                )
+            ),
             products (
                 *
             ),
@@ -36,6 +45,12 @@ export async function GetOrderInfo(order_id: string) {
             ),
             order_items (
                 *,
+                order_item_modifiers (
+                    *,
+                    modifiers (
+                        *
+                    )
+                ),
                 products (
                     *
                 )

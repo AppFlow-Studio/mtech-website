@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js"
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
-export async function addItemsWithModifiers({ order_info }: {
+export async function createNewOrderWithItemsAndModifiers({ order_info }: {
     order_info: {
         p_agent_id: string,
         p_order_name: string,

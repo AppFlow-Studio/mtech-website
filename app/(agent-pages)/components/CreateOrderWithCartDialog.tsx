@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { parseAddress } from "@/utils/parse-address";
 import { createOrderWithItems } from "../actions/create-order-with-items";
 import { syncOrderItems } from "../actions/sync-order-items";
-import { addItemsWithModifiers } from "../actions/add-items-with-modifiers";
+import { createNewOrderWithItemsAndModifiers } from "../actions/add-items-with-modifiers";
 
 interface Address {
     country?: string;
@@ -137,7 +137,7 @@ export default function CreateOrderWithCartDialog({
                     price_at_order: item.price,
                     selected_modifiers: item?.selectedModifiers || []
                 })))
-            const orderResult = await addItemsWithModifiers({
+            const orderResult = await createNewOrderWithItemsAndModifiers({
                 order_info: {
                     p_agent_id: profile.id,
                     p_order_name: orderForm.order_name,
@@ -213,11 +213,18 @@ export default function CreateOrderWithCartDialog({
         shippingAddress?.phone;
 
     const getCartTotal = () => {
-        return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+        return cartItems.reduce((total, item) => total + getItemTotalWithModifiers(item), 0);
     };
 
     const getTotalItems = () => {
         return cartItems.reduce((total, item) => total + item.quantity, 0);
+    };
+
+    const getItemTotalWithModifiers = (item: CartItem) => {
+        if (!item.selectedModifiers) {
+            return item.price * item.quantity;
+        }
+        return item.price + item.selectedModifiers?.reduce((total, modifier) => total + modifier.priceAdjustment, 0);
     };
 
     return (
@@ -305,7 +312,7 @@ export default function CreateOrderWithCartDialog({
                                             </div>
                                             <div className="text-right">
                                                 <div className="font-medium text-sm">
-                                                    ${(item.price * item.quantity).toFixed(2)}
+                                                    ${getItemTotalWithModifiers(item).toFixed(2)}
                                                 </div>
                                             </div>
                                         </div>

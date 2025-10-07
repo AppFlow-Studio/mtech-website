@@ -7,6 +7,8 @@ import { Loader2 } from 'lucide-react'
 import Autocomplete from "react-google-autocomplete"
 import { cn } from '@/lib/utils'
 import { parseAddress } from '@/utils/parse-address'
+import { validateAddressEntry } from '@/app/(agent-pages)/agent/order/[order_id]/actions/validate-address-entry'
+import { toast } from 'sonner'
 
 interface Address {
     country?: string
@@ -65,7 +67,16 @@ export default function AddressEditModal({
 
     const handleSave = async () => {
         if (formData) {
-            await onSave(formData)
+            const validatedAddress = await validateAddressEntry({
+                addressToValidate: formData
+            })
+
+            if (validatedAddress instanceof Error) {
+                toast.error(validatedAddress.message)
+                return
+            } else {
+                await onSave(formData)
+            }
         }
     }
 

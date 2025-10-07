@@ -117,14 +117,12 @@ export default function OrderProductShopping({ agent_id, agent_tier, agent_profi
         return cart[productId] || 0
     }
 
-
     const getCartTotal = () => {
         return Object.entries(cart).reduce((total, [productId, quantity]) => {
             const agentProduct = AgentProducts?.agent_tiers.agent_product_prices?.find((ap: any) => ap.products.id === productId)
             return total + (agentProduct?.price || 0) * quantity
         }, 0)
     }
-
 
     const getCartItems = () => {
         return Object.entries(cart).map(([productId, quantity]) => {

@@ -7,6 +7,7 @@ type OrderItem = {
     product_id: string,
     quantity: number,
     price_at_order: number
+    
 };
 
 export async function syncOrderItems(order_id: string, newItems: OrderItem[]) {

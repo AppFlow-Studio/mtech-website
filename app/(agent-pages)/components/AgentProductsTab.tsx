@@ -81,7 +81,7 @@ export default function AgentProductsTab({
 
     // Cart management functions using header cart (single source of truth)
     const getTotalCartItems = () => {
-        return cartItems?.reduce((total, item) => total + (item.quantity || 1), 0) || 0
+        return cartItems?.reduce((total, item) => total + Number(item.quantity || 1), 0) || 0;
     }
     // Handle scroll for sticky cart
     useEffect(() => {
@@ -184,9 +184,16 @@ export default function AgentProductsTab({
 
     const getCartTotal = () => {
         return cartItems?.reduce((total, item: any) => {
-            return total + ((item.price || 0) * (item.quantity || 1))
+            return total + getItemTotalWithModifiers(item)
         }, 0) || 0
     }
+
+    const getItemTotalWithModifiers = (item: any) => {
+        if (!item.selectedModifiers) {
+            return (item.price || 0) * (item.quantity || 1);
+        }
+        return (item.price || 0) + item.selectedModifiers?.reduce((total: number, modifier: any) => total + modifier.priceAdjustment, 0) * (item.quantity || 1);
+    };
 
     const getCartItems = () => {
         // Return cart items directly from header cart
@@ -234,7 +241,6 @@ export default function AgentProductsTab({
             if (modifierGroup) {
                 const modifier = modifierGroup.modifier_groups.modifiers.find((m: any) => m.id === modifierId)
                 if (modifier) {
-                    totalPrice += modifier.price_adjustment
                     selectedModifierDetails.push({
                         groupName: modifierGroup.modifier_groups.name,
                         modifierName: modifier.name,
@@ -462,7 +468,7 @@ export default function AgentProductsTab({
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
                                                     {item.selectedModifiers?.map((modifier: any) => (
-                                                        <span key={modifier.id}>{modifier.modifierName}: + ${modifier.priceAdjustment?.toFixed(2)}</span>
+                                                        <span key={modifier.id}>{modifier.modifierName || modifier.modifiers.name}: + ${modifier.priceAdjustment?.toFixed(2)}</span>
                                                     ))}
                                                 </p>
                                             </div>

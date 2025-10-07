@@ -108,10 +108,17 @@ export default function OrderCard({ order, refetchOrders, setSelectedInquiryForC
                 description: item.products.description,
                 price: item.price_at_order,
                 imageSrc: item.products.imageSrc,
+                selectedModifiers: item.order_item_modifiers?.map((modifier: any) => ({
+                    groupName: modifier.modifiers.modifier_groups.name,
+                    modifierId: modifier.modifier_id,
+                    modifierName: modifier.modifiers.name,
+                    priceAdjustment: modifier.price_adjustment_at_order
+                }))
             })));
         }
         setSelectedInquiryForCart(order);
     }
+
     const hasItems = order.order_items && order.order_items.length > 0;
     const onSubmitOrder = async () => {
         const result = await submitOrder(order.id, profile, order.order_name, order.notes, order.order_items || [], order.order_confirmation_number)
@@ -123,6 +130,15 @@ export default function OrderCard({ order, refetchOrders, setSelectedInquiryForC
             refetchOrders();
         }
     }
+    const getItemTotalWithModifiers = (item: any) => {
+        if (!item.order_item_modifiers) {
+            return item.price_at_order * item.quantity;
+        }
+        return item.price_at_order + item.order_item_modifiers?.reduce((total: number, modifier: any) => total + modifier.price_adjustment_at_order, 0) * item.quantity;
+    }
+    const getCartTotal = () => {
+        return order.order_items!.reduce((acc, item) => acc + getItemTotalWithModifiers(item), 0);
+    }
     return (
         <Card className="border border-border rounded-lg hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -130,7 +146,26 @@ export default function OrderCard({ order, refetchOrders, setSelectedInquiryForC
                     <CardTitle className="text-lg font-semibold text-foreground truncate">{order.order_name}</CardTitle>
                     <CardDescription className="text-xs text-muted-foreground">Created {formatDate(order.created_at)}</CardDescription>
                 </div>
-                <div className="flex gap-2 items-center">{statusBadge(order.status)}</div>
+                <div className="flex gap-2 items-center">
+                    {statusBadge(order.status)}
+                    {order.payment_status === "paid" ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Paid
+                        </span>
+                    ) : order.payment_status === "unpaid" ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            Unpaid
+                        </span>
+                    ) : order.payment_status === "pending" ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            Pending
+                        </span>
+                    ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            {order.payment_status || "Unknown"}
+                        </span>
+                    )}
+                </div>
             </CardHeader>
             <CardContent className="flex flex-row gap-0">
                 {/* Detailed Order Information */}
@@ -152,7 +187,7 @@ export default function OrderCard({ order, refetchOrders, setSelectedInquiryForC
                             </Link>
                             {order.status === 'approved' ? (
                                 <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={onShop}>
-                                    <CheckCircle className="h-4 w-4 mr-1" />Checkout 
+                                    <CheckCircle className="h-4 w-4 mr-1" />Checkout
                                 </Button>
                             ) : (
                                 <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={onShop}>
@@ -178,7 +213,26 @@ export default function OrderCard({ order, refetchOrders, setSelectedInquiryForC
                                         )}
                                         <div className="flex-1 min-w-0">
                                             <span className="block font-medium text-foreground truncate">{item.products.name}</span>
-                                            <span className="block text-xs text-muted-foreground">Qty: {item.quantity} &bull; ${item.price_at_order}</span>
+                                            {
+                                                item.order_item_modifiers && item.order_item_modifiers.length > 0 && (
+                                                    <div className="space-y-2">
+                                                        <div className="flex items-center gap-1">
+                                                            {item.order_item_modifiers.map((modifier: any) => (
+                                                                <div className="flex flex-col items-start gap-1">
+                                                                    <p className="text-xs font-medium text-muted-foreground">
+                                                                        {modifier.modifiers.modifier_groups.name}
+                                                                    </p>
+                                                                    <div className="text-xs border p-1 rounded-md px-2">
+                                                                        {modifier.modifiers.name}
+                                                                    </div>
+                                                                </div>
+
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )
+                                            }
+                                            <span className="block text-xs text-muted-foreground mt-1">Qty: {item.quantity} &bull; ${getItemTotalWithModifiers(item)}</span>
                                         </div>
                                     </li>
                                 ))}
@@ -195,7 +249,7 @@ export default function OrderCard({ order, refetchOrders, setSelectedInquiryForC
                 <section className="w-[15%] flex flex-col justify-between">
                     <div className="mb-2">
                         <span className="block text-xs font-medium text-muted-foreground mb-1">Total</span>
-                        <p className="text-lg text-foreground">${order.order_items!.reduce((acc, item) => acc + item.price_at_order * item.quantity, 0)}</p>
+                        <p className="text-lg text-foreground">${getCartTotal()}</p>
                     </div>
                     {order.status === 'draft' && <Button onClick={onSubmitOrder} size="sm" className="bg-green-600 hover:bg-green-700 text-white" >
                         <PlaneTakeoff className="h-4 w-4 mr-1" /> Submit Order
@@ -233,6 +287,8 @@ export default function OrderCard({ order, refetchOrders, setSelectedInquiryForC
                                 <div>
                                     <span className="block text-xs font-medium text-muted-foreground mb-1">Status</span>
                                     {statusBadge(order.status)}
+
+
                                 </div>
                                 <div>
                                     <span className="block text-xs font-medium text-muted-foreground mb-1">Created</span>

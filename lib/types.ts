@@ -169,7 +169,6 @@ export interface Product {
   link: string
   default_price: number
   inStock: boolean
-  tags?: string[]
   is_subscription?: boolean
   subscription_interval?: string
   subscription_price?: number
@@ -213,6 +212,17 @@ export interface OrderItems {
   products: Product
   quantity: number
   price_at_order: number
+  order_item_modifiers?: {
+    id: string
+    order_item_id: string
+    modifier_id: string
+    modifiers: {
+      id: string
+      name: string
+      description: string
+      price_adjustment: number
+    }
+  }[]
   created_at: string
   fulfillment_type: "PICKUP" | "SHIPPING"
   order_status: "PENDING" | "READY_FOR_PICKUP" | "SHIPPED" | "COMPLETED"
